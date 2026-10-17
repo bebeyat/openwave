@@ -92,7 +92,7 @@ jobs:
           Copy-Item "dist/OpenWave-$v-windows-x64-setup.exe" dist/OpenWave-windows-x64-setup.exe
           Copy-Item "dist/OpenWave-$v-windows-x64-portable.zip" dist/OpenWave-windows-x64-portable.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: dist/*
@@ -138,7 +138,7 @@ jobs:
           tar -C stage -czf "dist/OpenWave-$v-linux-x86_64.tar.gz" OpenWave
           cp "dist/OpenWave-$v-linux-x86_64.tar.gz" dist/OpenWave-linux-x86_64.tar.gz
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: linux
           path: dist/*
@@ -188,7 +188,7 @@ jobs:
           ditto -c -k --keepParent stage/OpenWave.app "dist/OpenWave-$v-macos-arm64.zip"
           cp "dist/OpenWave-$v-macos-arm64.zip" dist/OpenWave-macos-arm64.zip
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: dist/*
