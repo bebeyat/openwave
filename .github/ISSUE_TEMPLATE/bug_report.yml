@@ -1,0 +1,48 @@
+name: Bug report
+description: Something does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please do not include personal data. For security problems use the private advisory link instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, what happened instead? Screenshots help.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: "1. Open Search\n2. Type ...\n3. ..."
+  - type: input
+    id: version
+    attributes:
+      label: OpenWave version
+      description: Settings > About
+    validations:
+      required: true
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: Windows 11 23H2
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options: [Installer, Portable zip, Built from source]
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [Search / playback, Import (Spotify / YouTube), Library, Local files, Lyrics, Audio engine (yt-dlp), Settings, Installer, Other]
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?

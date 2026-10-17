@@ -1,0 +1,876 @@
+/*
+ * OpenWave design tokens + Tailwind v4 entry.
+ * Translucent panels over the blurred-cover backdrop; the accent stays one solid colour.
+ * Build: `npm run css` (writes ../assets/main.css, committed).
+ *
+ * Theme model
+ *   - Raw tokens are CSS variables named --ow-*. Dark is the base; "frost" (light) applies for
+ *     html[data-theme="light"] or, when the user follows the system, prefers-color-scheme: light.
+ *   - Accent presets html[data-accent=...] are the "no cover" palette (teal -> violet default).
+ *   - The theme engine (src/theme) sets --ow-accent, --ow-accent-2, --ow-on-accent, --ow-at-d,
+ *     --ow-at-l, --ow-sa-d, --ow-sa-l inline on <html> while a cover is known; they are registered
+ *     with @property so they crossfade over 700ms. data-cover marks that state.
+ *   - html[data-low-power] and prefers-reduced-motion: no crossfade, no blur layers (flat tint).
+ */
+@import "tailwindcss" source(none);
+@source "../src";
+
+/* ---------- animatable ambient properties ---------- */
+@property --ow-accent { syntax: "<color>"; inherits: true; initial-value: #2dd4bf; }
+@property --ow-accent-2 { syntax: "<color>"; inherits: true; initial-value: #8a7cff; }
+@property --ow-on-accent { syntax: "<color>"; inherits: true; initial-value: #0c0a12; }
+@property --ow-at-d { syntax: "<color>"; inherits: true; initial-value: #2dd4bf; }
+@property --ow-at-l { syntax: "<color>"; inherits: true; initial-value: #0a6f62; }
+@property --ow-sa-d { syntax: "<number>"; inherits: true; initial-value: 0.6; }
+@property --ow-sa-l { syntax: "<number>"; inherits: true; initial-value: 0.62; }
+
+:root {
+  transition:
+    --ow-accent 700ms ease-in-out,
+    --ow-accent-2 700ms ease-in-out,
+    --ow-on-accent 700ms ease-in-out,
+    --ow-at-d 700ms ease-in-out,
+    --ow-at-l 700ms ease-in-out,
+    --ow-sa-d 700ms ease-in-out,
+    --ow-sa-l 700ms ease-in-out;
+}
+
+/* ---------- raw tokens: dark "Gece" (base) ----------
+   Flat direction: solid, neutral surfaces separated by hairlines. The cover colour shows in the
+   window backdrop (between panels) and in the single accent; panels themselves take no tint. */
+:root {
+  color-scheme: dark;
+  --ow-bg: #0f0f0e;
+  --ow-panel: rgba(24, 23, 28, var(--ow-panel-a, 0.46));
+  --ow-surface: rgba(255, 255, 255, 0.05);
+  --ow-surface-2: rgba(255, 255, 255, 0.08);
+  --ow-glass: rgba(30, 29, 34, 0.95);
+  --ow-glass-solid: #1f1e22;
+  --ow-text: #f1eee8;
+  --ow-muted: #b4afa6;
+  --ow-faint: #858078;
+  --ow-placeholder: #9a958c;
+  --ow-border: rgba(255, 255, 255, 0.1);
+  --ow-border-strong: rgba(255, 255, 255, 0.34);
+  --ow-hover: rgba(255, 255, 255, 0.06);
+  --ow-press: rgba(255, 255, 255, 0.1);
+  --ow-scrim: rgba(0, 0, 0, 0.66);
+  --ow-bd-sat: 1.15;
+  --ow-bd-bright: 0.8;
+  --ow-danger: #f2705e;
+  --ow-danger-text: #f58a7a;
+  --ow-danger-solid: #f2705e;
+  --ow-on-danger: #1f0702;
+  --ow-success: #5fcb8a;
+  --ow-warning: #e8b23a;
+  --ow-info: #8ebcfb;
+  --ow-shadow-pop: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --ow-shadow-panel: 0 8px 32px rgba(0, 0, 0, 0.32);
+  --ow-panel-edge: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --ow-sheen: rgba(255, 255, 255, 0.045);
+  --ow-tint: 0%;
+  --ow-bloom: 0%;
+  --ow-card: rgba(255, 255, 255, 0.035);
+  --ow-card-hi: rgba(255, 255, 255, 0.035);
+  --ow-seg-bg: rgba(255, 255, 255, 0.04);
+  --ow-tintc: var(--ow-accent);
+  --ow-accent-tint: color-mix(in srgb, var(--ow-accent) 15%, transparent);
+  --ow-accent-text: var(--ow-at-d);
+  --ow-ink: #0c0b0a;
+}
+
+/* ---------- raw tokens: light "Kağıt" (warm paper, not lavender) ---------- */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ow-bg: #e9e6df;
+  --ow-panel: rgba(255, 255, 255, var(--ow-panel-a, 0.5));
+  --ow-surface: rgba(25, 24, 22, 0.04);
+  --ow-surface-2: rgba(25, 24, 22, 0.065);
+  --ow-glass: rgba(255, 255, 255, 0.96);
+  --ow-glass-solid: #fdfcfa;
+  --ow-tint: 0%;
+  --ow-tintc: var(--ow-accent);
+  --ow-card: rgba(25, 24, 22, 0.03);
+  --ow-card-hi: rgba(25, 24, 22, 0.03);
+  --ow-seg-bg: rgba(25, 24, 22, 0.05);
+  --ow-bloom: 0%;
+  --ow-bd-sat: 1;
+  --ow-bd-bright: 1;
+  --ow-text: #191816;
+  --ow-muted: #55514a;
+  --ow-faint: #7d786f;
+  --ow-placeholder: #6e6a62;
+  --ow-border: rgba(25, 24, 22, 0.1);
+  --ow-border-strong: rgba(25, 24, 22, 0.42);
+  --ow-hover: rgba(25, 24, 22, 0.05);
+  --ow-press: rgba(25, 24, 22, 0.09);
+  --ow-scrim: rgba(25, 24, 22, 0.4);
+  --ow-danger: #b0301e;
+  --ow-danger-text: #a52b1a;
+  --ow-danger-solid: #b0301e;
+  --ow-on-danger: #ffffff;
+  --ow-success: #176a3b;
+  --ow-warning: #8f5a00;
+  --ow-info: #1f55d6;
+  --ow-shadow-pop: 0 12px 32px rgba(25, 24, 22, 0.16), 0 0 0 1px rgba(25, 24, 22, 0.06);
+  --ow-shadow-panel: 0 8px 28px rgba(25, 24, 22, 0.1);
+  --ow-panel-edge: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --ow-sheen: rgba(255, 255, 255, 0.35);
+  --ow-accent-tint: color-mix(in srgb, var(--ow-accent) 13%, transparent);
+  --ow-accent-text: var(--ow-at-l);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --ow-bg: #e9e6df;
+    --ow-panel: rgba(255, 255, 255, var(--ow-panel-a, 0.5));
+    --ow-surface: rgba(25, 24, 22, 0.04);
+    --ow-surface-2: rgba(25, 24, 22, 0.065);
+    --ow-glass: rgba(255, 255, 255, 0.96);
+    --ow-glass-solid: #fdfcfa;
+    --ow-tint: 0%;
+    --ow-tintc: var(--ow-accent);
+    --ow-card: rgba(25, 24, 22, 0.03);
+    --ow-card-hi: rgba(25, 24, 22, 0.03);
+    --ow-seg-bg: rgba(25, 24, 22, 0.05);
+    --ow-bloom: 0%;
+    --ow-bd-sat: 1;
+    --ow-bd-bright: 1;
+    --ow-text: #191816;
+    --ow-muted: #55514a;
+    --ow-faint: #7d786f;
+    --ow-placeholder: #6e6a62;
+    --ow-border: rgba(25, 24, 22, 0.1);
+    --ow-border-strong: rgba(25, 24, 22, 0.42);
+    --ow-hover: rgba(25, 24, 22, 0.05);
+    --ow-press: rgba(25, 24, 22, 0.09);
+    --ow-scrim: rgba(25, 24, 22, 0.4);
+    --ow-danger: #b0301e;
+    --ow-danger-text: #a52b1a;
+    --ow-danger-solid: #b0301e;
+    --ow-on-danger: #ffffff;
+    --ow-success: #176a3b;
+    --ow-warning: #8f5a00;
+    --ow-info: #1f55d6;
+    --ow-shadow-pop: 0 12px 32px rgba(25, 24, 22, 0.16), 0 0 0 1px rgba(25, 24, 22, 0.06);
+    --ow-shadow-panel: 0 8px 28px rgba(25, 24, 22, 0.1);
+    --ow-panel-edge: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    --ow-sheen: rgba(255, 255, 255, 0.35);
+    --ow-accent-tint: color-mix(in srgb, var(--ow-accent) 13%, transparent);
+    --ow-accent-text: var(--ow-at-l);
+  }
+}
+
+/* ---------- accent presets (also the fallback palette when no cover is known) ----------
+   One accent. --ow-accent-2 is still set by the theme engine, but nothing in the UI draws a
+   two-stop gradient any more. */
+:root {
+  --ow-accent: #35d0b0;
+  --ow-accent-2: #35d0b0;
+  --ow-on-accent: #08130f;
+  --ow-at-d: #4fdcbf;
+  --ow-at-l: #0a6e5f;
+}
+:root[data-accent="blue"] { --ow-accent: #5aa2ff; --ow-at-d: #7db3ff; --ow-at-l: #1d4ed8; }
+:root[data-accent="violet"] { --ow-accent: #a78bfa; --ow-at-d: #b7a0fb; --ow-at-l: #5b3fd0; }
+:root[data-accent="rose"] { --ow-accent: #fb7185; --ow-at-d: #fd8c9c; --ow-at-l: #be123c; }
+:root[data-accent="orange"] { --ow-accent: #fb923c; --ow-at-d: #fb923c; --ow-at-l: #a64a06; }
+:root[data-accent="green"] { --ow-accent: #4ade80; --ow-at-d: #4ade80; --ow-at-l: #146b33; }
+
+/* ---------- layout tokens: scale with the window (responsive) ----------
+   --ow-gutter: page side padding; --ow-card-w: width of cover cards in rows and grids. */
+:root {
+  --ow-gutter: clamp(20px, 2.6vw, 48px);
+  --ow-card-w: clamp(152px, 9.5vw, 216px);
+  /* Özelleştirme overrides these from <style id="ow-custom">. */
+  --ow-gap: 8px;
+  --ow-bd-blur: 56px;
+  --ow-bd-dim: 0;
+  --ow-bd-mult: 1;
+  --ow-ui-scale: 1;
+  --ow-fs-art: 340px;
+  --ow-lyric-scale: 1;
+}
+
+/* ---------- motion tokens ---------- */
+:root {
+  --ow-dur-press: 100ms;
+  --ow-dur-hover: 180ms;
+  --ow-dur-panel: 280ms;
+  --ow-dur-dialog: 240ms;
+  --ow-dur-ambient: 700ms;
+  --ow-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+:root[data-low-power] {
+  --ow-dur-press: 0ms;
+  --ow-dur-hover: 0ms;
+  --ow-dur-panel: 0ms;
+  --ow-dur-dialog: 0ms;
+  --ow-dur-ambient: 0ms;
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --ow-dur-press: 0ms;
+    --ow-dur-hover: 0ms;
+    --ow-dur-panel: 0ms;
+    --ow-dur-dialog: 0ms;
+    --ow-dur-ambient: 0ms;
+    transition: none;
+  }
+}
+
+/* ---------- Tailwind theme mapping ---------- */
+@theme inline {
+  --color-*: initial;
+  --color-bg: var(--ow-bg);
+  --color-surface: var(--ow-surface);
+  --color-surface-2: var(--ow-surface-2);
+  --color-glass: var(--ow-glass);
+  --color-fg: var(--ow-text);
+  --color-muted: var(--ow-muted);
+  --color-faint: var(--ow-faint);
+  --color-placeholder: var(--ow-placeholder);
+  --color-line: var(--ow-border);
+  --color-line-strong: var(--ow-border-strong);
+  --color-hover: var(--ow-hover);
+  --color-press: var(--ow-press);
+  --color-scrim: var(--ow-scrim);
+  --color-accent: var(--ow-accent);
+  --color-accent-2: var(--ow-accent-2);
+  --color-accent-text: var(--ow-accent-text);
+  --color-on-accent: var(--ow-on-accent);
+  --color-ink: var(--ow-ink);
+  --color-danger: var(--ow-danger);
+  --color-danger-text: var(--ow-danger-text);
+  --color-danger-solid: var(--ow-danger-solid);
+  --color-on-danger: var(--ow-on-danger);
+  --color-success: var(--ow-success);
+  --color-warning: var(--ow-warning);
+  --color-info: var(--ow-info);
+
+  --font-sans: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans Variable", "Inter Variable", "Segoe UI", system-ui, sans-serif;
+
+  --text-*: initial;
+  --text-xs: 12px;
+  --text-xs--line-height: 16px;
+  --text-sm: 14px;
+  --text-sm--line-height: 20px;
+  --text-base: 16px;
+  --text-base--line-height: 24px;
+  --text-lg: 18px;
+  --text-lg--line-height: 26px;
+  --text-xl: 20px;
+  --text-xl--line-height: 28px;
+  --text-2xl: 24px;
+  --text-2xl--line-height: 32px;
+  --text-3xl: 40px;
+  --text-3xl--line-height: 46px;
+
+  --font-weight-*: initial;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --radius-*: initial;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  --shadow-*: initial;
+  --shadow-pop: var(--ow-shadow-pop);
+  --shadow-panel: var(--ow-shadow-panel);
+
+  --ease-ow: var(--ow-ease);
+}
+@theme {
+  --spacing: 4px;
+}
+
+/* ---------- base ---------- */
+@layer base {
+  html,
+  body {
+    height: 100%;
+    margin: 0;
+    /* The window is transparent; the backdrop paints the colour inside the rounded clip. */
+    background: transparent;
+    color: var(--ow-text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 20px;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #main {
+    height: 100%;
+  }
+  input,
+  textarea,
+  [data-selectable] {
+    user-select: text;
+    -webkit-user-select: text;
+  }
+  button,
+  [role="button"],
+  a {
+    cursor: pointer;
+  }
+  button:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+  :focus {
+    outline: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ow-accent-text);
+    outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+  /* Small headings (labels, eyebrows) read as UI text: body face, normal tracking. The display
+     face with negative tracking only belongs to sizes of 18px and up. */
+  :is(h1, h2, h3, .ow-display):is(.text-xs, .text-sm, .text-base) {
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+  /* thin themed scrollbars */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--ow-border-strong);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ow-muted);
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--ow-accent) 38%, transparent);
+  }
+}
+
+/* ---------- ambient backdrop (behind the whole app) ---------- */
+@layer components {
+  .ow-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+    /* No cover: one flat colour. With a cover, the blurred, dimmed cover shows only in the
+       gaps around the (near-opaque) panels, like light around a frame. */
+    background: var(--ow-bg);
+  }
+  /* No cover: two soft accent lights so the glass panels have something to frost. */
+  :root:not([data-cover]) .ow-backdrop {
+    background:
+      radial-gradient(60% 55% at 12% 8%, color-mix(in srgb, var(--ow-accent) 22%, transparent), transparent 70%),
+      radial-gradient(55% 60% at 92% 96%, color-mix(in srgb, var(--ow-accent) 14%, transparent), transparent 70%),
+      var(--ow-bg);
+  }
+  .ow-bd-layer {
+    position: absolute;
+    inset: -14%;
+    background-size: cover;
+    background-position: center;
+    filter: blur(var(--ow-bd-blur)) saturate(var(--ow-bd-sat)) brightness(calc(var(--ow-bd-bright) * var(--ow-bd-mult)));
+    opacity: 0;
+    transition: opacity var(--ow-dur-ambient) ease-in-out;
+    will-change: opacity;
+    transform: translateZ(0);
+  }
+  .ow-bd-layer[data-on] {
+    opacity: 1;
+  }
+  .ow-bd-scrim {
+    position: absolute;
+    z-index: 5;
+    inset: 0;
+    background: rgba(6, 5, 10, var(--ow-sa-d));
+  }
+  /* Flat tint: low power, reduced motion, or the cover could not be fetched. */
+  :root[data-cover][data-flat] .ow-backdrop {
+    background: color-mix(in oklab, var(--ow-accent) 14%, var(--ow-bg));
+  }
+  :root[data-flat] .ow-bd-layer {
+    display: none;
+  }
+  :root[data-theme="light"] .ow-bd-scrim {
+    background: rgba(233, 230, 223, var(--ow-sa-l));
+  }
+  :root[data-theme="light"][data-cover][data-flat] .ow-backdrop {
+    background: color-mix(in oklab, var(--ow-accent) 12%, var(--ow-bg));
+  }
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .ow-bd-scrim {
+    background: rgba(233, 230, 223, var(--ow-sa-l));
+  }
+  :root:not([data-theme="dark"])[data-cover][data-flat] .ow-backdrop {
+    background: color-mix(in oklab, var(--ow-accent) 12%, var(--ow-bg));
+  }
+}
+
+/* ---------- component animations (durations come from motion tokens) ---------- */
+@keyframes ow-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ow-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ow-pop-in { from { opacity: 0; transform: translateY(8px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes ow-pop-out { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(8px) scale(0.97); } }
+@keyframes ow-slide-in-right { from { transform: translateX(100%); } to { transform: none; } }
+@keyframes ow-slide-out-right { from { transform: none; } to { transform: translateX(100%); } }
+@keyframes ow-toast-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+@keyframes ow-menu-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ow-indeterminate { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@keyframes ow-spin { to { transform: rotate(360deg); } }
+@keyframes ow-shimmer { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+@layer components {
+  .ow-fade-in { animation: ow-fade-in var(--ow-dur-dialog) var(--ow-ease) both; }
+  .ow-fade-out { animation: ow-fade-out var(--ow-dur-dialog) var(--ow-ease) both; }
+  .ow-pop-in { animation: ow-pop-in var(--ow-dur-dialog) var(--ow-ease) both; }
+  .ow-pop-out { animation: ow-pop-out var(--ow-dur-dialog) var(--ow-ease) both; }
+  .ow-slide-in { animation: ow-slide-in-right var(--ow-dur-panel) var(--ow-ease) both; }
+  .ow-slide-out { animation: ow-slide-out-right var(--ow-dur-panel) var(--ow-ease) both; }
+  .ow-toast-in { animation: ow-toast-in var(--ow-dur-dialog) var(--ow-ease) both; }
+  .ow-menu-in { animation: ow-menu-in var(--ow-dur-hover) var(--ow-ease) both; }
+  .ow-indeterminate { animation: ow-indeterminate 1.4s var(--ow-ease) infinite; }
+  .ow-spin { animation: ow-spin 800ms linear infinite; }
+  .ow-shimmer { animation: ow-shimmer 1.6s ease-in-out 8; will-change: opacity; }
+
+  /* Window controls and the search field must never start a window drag. */
+  .ow-no-drag { -webkit-app-region: no-drag; }
+
+  /* ----- surfaces (glass) ----- */
+  /* Floating panel: frosted glass over the ambient backdrop. The backdrop is already blurred, so
+     the panel only needs translucency, a top sheen and a light edge; a backdrop-filter here would
+     re-blur on every scroll frame. */
+  .ow-panel {
+    background: linear-gradient(180deg, var(--ow-sheen), transparent 120px), var(--ow-panel);
+    border: 1px solid var(--ow-border);
+    box-shadow: var(--ow-panel-edge), var(--ow-shadow-panel);
+  }
+  /* Local darkening behind text that sits on art (flat, no tint). */
+  .ow-text-scrim {
+    background: rgba(8, 8, 7, 0.6);
+  }
+  /* Menus, dialogs, tooltips, toasts: they float over live content, so they blur what is behind. */
+  .ow-glass {
+    background: var(--ow-glass);
+    border: 1px solid var(--ow-border);
+    box-shadow: var(--ow-panel-edge), var(--ow-shadow-pop);
+    -webkit-backdrop-filter: blur(24px) saturate(1.5);
+    backdrop-filter: blur(24px) saturate(1.5);
+  }
+  /* Low power / reduced motion: no blur, an opaque surface keeps text readable. */
+  :root[data-low-power] .ow-glass {
+    background: var(--ow-glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /* ----- accent: one solid colour, no gradient, no glow ----- */
+  .ow-accent-fill {
+    background: var(--ow-accent);
+    color: var(--ow-on-accent);
+  }
+  /* Hairline so a pale cover accent (white, cream) still reads as a button on light glass. */
+  .ow-play-ring { box-shadow: 0 0 0 1px var(--ow-border); }
+  .ow-accent-glow-sm,
+  .ow-accent-glow {
+    box-shadow: none;
+  }
+  /* Flat accent wash for selected / now-playing states. */
+  .ow-accent-tint { background: var(--ow-accent-tint); }
+
+  /* ----- type ----- */
+  .ow-hero-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    font-size: clamp(40px, 5vw, 64px);
+  }
+  .ow-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+
+  /* ----- track rows: flat hover, flat accent wash + 3px marker for the playing row ----- */
+  .ow-trow { position: relative; isolation: isolate; }
+  /* The row whose menu is open sits above its siblings, or later rows paint over the menu. */
+  .ow-trow:has([data-ow-overlay]) { z-index: 30; }
+  .ow-trow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    background: var(--ow-hover);
+    transition: opacity var(--ow-dur-hover) var(--ow-ease);
+  }
+  .ow-trow:hover::before,
+  .ow-trow:focus-within::before,
+  .ow-trow[aria-current]::before { opacity: 1; }
+  .ow-trow[aria-current]::before {
+    background: var(--ow-accent-tint);
+    box-shadow: inset 3px 0 0 var(--ow-accent);
+  }
+
+  /* ----- cover cards: no lift, no shadow; a hairline appears on hover ----- */
+  .ow-card .ow-card-cover { transition: box-shadow var(--ow-dur-hover) var(--ow-ease); }
+  .ow-card:hover .ow-card-cover,
+  .ow-card:focus-within .ow-card-cover {
+    box-shadow: 0 0 0 1px var(--ow-border-strong);
+  }
+
+  /* ----- settings / dialogs: plain grouped surfaces, icon chips ----- */
+  .ow-card-glass {
+    position: relative;
+    border-radius: 12px;
+    background: var(--ow-card);
+    border: 1px solid var(--ow-border);
+  }
+  /* Icon chip: quiet accent wash with the accent-coloured glyph. */
+  .ow-chip-icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--ow-accent-tint);
+    color: var(--ow-accent-text);
+  }
+  /* Kept as a no-op so existing markup stays valid: no corner light any more. */
+  .ow-corner-glow { isolation: isolate; }
+  .ow-card-deep { --ow-card: var(--ow-surface); }
+  /* Per-source icon chip: --ca is the source's own brand colour, set inline. */
+  .ow-chip-hue {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    background: var(--ca);
+    color: #0c0b0a;
+  }
+  /* Clickable tile (import sources, onboarding). */
+  .ow-tile { transition: border-color var(--ow-dur-hover) var(--ow-ease), background-color var(--ow-dur-hover) var(--ow-ease); }
+  .ow-tile:hover, .ow-tile:focus-visible {
+    border-color: var(--ow-border-strong);
+    background-color: var(--ow-hover);
+  }
+  .ow-nav-active {
+    background: var(--ow-accent-tint);
+  }
+  .ow-seg {
+    background: var(--ow-seg-bg);
+  }
+  /* Accent preview (settings): --pa is set inline per preset. */
+  .ow-prev-fill { background: var(--pa); color: #0c0b0a; }
+  .ow-prev-bar { background: var(--pa); }
+  .ow-prev-glow { box-shadow: none; }
+
+  /* ----- hero banner (legacy art scrim, flat) ----- */
+  .ow-hero-scrim {
+    background: rgba(8, 8, 7, 0.55);
+  }
+}
+
+/* Decorative motion off: reduced-motion + low-power. The spinner stays (it is functional). */
+@media (prefers-reduced-motion: reduce) {
+  .ow-shimmer { animation: none; }
+  .ow-indeterminate { animation: none; transform: translateX(80%); }
+  .ow-card:hover, .ow-card:focus-within { transform: none; }
+  * { scroll-behavior: auto !important; }
+}
+:root[data-low-power] .ow-shimmer { animation: none; }
+:root[data-low-power] .ow-indeterminate { animation: none; transform: translateX(80%); }
+:root[data-low-power] .ow-card:hover,
+:root[data-low-power] .ow-card:focus-within { transform: none; }
+:root[data-low-power] * { scroll-behavior: auto !important; }
+:root[data-low-power] .ow-hero-img { filter: none; transform: none; }
+
+/* Secondary text on a tinted row gets a notch brighter so it keeps 4.5:1 over the accent.
+   Unlayered on purpose: it must beat the `text-muted` utility. */
+.ow-trow:hover .text-muted,
+.ow-trow[aria-current] .text-muted { color: color-mix(in srgb, var(--ow-text) 88%, transparent); }
+
+/* Unselected segmented options read at near-full text strength (unlayered: beats `text-muted`). */
+.ow-seg button[aria-checked="false"] { color: color-mix(in srgb, var(--ow-text) 94%, transparent); }
+
+/* Tooltip: pure CSS, shown on hover (after a short delay) and keyboard focus. */
+.ow-tip { position: relative; display: inline-flex; }
+.ow-tip > .ow-tip-bubble {
+  position: absolute; z-index: 60; left: 50%; transform: translateX(-50%);
+  opacity: 0; pointer-events: none; width: max-content; max-width: 320px;
+  transition: opacity var(--ow-dur-hover) var(--ow-ease);
+}
+.ow-tip[data-side="top"] > .ow-tip-bubble { bottom: calc(100% + 8px); }
+.ow-tip[data-side="bottom"] > .ow-tip-bubble { top: calc(100% + 8px); }
+.ow-tip[data-align="start"] > .ow-tip-bubble { left: 0; transform: none; }
+.ow-tip[data-align="end"] > .ow-tip-bubble { left: auto; right: 0; transform: none; }
+.ow-tip:hover > .ow-tip-bubble { opacity: 1; transition-delay: 450ms; }
+.ow-tip:has(:focus-visible) > .ow-tip-bubble { opacity: 1; transition-delay: 0ms; }
+
+/* Slider: Rust sets --p (0-100); CSS draws a solid fill and a plain thumb. */
+.ow-slider-fill {
+  width: calc(var(--p) * 1%);
+  background: var(--ow-accent);
+}
+.ow-slider-thumb {
+  left: calc(var(--p) * 1%);
+  background: var(--ow-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* ---------- player surfaces (bar, dock, fullscreen) ---------- */
+/* Glow ring of the main play button: pulses once (transform + opacity only) each time playback starts or resumes; an endless loop kept a whole CPU core busy in WebView2, so it is bounded. The
+   attribute is `aria-pressed`, which GradientPlayButton sets only while audio is active, so a
+   paused player has no running animation at all. */
+@keyframes ow-play-pulse { 0% { transform: scale(1); opacity: 0.65; } 100% { transform: scale(1.6); opacity: 0; } }
+.ow-play-pulse { position: relative; }
+.ow-play-pulse::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  pointer-events: none;
+  opacity: 0;
+  border: 2px solid color-mix(in srgb, var(--ow-accent) 70%, transparent);
+  box-sizing: border-box;
+  will-change: transform, opacity;
+}
+/* Flat direction: the pulse ring is retired (kept as a class so markup stays valid). */
+.ow-play-pulse::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .ow-play-pulse::after { animation: none !important; } }
+:root[data-low-power] .ow-play-pulse::after { animation: none !important; }
+
+/* Cover glow of the bar and the hero card. */
+.ow-cover-glow { box-shadow: 0 0 0 1px var(--ow-border); }
+
+/* Lyrics fade out softly at the top and bottom edge instead of being cut. */
+.ow-fade-edges {
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+}
+/* Lyric line: opacity comes from the distance to the active line (--lo), 320ms. */
+.ow-lyric { opacity: var(--lo, 1); transition: opacity var(--ow-dur-lyric, 320ms) var(--ow-ease), transform var(--ow-dur-lyric, 320ms) var(--ow-ease); transform-origin: left center; }
+.ow-lyric:hover, .ow-lyric:focus-visible { opacity: max(var(--lo, 1), 0.85); }
+.ow-lyric[aria-current] { transform: scale(1.02); }
+:root[data-low-power] .ow-lyric, :root[data-low-power] .ow-lyric[aria-current] { transition: none; transform: none; }
+@media (prefers-reduced-motion: reduce) { .ow-lyric, .ow-lyric[aria-current] { transition: none; transform: none; } }
+
+/* Fullscreen player backdrop: the same blurred cover as the app backdrop, one static layer. */
+.ow-fs-img { filter: blur(56px) saturate(1.1) brightness(0.55); transform: scale(1.35); }
+:root[data-flat] .ow-fs-img { display: none; }
+.ow-fs-bg {
+  background: color-mix(in oklab, var(--ow-accent) 10%, #0f0f0e);
+}
+
+/* ===== Home + Search (cinematic pass) ===== */
+@keyframes ow-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ow-enter { animation: ow-page-in 220ms var(--ow-ease) both; }
+@media (prefers-reduced-motion: reduce) {
+  .ow-enter { animation: none; }
+}
+:root[data-low-power] .ow-enter { animation: none; }
+
+/* Snapping card rows with faded edges and an accent glow under the hovered cover. */
+.ow-snap-row {
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 24px;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 32px, #000 calc(100% - 32px), transparent 100%);
+}
+.ow-snap-row::-webkit-scrollbar { display: none; }
+.ow-snap-row > .ow-card { scroll-snap-align: start; }
+/* Page content column: fills the main panel, capped on very wide screens. */
+.ow-page {
+  width: 100%;
+  max-width: 2400px;
+  margin-inline: auto;
+  padding-inline: var(--ow-gutter);
+}
+/* In a grid, cards stretch to their column instead of keeping the row width. */
+.ow-card-grid > .ow-card { width: auto; }
+/* Home "continue" block and welcome card: flat; the cover is the only colour. */
+.ow-home-scrim { background: transparent; }
+.ow-home-glow { background: transparent; }
+.ow-welcome {
+  background: var(--ow-card);
+  border: 1px solid var(--ow-border);
+}
+
+/* Search tabs as a segmented control (keeps tab semantics and keys). */
+.ow-seg[role="tablist"] {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--ow-border);
+  border-radius: 8px;
+  background: var(--ow-seg-bg);
+}
+.ow-seg [role="tab"] {
+  margin: 0;
+  height: 32px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 14px;
+  box-shadow: none;
+}
+.ow-seg [role="tab"][aria-selected="true"] {
+  background: var(--ow-surface-2);
+  color: var(--ow-text);
+  box-shadow: inset 0 0 0 1px var(--ow-border);
+}
+/* The shell search field: a crisp accent border while focused, no glow. */
+[role="search"]:focus-within input {
+  border-color: var(--ow-accent-text);
+  box-shadow: 0 0 0 1px var(--ow-accent-text);
+}
+
+/* ===== detail + library screens ===== */
+@keyframes ow-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ow-enter { animation: ow-page-in 220ms var(--ow-ease) backwards; }
+.ow-detail-scrim { background: transparent; }
+@media (prefers-reduced-motion: reduce) {
+  .ow-enter { animation: none; }
+}
+:root[data-low-power] .ow-enter { animation: none; }
+.ow-fade-edges::-webkit-scrollbar { display: none; }
+/* Light theme: dimmed lyric lines keep a readable floor on the pale panel (the fullscreen card is always dark). */
+:root[data-theme="light"] .ow-lyric:not([data-dark]) { opacity: calc(0.42 + var(--lo, 1) * 0.58); }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .ow-lyric:not([data-dark]) { opacity: calc(0.42 + var(--lo, 1) * 0.58); } }
+/* The hero menu trigger: a plain outlined icon button on the page surface. */
+.ow-hero-menu [aria-haspopup="menu"] {
+  color: var(--ow-text);
+  background: transparent;
+  box-shadow: inset 0 0 0 1px var(--ow-border-strong);
+}
+.ow-hero-menu [aria-haspopup="menu"]:hover { background: var(--ow-hover); }
+
+/* ===== equalizer glyph (playing row, Home chip) =====
+   Three fixed-height bars animated with transform only (compositor layer, no layout or paint). The
+   animation is BOUNDED: 3 loops (~3 s), then it holds a static mid pose, because an endless loop kept
+   a whole CPU core busy in WebView2. It restarts when the element mounts (new track, chip shown)
+   and when data-paused is removed (resume). Reduced motion and low power: static pose, no animation. */
+@keyframes ow-eq { 0% { transform: scaleY(0.6); } 25% { transform: scaleY(1); } 50% { transform: scaleY(0.35); } 75% { transform: scaleY(0.9); } 100% { transform: scaleY(0.6); } }
+.ow-eq { display: inline-flex; align-items: flex-end; gap: 3px; height: 16px; width: 15px; }
+.ow-eq > i { display: block; width: 3px; height: 100%; border-radius: 1px; background: currentColor; }
+.ow-eq-bar, .ow-eq > i {
+  transform-origin: bottom; transform: scaleY(0.6); will-change: transform;
+  animation: ow-eq 1000ms ease-in-out 3 both;
+}
+.ow-eq-bar:nth-child(2), .ow-eq > i:nth-child(2) { animation-duration: 820ms; }
+.ow-eq-bar:nth-child(3), .ow-eq > i:nth-child(3) { animation-duration: 1160ms; }
+.ow-eq[data-paused] > i { animation: none; transform: scaleY(0.45); will-change: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .ow-eq-bar, .ow-eq > i { animation: none; will-change: auto; }
+}
+:root[data-low-power] .ow-eq-bar, :root[data-low-power] .ow-eq > i { animation: none; will-change: auto; }
+
+/* ---------- Özelleştirme switches (unlayered, so they win over utilities) ---------- */
+/* Extra darkening over the backdrop. */
+.ow-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  background: rgba(0, 0, 0, var(--ow-bd-dim));
+}
+/* No cover behind the panels: the flat backdrop (with the soft accent lights). */
+:root[data-no-cover-bg] .ow-bd-layer { display: none; }
+:root[data-no-cover-bg] .ow-backdrop {
+  background:
+    radial-gradient(60% 55% at 12% 8%, color-mix(in srgb, var(--ow-accent) 22%, transparent), transparent 70%),
+    radial-gradient(55% 60% at 92% 96%, color-mix(in srgb, var(--ow-accent) 14%, transparent), transparent 70%),
+    var(--ow-bg);
+}
+:root[data-no-border] .ow-panel,
+:root[data-no-border] .ow-glass { border-color: transparent; }
+/* Whole-interface scale. */
+body { zoom: var(--ow-ui-scale); }
+/* Animations off: the same as low power for motion, without dropping the blurred cover. */
+:root[data-no-motion] {
+  --ow-dur-press: 0ms;
+  --ow-dur-hover: 0ms;
+  --ow-dur-panel: 0ms;
+  --ow-dur-dialog: 0ms;
+  --ow-dur-ambient: 0ms;
+  transition: none;
+}
+:root[data-no-motion] *,
+:root[data-no-motion] *::before,
+:root[data-no-motion] *::after {
+  animation-duration: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+}
+:root[data-lyrics-center] .ow-lyric { text-align: center; }
+
+/* ---------- window shape ----------
+   The frameless window is transparent: the page rounds its own corners. A maximized window
+   fills the screen edge to edge, so it stays square. */
+html { clip-path: inset(0 round 10px); }
+:root[data-maximized] { clip-path: none; }
+/* A hairline along the rounded edge: without a system shadow (transparent window) the shape
+   would otherwise blur into a light window behind it. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  border-radius: 10px;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), inset 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+:root[data-maximized] body::before { display: none; }
+
+/* ---------- settings: cards flow into as many columns as fit ----------
+   Each card (and each heading with the card after it) stays whole; the section title spans. */
+.ow-settings-flow {
+  columns: 440px;
+  column-gap: 24px;
+}
+.ow-settings-flow > * { break-inside: avoid; }
+.ow-settings-flow > h3,
+.ow-settings-flow > .ow-keep-next { break-after: avoid; }
+.ow-settings-flow > .ow-span-all { column-span: all; }
+
+/* Morphing icons (src/ui/morph.rs): the paths of a family share commands, so `d` interpolates
+   when an Icon switches state. `pathLength=1` strokes draw in through the dash offset. */
+.ow-morph path {
+  transition: d 260ms var(--ow-ease), opacity 180ms var(--ow-ease),
+    stroke-width 260ms var(--ow-ease), stroke-dashoffset 300ms var(--ow-ease),
+    fill 180ms var(--ow-ease), stroke 180ms var(--ow-ease);
+}
+.ow-morph path[pathLength] { stroke-dasharray: 1 1; }
+.ow-morph .ow-morph-in-shaft { animation: ow-morph-shaft 420ms var(--ow-ease) both; }
+.ow-morph .ow-morph-in-head { animation: ow-morph-head 420ms var(--ow-ease) both; }
+@keyframes ow-morph-shaft { from { d: path("M12 3 L12 15"); opacity: 1; } }
+@keyframes ow-morph-head { from { d: path("M7 10 L12 15 L17 10"); } }
+@media (prefers-reduced-motion: reduce) {
+  .ow-morph path { transition: none !important; animation: none !important; }
+}
+:root[data-low-power] .ow-morph path { transition: none !important; animation: none !important; }

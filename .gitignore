@@ -1,0 +1,46 @@
+# Build output
+/target/
+/dist/
+/stage/
+*.pdb
+
+# Tooling
+tools/node_modules/
+*.log
+.env
+.env.*
+!.env.example
+
+# Local design history, old screenshots and one-off capture scripts (not published)
+/design-backup/
+/tools/ui-test/
+/.local-backups/
+
+# Private development checks and planning notes (kept locally, not published)
+/tests/
+/src/**/*_tests.rs
+/src/i18n/tests.rs
+/src/backend/media_perf.rs
+/docs/SPEC.md
+/docs/DESIGN_DIRECTION.md
+/docs/UI_KIT.md
+/docs/PERF.md
+
+# Outdated translation of the README (the English README is the maintained one)
+/README.tr.md
+
+# OS and editor clutter
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.swp
+
+# Extra screenshots kept locally
+/docs/media/artist-light.png
+/docs/media/import-1-source.png
+/docs/media/import-5-result.png
+/docs/media/import-6-playlist.png
+/docs/media/liked-light.png
+/docs/media/playlist-dark.png

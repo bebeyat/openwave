@@ -1,0 +1,77 @@
+# Continuous integration. Third-party actions are pinned by MAJOR version tag (e.g. @v4) for readability;
+# for stricter supply-chain hygiene, pin each to a full commit SHA before the first release (Dependabot
+# keeps SHA-pinned actions up to date).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The toolchain version comes from rust-toolchain.toml; rustup installs it on first use.
+      - name: Install Rust toolchain (from rust-toolchain.toml)
+        shell: pwsh
+        run: |
+          rustup show active-toolchain
+          rustup component add rustfmt clippy
+          rustc --version
+
+      - uses: Swatinem/rust-cache@v2
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: tools/package-lock.json
+
+      - name: Build CSS and make sure the committed file is up to date
+        shell: pwsh
+        working-directory: tools
+        run: |
+          npm ci
+          npm run css
+          git diff --exit-code -- ../assets/main.css
+          if ($LASTEXITCODE -ne 0) { Write-Error "assets/main.css is stale. Run 'npm run css' in tools/ and commit the result."; exit 1 }
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+
+      - name: Test
+        run: cargo test --locked
+
+      - name: Check source classes and HTML injection rules
+        run: node scripts/check-classes.mjs
+
+      - name: Third-party notices are current and permissive
+        run: |
+          node scripts/gen-notices.mjs --check
+          git diff --exit-code -- THIRD_PARTY_NOTICES.md
+
+  deny:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+      - name: cargo deny
+        run: cargo deny check

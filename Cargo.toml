@@ -1,0 +1,58 @@
+[package]
+name = "openwave"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.95"
+description = "A simple, private, local-first desktop music player"
+publish = false
+license = "MIT OR Apache-2.0"
+authors = ["meganek31"]
+repository = "https://github.com/bebeyat/openwave"
+homepage = "https://github.com/bebeyat/openwave"
+readme = "README.md"
+keywords = ["music", "player", "desktop", "dioxus", "youtube-music"]
+categories = ["multimedia::audio", "gui"]
+
+[dependencies]
+dioxus = { version = "0.7", features = ["desktop", "router"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "http2"] }
+ytmapi-rs = { version = "0.3.3", default-features = false, features = ["rustls", "simplified-queries"] }
+axum = "0.8"
+uuid = { version = "1", features = ["v4"] }
+futures-util = "0.3"
+tokio-util = { version = "0.7", features = ["io"] }
+rfd = "0.15"
+directories = "6"
+open = "5"
+arboard = { version = "3", default-features = false }
+# Cover palette extraction (JPEG/PNG/WebP decode only). MIT OR Apache-2.0.
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp"] }
+# Local file tags and embedded covers (ID3, MP4, Vorbis, FLAC...). MIT OR Apache-2.0.
+lofty = "0.25"
+# Discord "Listening to" status over the local Discord IPC socket. MIT.
+discord-rich-presence = "1.1"
+
+[profile.dev]
+debug = 0
+
+[profile.release]
+strip = true
+lto = "thin"
+codegen-units = 1
+
+[dependencies.sys-locale]
+version = "0.3"
+
+[dependencies.sha2]
+version = "0.10"
+
+# Windows media keys + system media overlay (SMTC). MIT licensed.
+[target.'cfg(windows)'.dependencies]
+souvlaki = "0.8"
+
+# Embeds the app icon into the exe.
+[target.'cfg(windows)'.build-dependencies]
+winresource = "0.1"

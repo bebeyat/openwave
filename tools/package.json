@@ -1,0 +1,21 @@
+{
+  "name": "openwave-tools",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Build tooling for OpenWave: Tailwind CSS, bundled font and icon extraction",
+  "scripts": {
+    "css": "tailwindcss -i ./tailwind.css -o ../assets/main.css --minify",
+    "css:watch": "tailwindcss -i ./tailwind.css -o ../assets/main.css --watch",
+    "icons": "node ./extract-icons.mjs",
+    "assets": "node ./extract-assets.mjs"
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@tailwindcss/cli": "^4.1.0",
+    "lucide-static": "1.59.0",
+    "tailwindcss": "^4.1.0"
+  },
+  "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0"
+  }
+}
