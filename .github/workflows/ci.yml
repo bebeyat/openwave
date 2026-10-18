@@ -22,7 +22,7 @@ jobs:
   check:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The toolchain version comes from rust-toolchain.toml; rustup installs it on first use.
       - name: Install Rust toolchain (from rust-toolchain.toml)
@@ -34,7 +34,7 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -58,8 +58,9 @@ jobs:
       - name: Test
         run: cargo test --locked
 
-      - name: Check source classes and HTML injection rules
-        run: node scripts/check-classes.mjs
+      - name: JS tests (class checker, motion rules, reverb impulse responses)
+        shell: bash
+        run: node --test tests/js/*.test.mjs
 
       - name: Third-party notices are current and permissive
         run: |
@@ -69,7 +70,7 @@ jobs:
   deny:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-deny
