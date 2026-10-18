@@ -22,7 +22,7 @@ jobs:
   check:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # The toolchain version comes from rust-toolchain.toml; rustup installs it on first use.
       - name: Install Rust toolchain (from rust-toolchain.toml)
@@ -70,7 +70,7 @@ jobs:
   deny:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-deny
