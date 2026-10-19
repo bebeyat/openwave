@@ -6,8 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-19
+
 ### Added
 
+- Home: localized Discover rows (new releases, trending songs, charts, moods) for your country and language.
+- Lyrics: word-by-word karaoke highlight with glow and smooth line transitions in full screen.
+- Liked Songs pinned at the top of the sidebar playlists.
+- Language picker uses the app menu and shows flags.
 - Share links: "Share" on a playlist or in a song menu makes a short link (`https://openwave.pages.dev/#<id>`,
   38 characters whatever the list length) and copies it. Opening it starts OpenWave on the playlist preview
   (or plays the song); without OpenWave the page lists the songs. Lists are stored on public Nostr relays,
@@ -16,6 +22,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Automatic updates from GitHub releases. The installed Windows app downloads and verifies the new installer in
   the background and installs it from the **Update** button or when it closes; other builds link to the release.
   Can be turned off in Settings > General.
+
+### Fixed
+
+- macOS and Linux: audio plays (the window origin is allowed by the local proxy), the native yt-dlp build is
+  downloaded and made executable, and a second copy of the app no longer starts.
+- The queue and library are saved when the window closes.
+- Data safety: local files list and downloads are written atomically; a damaged library is set aside with a
+  notice; deleting all data stops downloads first.
+- Search keeps "&" (R&B); album and artist pages reload when you switch between them; repeat-one skips a
+  song that cannot play; fast shortcut presses are no longer dropped.
+- Spotify rate limits are no longer reported as a private playlist.
+- The title bar stays readable over bright and dark covers.
 
 ## [0.1.0] - 2026-10-17
 
@@ -42,5 +60,6 @@ First public version.
   no analytics.
 - Windows installer and portable zip, macOS app zip and Linux tarball, with SHA-256 checksums.
 
-[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/bebeyat/openwave/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bebeyat/openwave/releases/tag/v0.1.0
