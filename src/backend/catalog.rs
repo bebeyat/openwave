@@ -15,7 +15,7 @@ use ytmapi_rs::common::{
 use ytmapi_rs::query::search::{
     AlbumsFilter, ArtistsFilter, PlaylistsFilter, SearchQuery, SongsFilter,
 };
-use ytmapi_rs::query::GetMoodPlaylistsQuery;
+use ytmapi_rs::query::{GetMoodPlaylistsQuery, GetPlaylistTracksQuery};
 use ytmapi_rs::{auth::noauth::NoAuthToken, YtMusic};
 
 #[path = "catalog_discover.rs"]
@@ -191,7 +191,12 @@ async fn browse_section(
     section: &str,
     key: &str,
 ) -> Result<Value, CatalogError> {
-    let raw = fetch_page(api, section, key).await?;
+    let raw = match fetch_page(api, section, key).await {
+        Err(CatalogError::BadResponse(_)) if section == "list" => {
+            return lenient_list(api, key).await
+        }
+        page => page?,
+    };
     let mut tracks = vec![];
     collect_tracks(&raw, &raw, &mut tracks);
     let mut seen = HashSet::new();
@@ -206,6 +211,34 @@ async fn browse_section(
         "name": raw["title"].as_str().or(raw["name"].as_str()).unwrap_or(""),
         "description": raw["description"].as_str().unwrap_or(""),
         "artwork": image(&raw),
+    }))
+}
+
+/// The typed playlist reader rejects a whole list when one row lacks a field (a song whose
+/// artist has no page, common in video charts). Read the rows ourselves and skip only those.
+async fn lenient_list(api: &YtMusic<NoAuthToken>, key: &str) -> Result<Value, CatalogError> {
+    let raw = api
+        .raw_json_query(GetPlaylistTracksQuery::new(PlaylistID::from_raw(key)))
+        .await
+        .map_err(net)?;
+    let raw: Value = serde_json::from_str(&raw).map_err(bad)?;
+    let mut items = vec![];
+    collect_mrlir(&raw, "track", &mut items);
+    let mut seen = HashSet::new();
+    items.retain(|t| seen.insert(t.key.clone()));
+    if items.is_empty() {
+        return Err(CatalogError::BadResponse("empty list".into()));
+    }
+    let header = search::find_header(&raw);
+    Ok(json!({
+        "items": items,
+        "releases": [],
+        "name": header.and_then(|h| h.pointer("/title/runs/0/text")).and_then(Value::as_str).unwrap_or(""),
+        "description": "",
+        "artwork": header
+            .and_then(|h| h.pointer("/thumbnail/musicThumbnailRenderer/thumbnail"))
+            .map(image)
+            .unwrap_or_default(),
     }))
 }
 

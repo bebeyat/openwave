@@ -47,8 +47,17 @@ fn EngineRow() -> Element {
             } else {
                 t("engine.source.path")
             };
+            // A yt-dlp found on PATH is not run, so its version is unknown: name only where it is.
+            let summary = if version == crate::backend::ytdlp::UNVERIFIED_VERSION {
+                source
+            } else {
+                format!(
+                    "{} · {source}",
+                    t_args("engine.version", &[("version", &version)])
+                )
+            };
             (
-                rsx! { span { class: "text-sm text-fg", {t_args("engine.version", &[("version", &version)])} " · " "{source}" } },
+                rsx! { span { class: "text-sm text-fg", "{summary}" } },
                 update_controls(update, version),
             )
         }
