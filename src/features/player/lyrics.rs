@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use dioxus::prelude::*;
 
-use super::lyric_logic::{active_line, line_opacity, should_autoscroll};
+use super::lyric_logic::{active_line, line_opacity, should_autoscroll, word_spans, WordSpan};
 use super::lyrics_state::{self, lyrics_enabled, LyricsView, LYRICS};
 use crate::i18n::t;
 use crate::model::{Lyrics, Track};
@@ -166,6 +166,9 @@ fn Plain(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Elemen
     }
 }
 
+/// Karaoke fill of the active line, word by word (see `assets/lyrics_fill.js`).
+const LYRICS_FILL_JS: &str = include_str!("../../../assets/lyrics_fill.js");
+
 fn now_ms() -> u64 {
     library::now_ms()
 }
@@ -182,6 +185,9 @@ var top=e.offsetTop-c.clientHeight/2+e.offsetHeight/2;c.scrollTo({{top:Math.max(
 #[component]
 fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
     let ids = use_hook(|| next_id("lyrics"));
+    use_hook(|| {
+        document::eval(LYRICS_FILL_JS);
+    });
     let box_id = format!("{ids}-box");
     let mut last_manual = use_signal(|| None::<u64>);
     let lines = lyrics.clone();
@@ -225,6 +231,7 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
                     key: "{i}",
                     id: format!("{ids}-{i}"),
                     text: line.text.clone(),
+                    words: word_spans(&lyrics.synced, i),
                     start_ms: line.start_ms,
                     active: active() == Some(i),
                     size: size.to_string(),
@@ -241,6 +248,7 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
 fn LyricLineRow(
     id: String,
     text: String,
+    words: Vec<WordSpan>,
     start_ms: u64,
     active: bool,
     size: String,
@@ -265,7 +273,14 @@ fn LyricLineRow(
             "data-dark": on_dark.then_some("true"),
             "aria-current": active.then_some("true"),
             onclick: move |_| ctl::seek_to(start_ms as f64 / 1000.0),
-            "{text}"
+            for w in words {
+                span {
+                    class: "ow-w",
+                    "data-s": "{w.start_ms}",
+                    "data-e": "{w.end_ms}",
+                    "{w.text}"
+                }
+            }
         }
     }
 }
