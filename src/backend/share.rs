@@ -342,6 +342,8 @@ pub async fn fetch(id: &str) -> Result<Shared, ShareError> {
     })
 }
 
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
 #[cfg(all(test, private_tests))]
-#[path = "share_tests.rs"]
-mod tests;
+mod tests {
+    include!("share_tests.rs");
+}

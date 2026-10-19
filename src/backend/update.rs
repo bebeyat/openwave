@@ -130,6 +130,8 @@ pub fn run_installer(setup: &Path, relaunch: bool) -> std::io::Result<()> {
     cmd.spawn().map(drop)
 }
 
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
 #[cfg(all(test, private_tests))]
-#[path = "update_tests.rs"]
-mod tests;
+mod tests {
+    include!("update_tests.rs");
+}
