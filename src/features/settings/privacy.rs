@@ -10,7 +10,7 @@ use crate::i18n::{t, t_args};
 use crate::ui::{Banner, BannerKind, Button, ButtonVariant, Dialog, DialogSize, Icon, TextInput};
 
 /// (destination shown as-is, i18n key of "when and what is sent"). Keep in sync with PRIVACY.md.
-pub const NETWORK: [(&str, &str); 9] = [
+pub const NETWORK: [(&str, &str); 10] = [
     ("music.youtube.com", "settings.privacy.row.catalog"),
     (
         "www.youtube.com (visitor id)",
@@ -24,6 +24,10 @@ pub const NETWORK: [(&str, &str); 9] = [
     ),
     ("lrclib.net", "settings.privacy.row.lyrics"),
     ("open.spotify.com", "settings.privacy.row.spotify"),
+    (
+        "relay.damus.io · nos.lol · relay.primal.net · nostr.mom · relay.nostr.net",
+        "settings.privacy.row.share",
+    ),
     (
         "github.com · *.githubusercontent.com",
         "settings.privacy.row.github",

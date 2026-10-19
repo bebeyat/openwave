@@ -15,7 +15,8 @@ impl Kind {
     pub fn of(source: &Source) -> Kind {
         match source {
             Source::Spotify(_) => Kind::Spotify,
-            Source::Youtube(_) => Kind::Youtube,
+            // Shared lists are YouTube Music songs.
+            Source::Youtube(_) | Source::Shared(_) => Kind::Youtube,
         }
     }
 }
@@ -115,7 +116,11 @@ pub fn find_link(text: &str) -> Option<(Source, String)> {
     }
     text.split_whitespace()
         .map(|w| w.trim_matches(|c: char| matches!(c, '<' | '>' | '"' | '\'' | ',' | ')' | '(')))
-        .filter(|w| w.contains("spotify") || w.contains("youtube") || w.contains("youtu.be"))
+        .filter(|w| {
+            ["spotify", "youtube", "youtu.be", "openwave"]
+                .iter()
+                .any(|k| w.contains(k))
+        })
         .find_map(|w| parse_source(w).map(|s| (s, w.to_owned())))
 }
 

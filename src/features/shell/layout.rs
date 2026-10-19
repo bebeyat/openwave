@@ -111,6 +111,8 @@ pub fn Shell() -> Element {
             }
             PlayerBarSlot {}
             crate::features::import::ImportDialog {}
+            crate::features::share::ShareDialog {}
+            crate::features::share::LinkInbox {}
         }
     }
 }

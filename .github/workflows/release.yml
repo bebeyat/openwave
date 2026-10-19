@@ -130,9 +130,10 @@ jobs:
           Type=Application
           Name=OpenWave
           Comment=A simple, private, local-first desktop music player
-          Exec=openwave
+          Exec=openwave %u
           Icon=openwave
           Categories=AudioVideo;Audio;Player;
+          MimeType=x-scheme-handler/openwave;
           EOF
           sed -i 's/^          //' stage/OpenWave/openwave.desktop
           tar -C stage -czf "dist/OpenWave-$v-linux-x86_64.tar.gz" OpenWave
@@ -183,6 +184,10 @@ jobs:
             <key>CFBundleVersion</key><string>$v</string>
             <key>LSMinimumSystemVersion</key><string>11.0</string>
             <key>NSHighResolutionCapable</key><true/>
+            <key>CFBundleURLTypes</key><array><dict>
+              <key>CFBundleURLName</key><string>OpenWave share link</string>
+              <key>CFBundleURLSchemes</key><array><string>openwave</string></array>
+            </dict></array>
           </dict></plist>
           EOF
           # Ad-hoc seal of the whole bundle: an unsealed .app is reported as "damaged" by Gatekeeper.

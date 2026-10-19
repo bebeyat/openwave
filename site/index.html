@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' https://i.ytimg.com https://*.ggpht.com https://*.googleusercontent.com; connect-src wss://relay.damus.io wss://nos.lol wss://relay.primal.net wss://nostr.mom wss://relay.nostr.net; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f0f0e">
+<title>OpenWave</title>
+<meta name="description" content="A playlist shared with OpenWave, the free open-source music player.">
+<meta property="og:site_name" content="OpenWave">
+<meta property="og:title" content="A playlist shared with OpenWave">
+<meta property="og:description" content="Open it in OpenWave, the free open-source music player for Windows, macOS and Linux.">
+<meta property="og:image" content="https://openwave.pages.dev/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<header class="bar">
+  <a class="brand" href="https://github.com/bebeyat/openwave" rel="noopener">
+    <img src="icon.svg" alt="" width="28" height="28">
+    <span>OpenWave</span>
+  </a>
+  <a class="btn btn-ghost" id="get-top" href="https://github.com/bebeyat/openwave/releases/latest" rel="noopener" data-i18n="get">Get OpenWave</a>
+</header>
+
+<main id="main">
+  <section class="hero" id="hero" aria-busy="true">
+    <div class="art" id="art" aria-hidden="true"></div>
+    <div class="info">
+      <p class="eyebrow" id="kind" data-i18n="loading">Loading…</p>
+      <h1 id="title"><span class="skel" style="width:14ch"></span></h1>
+      <p class="meta" id="meta"><span class="skel" style="width:10ch"></span></p>
+      <div class="actions" id="actions" hidden>
+        <a class="btn btn-primary" id="open" href="#">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="currentColor"/></svg>
+          <span data-i18n="open">Open in OpenWave</span>
+        </a>
+        <a class="btn btn-ghost" id="get" href="https://github.com/bebeyat/openwave/releases/latest" rel="noopener" data-i18n="get">Get OpenWave</a>
+      </div>
+      <p class="note" id="note" data-i18n="note">OpenWave is a free, open-source music player for Windows, macOS and Linux.</p>
+      <p class="note hint" id="hint" role="status" hidden data-i18n="hint">Nothing happened? Get OpenWave, then open the link again.</p>
+    </div>
+  </section>
+  <ol class="tracks" id="tracks" hidden></ol>
+  <section class="empty" id="empty" hidden>
+    <h1 id="empty-title"></h1>
+    <p id="empty-body"></p>
+    <a class="btn btn-primary" href="https://github.com/bebeyat/openwave/releases/latest" rel="noopener" data-i18n="get">Get OpenWave</a>
+  </section>
+</main>
+
+<footer class="foot">
+  <span data-i18n="foot">Songs play from YouTube Music. OpenWave has no account and no ads.</span>
+  <a href="https://github.com/bebeyat/openwave/blob/main/docs/PRIVACY.md" rel="noopener" data-i18n="privacy">Privacy</a>
+</footer>
+</body>
+</html>

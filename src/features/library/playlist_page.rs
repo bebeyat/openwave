@@ -95,7 +95,9 @@ fn PlaylistView(playlist: crate::model::Playlist) -> Element {
     let tracks = playlist.tracks.clone();
     let empty = tracks.is_empty();
     let (play_set, shuffle_set, remove_set) = (tracks.clone(), tracks.clone(), tracks.clone());
-    let download_set = tracks.clone();
+    let (download_set, share_set) = (tracks.clone(), tracks.clone());
+    let share_name = name.clone();
+    let shareable = tracks.iter().any(|t| !t.is_local());
     let (reorder_id, remove_id) = (id.clone(), id.clone());
     let (cover_id, uncover_id) = (id.clone(), id.clone());
     let has_cover = playlist.cover.as_deref().is_some_and(|c| !c.is_empty());
@@ -117,6 +119,12 @@ fn PlaylistView(playlist: crate::model::Playlist) -> Element {
                     }
                     HeroButton { icon: "shuffle", disabled: empty, onclick: move |_| shuffle_all(&shuffle_set), {t("common.shuffle")} }
                     crate::features::downloads::DownloadAllButton { tracks: download_set.clone() }
+                    HeroButton {
+                        icon: "share-2",
+                        disabled: !shareable,
+                        onclick: move |_| crate::features::share::share_list(&share_name, &share_set),
+                        {t("share.action")}
+                    }
                     div { class: "ow-hero-menu",
                     DropdownMenu { aria_label: t("common.more"), icon: "ellipsis", align: MenuAlign::Start,
                         MenuItem {

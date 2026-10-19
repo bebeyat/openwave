@@ -86,6 +86,13 @@ creates a **draft** release. Watch the workflow under the Actions tab.
 3. Paste the `CHANGELOG.md` section into the release notes.
 4. Click **Publish release**. This is the moment the release becomes public.
 
+## Share page
+
+`site/` is the static page behind share links (`https://openwave.pages.dev`, Cloudflare Pages project
+`openwave`). It does not change with releases; after editing it run
+`npx wrangler@4.151.2 pages deploy site --project-name openwave --branch main`. Keep its relay list in sync
+with `RELAYS` in `src/backend/share.rs`, and never change the link format: shared links must keep working.
+
 ## If something goes wrong
 
 Delete the draft release and the tag (`git push origin :refs/tags/v0.1.0`; `git tag -d v0.1.0`), fix, and tag

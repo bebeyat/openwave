@@ -7,6 +7,10 @@ use dioxus::prelude::*;
 /// import dialog; the import milestone owns the dialog and resets it on close.
 pub static OPEN_IMPORT: GlobalSignal<bool> = Signal::global(|| false);
 
+/// A list that is already read (an opened share link): the import dialog starts on its preview.
+pub static PENDING_IMPORT: GlobalSignal<Option<crate::backend::import_flow::PreparedImport>> =
+    Signal::global(|| None);
+
 /// A page sets this to `true` while it wants the 320px context panel (artist info, top songs, up
 /// next) and back to `false` when it unmounts. The panel only shows at window widths >= 1280px.
 pub static RIGHT_PANEL: GlobalSignal<bool> = Signal::global(|| false);

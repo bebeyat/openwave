@@ -6,6 +6,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Share links: "Share" on a playlist or in a song menu makes a short link (`https://openwave.pages.dev/#<id>`,
+  38 characters whatever the list length) and copies it. Opening it starts OpenWave on the playlist preview
+  (or plays the song); without OpenWave the page lists the songs. Lists are stored on public Nostr relays,
+  no OpenWave server or account (see docs/PRIVACY.md).
+
 ## [0.1.0] - 2026-10-17
 
 First public version.

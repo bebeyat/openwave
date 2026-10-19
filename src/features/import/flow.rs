@@ -221,6 +221,16 @@ impl Ctx {
         });
     }
 
+    /// Start on the preview of a list that is already read (an opened share link).
+    pub fn show(self, p: PreparedImport) {
+        let (mut kind, mut name, mut prepared, mut step) =
+            (self.kind, self.name, self.prepared, self.step);
+        kind.set(Kind::Youtube);
+        name.set(p.preview.name.clone());
+        prepared.set(Some(p));
+        step.set(Step::Preview);
+    }
+
     /// Match the songs and save the playlist ("Kitaplığıma ekle").
     pub fn confirm(self) {
         let Some(prepared) = self.prepared.peek().clone() else {

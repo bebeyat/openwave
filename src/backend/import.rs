@@ -19,6 +19,8 @@ pub(crate) const MAX_TEXT_CHARS: usize = 200;
 pub enum Source {
     Spotify(String),
     Youtube(String),
+    /// An OpenWave share link (`share::BASE_URL`); holds the share id.
+    Shared(String),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -63,6 +65,9 @@ fn host_of(url: &reqwest::Url) -> String {
 /// Recognise a Spotify or YouTube playlist link (or `spotify:playlist:<id>` URI).
 pub fn parse_source(input: &str) -> Option<Source> {
     let input = input.trim();
+    if input.contains("openwave") {
+        return super::share::parse_link(input).map(Source::Shared);
+    }
     if let Some(id) = input.strip_prefix("spotify:playlist:") {
         return spotify_id(id).map(Source::Spotify);
     }

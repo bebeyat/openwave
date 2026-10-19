@@ -3,12 +3,12 @@
 use super::{
     catalog::Catalog,
     convert,
-    error::{ApiError, ApiResult, CatalogError, ImportError},
+    error::{ApiError, ApiResult, CatalogError, ImportError, ShareError},
     import::{self, Source},
     import_flow::{self, ImportResult, PreparedImport},
     lyrics::{self, LyricsQuery},
     media::Media,
-    ytdlp,
+    share, ytdlp,
 };
 use crate::model::*;
 use serde_json::Value;
@@ -422,7 +422,32 @@ pub async fn import_prepare(source: &Source) -> Result<PreparedImport, ImportErr
                 .map_err(import_err)?;
             import_flow::prepare_tracks(c.title.to_string(), c.cover, c.tracks)
         }
+        Source::Shared(id) => shared_import(open_share(id).await.map_err(|e| match e {
+            ShareError::Offline => ImportError::Offline,
+            _ => ImportError::ShareGone,
+        })?),
     }
+}
+
+/// Store a playlist (or one song, `single`) on the share relays and return its short link.
+pub async fn share(name: String, tracks: Vec<Track>, single: bool) -> Result<String, ShareError> {
+    run(async move { share::publish(&name, &tracks, single).await })
+        .await
+        .unwrap_or(Err(ShareError::Offline))
+}
+
+/// Read the list behind a share id (checked against the id, cleaned like any outside input).
+pub async fn open_share(id: &str) -> Result<share::Shared, ShareError> {
+    let id = id.to_owned();
+    run(async move { share::fetch(&id).await })
+        .await
+        .unwrap_or(Err(ShareError::Offline))
+}
+
+/// A shared list as an import: it already holds catalog tracks, so nothing needs matching.
+pub fn shared_import(shared: share::Shared) -> Result<PreparedImport, ImportError> {
+    let cover = shared.tracks.iter().find_map(|t| t.cover.clone());
+    import_flow::prepare_tracks(shared.name, cover, shared.tracks)
 }
 
 /// Match a prepared import against the catalog. `progress(done, total)` fires after each track.

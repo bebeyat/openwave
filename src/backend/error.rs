@@ -124,6 +124,8 @@ pub enum ImportError {
     },
     /// The source page had an unexpected layout.
     Unreadable,
+    /// A share link whose list no relay has any more.
+    ShareGone,
 }
 impl Coded for ImportError {
     fn code(&self) -> &'static str {
@@ -135,6 +137,7 @@ impl Coded for ImportError {
             Self::NothingMatched => "import.error.nothing_matched",
             Self::Truncated { .. } => "import.error.truncated",
             Self::Unreadable => "import.error.unreadable",
+            Self::ShareGone => "share.error.not_found",
         }
     }
     fn args(&self) -> Vec<(&'static str, String)> {
@@ -169,6 +172,34 @@ impl fmt::Display for ImportError {
     }
 }
 impl std::error::Error for ImportError {}
+
+/// Creating or opening a share link.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ShareError {
+    /// Nothing shareable: empty, or only local files.
+    Nothing,
+    TooLarge,
+    /// No relay could be reached (or none kept the list).
+    Offline,
+    /// The relays answered but none has this share (expired, removed or a mistyped link).
+    NotFound,
+}
+impl Coded for ShareError {
+    fn code(&self) -> &'static str {
+        match self {
+            Self::Nothing => "share.error.nothing",
+            Self::TooLarge => "share.error.too_large",
+            Self::Offline => "share.error.offline",
+            Self::NotFound => "share.error.not_found",
+        }
+    }
+}
+impl ShareError {
+    fn detail(&self) -> Option<&str> {
+        None
+    }
+}
+impl_display!(ShareError);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LyricsError {
