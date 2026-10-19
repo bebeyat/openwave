@@ -1,4 +1,4 @@
-//! "Paylaş": stores the list on the share relays, copies the short link, says what was published.
+//! "Paylaş": stores the list on the share relays and copies the short link.
 
 use std::sync::Mutex;
 
@@ -8,7 +8,7 @@ use super::REQUEST;
 use crate::backend::api;
 use crate::backend::error::Coded;
 use crate::i18n::t;
-use crate::ui::{Banner, BannerKind, Button, ButtonVariant, Dialog, DialogSize, Icon, Spinner};
+use crate::ui::{Banner, BannerKind, Button, ButtonVariant, Dialog, DialogSize, Spinner};
 
 /// Kept open for the whole run: on Linux the clipboard text lives only as long as its owner.
 static BOARD: Mutex<Option<arboard::Clipboard>> = Mutex::new(None);
@@ -64,8 +64,7 @@ pub fn ShareDialog() -> Element {
             description: request.as_ref().map(|r| r.name.clone()),
             size: DialogSize::Md,
             footer: Some(footer),
-            div { class: "flex flex-col gap-4",
-                match state {
+            match state {
                     None => rsx! {
                         div { class: "flex items-center gap-3 py-3 text-sm text-muted", role: "status",
                             Spinner { size: 20 }
@@ -75,11 +74,6 @@ pub fn ShareDialog() -> Element {
                     Some(Ok(link)) => rsx! { LinkBox { link, copied } },
                     Some(Err(e)) => rsx! { Banner { kind: BannerKind::Error, {e.user_message()} } },
                 }
-                p { class: "flex items-start gap-2 text-sm text-muted",
-                    Icon { name: "info", size: 16, class: "mt-0.5 flex-none" }
-                    {t("share.privacy")}
-                }
-            }
         }
     }
 }
@@ -89,8 +83,7 @@ fn LinkBox(link: String, copied: Signal<bool>) -> Element {
     let mut copied = copied;
     let text = link.clone();
     rsx! {
-        div { class: "flex flex-col gap-1.5",
-            div { class: "flex items-center gap-2",
+        div { class: "flex items-center gap-2",
                 input {
                     id: "ow-share-link",
                     r#type: "text",
@@ -111,10 +104,6 @@ fn LinkBox(link: String, copied: Signal<bool>) -> Element {
                     },
                     if copied() { {t("share.copied_short")} } else { {t("share.copy")} }
                 }
-            }
-            p { class: "text-sm text-muted", role: "status",
-                if copied() { {t("share.copied")} }
-            }
         }
     }
 }
