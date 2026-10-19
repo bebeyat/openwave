@@ -12,11 +12,14 @@ pub const CRASH_LOG: &str = "crash.log";
 
 /// Base names of the documents OpenWave keeps in its data directory (each may also exist with a
 /// `.tmp`, `.bak`, `.corrupt-*` or `.quarantine-*` suffix).
-pub const OWN_FILES: [&str; 5] = [
+pub const OWN_FILES: [&str; 8] = [
     "settings.json",
     "library.json",
     "last-queue.json",
     "home_mixes.json",
+    "home_recs.json",
+    "home_genres.json",
+    "home_discover.json",
     "local-files.json",
 ];
 

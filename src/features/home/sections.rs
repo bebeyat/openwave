@@ -6,11 +6,11 @@ use std::time::Duration;
 use dioxus::prelude::*;
 
 use super::cache::{self, Mix, MixCache};
-use super::logic::{build_mix, featured_query, Seed, TRY_SONGS};
+use super::logic::{build_mix, Seed};
 use super::row::{RowHeading, RowSkeleton, ScrollRow};
-use crate::backend::api::{self, SearchKind};
+use crate::backend::api;
 use crate::features::tracks::actions::open_album;
-use crate::i18n::{language, t, t_args};
+use crate::i18n::{t, t_args};
 use crate::model::Track;
 use crate::player::controller;
 use crate::store::library::now_ms;
@@ -161,40 +161,6 @@ pub fn Mixes(seeds: Vec<Seed>) -> Element {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-/// "Başlamak için bir şarkı dene": top results of one fixed popular search (online only).
-#[component]
-pub fn TrySongs() -> Element {
-    let mut nonce = use_signal(|| 0u32);
-    let res = use_resource(use_reactive!(|nonce| async move {
-        let _ = nonce;
-        api::search(SearchKind::Track, featured_query(language())).await
-    }));
-    rsx! {
-        section { class: "mb-10", "aria-labelledby": "ow-home-try",
-            RowHeading { title: t("home.try_song"), id: "ow-home-try", row: "ow-row-try",
-                if matches!(&*res.read_unchecked(), Some(Err(_))) {
-                    Button {
-                        variant: ButtonVariant::Ghost,
-                        size: ButtonSize::Sm,
-                        icon: "refresh-cw",
-                        onclick: move |_| nonce += 1,
-                        {t("common.retry")}
-                    }
-                }
-            }
-            match &*res.read_unchecked() {
-                None => rsx! { RowSkeleton { count: TRY_SONGS } },
-                Some(Err(_)) => rsx! { p { class: "text-sm text-muted", {t("home.try_song_offline")} } },
-                Some(Ok(r)) if r.tracks.is_empty() => rsx! { p { class: "text-sm text-muted", {t("home.section_failed")} } },
-                Some(Ok(r)) => rsx! {
-                    TrackCards { tracks: r.tracks.iter().take(TRY_SONGS).cloned().collect::<Vec<_>>(), row_id: "ow-row-try" }
-                    p { class: "mt-2 text-sm text-muted", {t("home.try_song_hint")} }
-                },
             }
         }
     }

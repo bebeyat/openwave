@@ -196,6 +196,48 @@ pub async fn radio(track_id: &str) -> ApiResult<Vec<Track>> {
         .collect())
 }
 
+/// Discovery rows for language `hl` (`tr`, `pt-BR`…) and country `gl` (`TR`; `None` lets the
+/// server use the connection's country), or only the rows of one mood `chip`.
+pub async fn discover(hl: String, gl: Option<String>, chip: Option<String>) -> ApiResult<Discover> {
+    use super::catalog::discover;
+    let raw = run(async move {
+        tokio::time::timeout(
+            CATALOG_TIMEOUT,
+            discover::discover(&hl, gl.as_deref(), chip.as_deref()),
+        )
+        .await
+        .map_err(|_| CatalogError::Network("timeout".into()))?
+    })
+    .await?
+    .map_err(ApiError::from)?;
+    let shelves = raw
+        .shelves
+        .into_iter()
+        .map(|s| Shelf {
+            title: s.title,
+            items: match s.kind {
+                "track" => ShelfItems::Tracks(s.items.iter().map(convert::track).collect()),
+                "album" => {
+                    ShelfItems::Albums(s.items.into_iter().map(convert::album_item).collect())
+                }
+                "list" => {
+                    ShelfItems::Playlists(s.items.into_iter().map(convert::playlist_item).collect())
+                }
+                _ => ShelfItems::Artists(s.items.into_iter().map(convert::artist_item).collect()),
+            },
+        })
+        .collect();
+    let chips = raw
+        .chips
+        .into_iter()
+        .map(|c| MoodChip {
+            label: c.label,
+            params: c.params,
+        })
+        .collect();
+    Ok(Discover { chips, shelves })
+}
+
 fn links(v: &Value) -> Vec<CatalogLink> {
     v["items"]
         .as_array()

@@ -4,7 +4,7 @@
 use dioxus::prelude::*;
 
 use crate::i18n::t;
-use crate::ui::{IconButton, IconButtonSize, Skeleton};
+use crate::ui::{IconButton, IconButtonSize, Skeleton, TooltipAlign};
 
 /// Fraction of the visible width one arrow press scrolls.
 const SCROLL_STEP: f64 = 0.85;
@@ -44,6 +44,8 @@ pub fn RowHeading(
                                 icon: "chevron-right",
                                 label: t("home.scroll_forward"),
                                 size: IconButtonSize::Sm,
+                                // The row's last control: a centred tip would stick out of the panel.
+                                tooltip_align: TooltipAlign::End,
                                 class: "max-[900px]:hidden",
                                 onclick: move |_| scroll_row(&forward, 1),
                             }
