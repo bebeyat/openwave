@@ -130,45 +130,6 @@ pub fn run_installer(setup: &Path, relaunch: bool) -> std::io::Result<()> {
     cmd.spawn().map(drop)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn versions_come_from_release_urls() {
-        let url = "https://github.com/bebeyat/openwave/releases/tag/v0.2.10";
-        assert_eq!(version_of(url).as_deref(), Some("0.2.10"));
-        assert_eq!(
-            version_of("https://github.com/x/releases/tag/v1.0.0/").as_deref(),
-            Some("1.0.0")
-        );
-        for bad in [
-            "https://github.com/bebeyat/openwave/releases",
-            "v",
-            "v1..2",
-            "v1.2-beta",
-            "1.2.3",
-        ] {
-            assert_eq!(version_of(bad), None, "{bad}");
-        }
-    }
-
-    #[test]
-    fn only_a_higher_version_is_an_update() {
-        assert!(is_newer("0.2.0", "0.1.9"));
-        assert!(is_newer("0.10.0", "0.9.0"));
-        assert!(!is_newer("0.1.0", "0.1.0"));
-        assert!(!is_newer("0.1.0", "0.2.0"));
-    }
-
-    /// Talks to GitHub: `cargo test update_from_github -- --ignored`.
-    #[tokio::test]
-    #[ignore]
-    async fn update_from_github() {
-        let v = latest().await.expect("latest release");
-        let dir = std::env::temp_dir().join(format!("ow-update-{}", uuid::Uuid::new_v4()));
-        let setup = download(&v, &dir).await.expect("verified download");
-        assert!(setup.metadata().expect("file").len() > 1_000_000);
-        let _ = std::fs::remove_dir_all(dir);
-    }
-}
+#[cfg(all(test, private_tests))]
+#[path = "update_tests.rs"]
+mod tests;

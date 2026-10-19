@@ -342,6 +342,6 @@ pub async fn fetch(id: &str) -> Result<Shared, ShareError> {
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, private_tests))]
 #[path = "share_tests.rs"]
 mod tests;

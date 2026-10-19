@@ -38,6 +38,13 @@ fn main() {
     println!("cargo:rerun-if-changed=assets/branding/openwave.ico");
     embed_exe_icon();
 
+    // Some unit tests live in `*_tests.rs` files that stay on the developer's machine (.gitignore).
+    println!("cargo::rustc-check-cfg=cfg(private_tests)");
+    println!("cargo:rerun-if-changed=src/backend/share_tests.rs");
+    if PathBuf::from("src/backend/share_tests.rs").exists() {
+        println!("cargo:rustc-cfg=private_tests");
+    }
+
     let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
     let out = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
     let icons_dir = manifest.join("assets").join("icons");
