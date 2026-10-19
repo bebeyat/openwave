@@ -91,6 +91,8 @@ pub fn Slider(
     // While dragging we show our own value so the thumb follows the pointer even if the parent
     // updates asynchronously.
     let mut live = use_signal(|| value);
+    // Where the pointer last was: a quick click can be released before the track is measured.
+    let mut last_x = use_signal(|| 0.0_f64);
     let shown = if dragging() { live() } else { value };
     let p = percent(shown, min, max);
 
@@ -135,6 +137,7 @@ pub fn Slider(
                 }
                 let x = e.client_coordinates().x;
                 let Some(m) = mounted() else { return };
+                last_x.set(x);
                 dragging.set(true);
                 // Route every later pointer event of this press to the slider, even outside the
                 // window. A full-screen layer cannot do that, and inside a panel with a backdrop
@@ -146,7 +149,9 @@ pub fn Slider(
                 spawn(async move {
                     if let Ok(r) = m.get_client_rect().await {
                         rect.set((r.origin.x, r.size.width));
-                        apply(x, false);
+                        // Already released (a quick click): commit where the pointer went up.
+                        let released = !*dragging.peek();
+                        apply(if released { last_x() } else { x }, released);
                     }
                 });
             },
@@ -157,6 +162,7 @@ pub fn Slider(
                 // A release the slider never heard about (capture refused): the next move comes
                 // with no button held, so the gesture ends and commits there.
                 let released = e.held_buttons().is_empty();
+                last_x.set(e.client_coordinates().x);
                 apply(e.client_coordinates().x, released);
                 if released {
                     dragging.set(false);
@@ -164,6 +170,7 @@ pub fn Slider(
             },
             onpointerup: move |e| {
                 if dragging() {
+                    last_x.set(e.client_coordinates().x);
                     apply(e.client_coordinates().x, true);
                     dragging.set(false);
                 }
