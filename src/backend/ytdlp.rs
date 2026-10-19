@@ -255,10 +255,15 @@ pub(crate) async fn latest_tag_from(base: &str) -> Result<String, YtDlpError> {
     tag_from_location(location).ok_or_else(|| YtDlpError::BadRelease("unexpected tag".into()))
 }
 
-/// Compare the installed version (if any) with the newest release.
-pub async fn check_update() -> Result<UpdateCheck, YtDlpError> {
+/// Compare the installed version with the newest release. `known` is the version the caller
+/// already read; asking yt-dlp again can time out, which used to look like "nothing installed".
+pub async fn check_update(known: Option<String>) -> Result<UpdateCheck, YtDlpError> {
     let latest = latest_tag().await?;
-    let installed = status().await.version.filter(|v| v != UNVERIFIED_VERSION);
+    let installed = match known {
+        Some(v) => Some(v),
+        None => status().await.version,
+    }
+    .filter(|v| v != UNVERIFIED_VERSION);
     let update_available = installed
         .as_deref()
         .is_none_or(|v| compare_versions(&latest, v) == Ordering::Greater);

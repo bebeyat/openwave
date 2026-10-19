@@ -512,8 +512,8 @@ pub async fn ytdlp_status() -> ytdlp::Status {
 }
 
 /// Network call to github.com; only call after the user agreed.
-pub async fn ytdlp_check_update() -> ApiResult<ytdlp::UpdateCheck> {
-    Ok(run(ytdlp::check_update()).await??)
+pub async fn ytdlp_check_update(known: Option<String>) -> ApiResult<ytdlp::UpdateCheck> {
+    Ok(run(ytdlp::check_update(known)).await??)
 }
 
 /// Download + verify + install the newest yt-dlp. Only call after the user agreed.

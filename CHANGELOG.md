@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-10-20
+
+### Fixed
+
+- Settings > About shows whether OpenWave itself has an update, with **Check for updates** and **Update** for the
+  app (the buttons there were only for yt-dlp).
+- The yt-dlp check no longer reports the installed version as a new one when yt-dlp answers slowly.
+- Updating an all-users install (under Program Files) updates that copy instead of adding a per-user one.
+
 ## [0.1.2] - 2026-10-19
 
 ### Fixed
@@ -67,7 +76,8 @@ First public version.
   no analytics.
 - Windows installer and portable zip, macOS app zip and Linux tarball, with SHA-256 checksums.
 
-[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/bebeyat/openwave/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bebeyat/openwave/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bebeyat/openwave/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bebeyat/openwave/releases/tag/v0.1.0
