@@ -313,12 +313,6 @@
   #main {
     height: 100%;
   }
-  /* The native <select> list paints its own (opaque) background: give options the theme's solid
-     colours, or they inherit light text on the list's white background in the dark theme. */
-  option {
-    background-color: var(--ow-glass-solid);
-    color: var(--ow-text);
-  }
   input,
   textarea,
   [data-selectable] {

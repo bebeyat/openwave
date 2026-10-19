@@ -153,7 +153,6 @@ pub fn General(settings: Arc<Settings>, on_change: EventHandler<SettingsChange>)
                 Select {
                     options: language_options(),
                     value: language_value(settings.language),
-                    class: "w-[220px]",
                     aria_label: t("settings.general.language"),
                     on_change: move |v: String| on_change.call(SettingsChange::Language(parse_language(&v))),
                 }

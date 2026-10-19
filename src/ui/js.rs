@@ -59,7 +59,7 @@ window.ow = (function () {
       var el = document.getElementById(id); if (!el) return;
       place(el, placement);
       var prev = document.activeElement;
-      var items = function () { return Array.prototype.filter.call(el.querySelectorAll('[role="menuitem"]'), function (i) { return !i.disabled; }); };
+      var items = function () { return Array.prototype.filter.call(el.querySelectorAll('[role^="menuitem"]'), function (i) { return !i.disabled; }); };
       var onKey = function (e) {
         var list = items(), i = list.indexOf(document.activeElement), n = list.length; if (!n) return;
         var next = -1;
@@ -103,11 +103,11 @@ pub const SHORTCUT_JS: &str = r#"
   };
   var activatable = function (t) {
     if (!t || !t.closest) return false;
-    return !!t.closest('button,a[href],summary,[role="button"],[role="tab"],[role="switch"],[role="menuitem"],[role="checkbox"],[role="radio"],[role="option"]');
+    return !!t.closest('button,a[href],summary,[role="button"],[role="tab"],[role="switch"],[role^="menuitem"],[role="checkbox"],[role="radio"],[role="option"]');
   };
   var ownsArrows = function (t) {
     if (!t || !t.closest) return false;
-    return !!t.closest('[role="slider"],[role="tab"],[role="radio"],[role="menuitem"],[role="option"],[role="listbox"],[role="tablist"],[role="radiogroup"]');
+    return !!t.closest('[role="slider"],[role="tab"],[role="radio"],[role^="menuitem"],[role="option"],[role="listbox"],[role="tablist"],[role="radiogroup"]');
   };
   var onKey = function (e) {
     if (e.defaultPrevented || e.isComposing) return;

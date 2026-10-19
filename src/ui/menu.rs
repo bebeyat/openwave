@@ -41,6 +41,9 @@ pub fn MenuItem(
     #[props(into, default)] shortcut: Option<String>,
     #[props(default)] danger: bool,
     #[props(default)] disabled: bool,
+    /// Makes the item one choice of a set (`menuitemradio`), ticked when true.
+    #[props(default)]
+    checked: Option<bool>,
     #[props(default)] onselect: EventHandler<()>,
 ) -> Element {
     let ctx = use_context::<MenuCtx>();
@@ -52,7 +55,8 @@ pub fn MenuItem(
     rsx! {
         button {
             r#type: "button",
-            role: "menuitem",
+            role: if checked.is_some() { "menuitemradio" } else { "menuitem" },
+            "aria-checked": checked.map(|c| c.to_string()),
             tabindex: "-1",
             disabled,
             class: "flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-normal outline-offset-[-2px] hover:bg-hover focus-visible:bg-hover disabled:opacity-50 {tone}",
@@ -66,6 +70,9 @@ pub fn MenuItem(
                 span { class: "w-[18px] flex-none" }
             }
             span { class: "min-w-0 flex-1 truncate", "{label}" }
+            if checked == Some(true) {
+                Icon { name: "check", size: 16, class: "text-accent-text" }
+            }
             if let Some(keys) = shortcut {
                 span { class: "text-muted", Shortcut { keys } }
             }
