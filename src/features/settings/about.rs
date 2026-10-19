@@ -49,7 +49,7 @@ fn EngineRow() -> Element {
             };
             (
                 rsx! { span { class: "text-sm text-fg", {t_args("engine.version", &[("version", &version)])} " · " "{source}" } },
-                update_controls(update),
+                update_controls(update, version),
             )
         }
         Engine::Missing => (
@@ -110,7 +110,7 @@ fn install_controls(retry: bool) -> Element {
     }
 }
 
-fn update_controls(mut update: Signal<Update>) -> Element {
+fn update_controls(mut update: Signal<Update>, version: String) -> Element {
     rsx! {
         Button {
             variant: ButtonVariant::Secondary,
@@ -118,8 +118,9 @@ fn update_controls(mut update: Signal<Update>) -> Element {
             loading: update() == Update::Checking,
             onclick: move |_| {
                 update.set(Update::Checking);
+                let known = Some(version.clone());
                 spawn(async move {
-                    update.set(match api::ytdlp_check_update().await {
+                    update.set(match api::ytdlp_check_update(known).await {
                         Ok(c) if c.update_available => Update::Available(c.latest),
                         Ok(_) => Update::UpToDate,
                         Err(e) => Update::Failed(e.user_message()),
@@ -137,11 +138,14 @@ pub fn About() -> Element {
         SectionTitle { title: t("settings.section.about"), intro: t("settings.about.tagline"), icon: "info" }
         Card {
             Row { label: "OpenWave", help: t_args("settings.about.version", &[("version", app_version())]),
-                Button {
-                    variant: ButtonVariant::Secondary,
-                    icon: "external-link",
-                    onclick: move |_| open_link(REPO_URL),
-                    {t("settings.about.github")}
+                div { class: "flex flex-wrap items-center justify-end gap-3",
+                    crate::features::update::UpdateControls {}
+                    Button {
+                        variant: ButtonVariant::Secondary,
+                        icon: "external-link",
+                        onclick: move |_| open_link(REPO_URL),
+                        {t("settings.about.github")}
+                    }
                 }
             }
             EngineRow {}

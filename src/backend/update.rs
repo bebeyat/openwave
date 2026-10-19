@@ -119,11 +119,29 @@ pub async fn download(version: &str, dir: &Path) -> Result<PathBuf, String> {
     Ok(target)
 }
 
+/// Installed under Program Files (for all users) rather than in the user's own folder.
+fn installed_for_all_users() -> bool {
+    let Ok(exe) = std::env::current_exe() else {
+        return false;
+    };
+    ["ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"]
+        .iter()
+        .filter_map(std::env::var_os)
+        .any(|dir| exe.starts_with(dir))
+}
+
 /// Start the installer without any window. With `relaunch` it opens OpenWave again when done
 /// (see `RelaunchAfterUpdate` in installer/openwave.iss). The caller then exits.
 pub fn run_installer(setup: &Path, relaunch: bool) -> std::io::Result<()> {
     let mut cmd = std::process::Command::new(setup);
     cmd.args(["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"]);
+    // Same install mode as now, so the update replaces this copy instead of adding a second one.
+    // All-users installs ask for administrator rights (the Windows prompt) as on first install.
+    cmd.arg(if installed_for_all_users() {
+        "/ALLUSERS"
+    } else {
+        "/CURRENTUSER"
+    });
     if relaunch {
         cmd.arg("/RELAUNCH=1");
     }
