@@ -135,7 +135,15 @@ pub(super) fn mrlir_entry(row: &Value, kind: &str) -> Option<Entry> {
         kind: kind.into(),
         name: name.into(),
         seconds: if kind == "track" {
-            track_seconds(&parts)
+            // Playlist rows keep the length in a column of its own.
+            match track_seconds(&parts) {
+                0 => text(
+                    row,
+                    "/fixedColumns/0/musicResponsiveListItemFixedColumnRenderer/text/runs/0/text",
+                )
+                .map_or(0, length),
+                s => s,
+            }
         } else {
             0
         },
@@ -148,6 +156,18 @@ pub(super) fn mrlir_entry(row: &Value, kind: &str) -> Option<Entry> {
         artist_key: sub.artist_key,
         album_key: sub.album_key,
     })
+}
+
+/// The header of a playlist page (title and cover) in either page layout.
+pub(super) fn find_header(v: &Value) -> Option<&Value> {
+    match v {
+        Value::Object(o) => o
+            .get("musicResponsiveHeaderRenderer")
+            .or_else(|| o.get("musicDetailHeaderRenderer"))
+            .or_else(|| o.values().find_map(find_header)),
+        Value::Array(a) => a.iter().find_map(find_header),
+        _ => None,
+    }
 }
 
 pub(super) fn collect_mrlir(v: &Value, kind: &str, out: &mut Vec<Entry>) {

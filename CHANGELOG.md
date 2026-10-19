@@ -6,6 +6,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-10-20
+
+### Fixed
+
+- Playlists that contain a song without an artist page (for example the video charts on Home) opened with
+  "unexpected response from the server". They now open; only a row that cannot be read at all is skipped.
+- Playlist songs read this way keep their length.
+- Settings > About no longer shows "unverified" as the version of a yt-dlp found on the computer.
+
 ## [0.1.3] - 2026-10-20
 
 ### Fixed
@@ -76,7 +85,8 @@ First public version.
   no analytics.
 - Windows installer and portable zip, macOS app zip and Linux tarball, with SHA-256 checksums.
 
-[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/bebeyat/openwave/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/bebeyat/openwave/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bebeyat/openwave/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bebeyat/openwave/compare/v0.1.0...v0.1.1
