@@ -139,6 +139,9 @@ pub fn SearchInput(
 pub struct SelectOption {
     pub value: String,
     pub label: String,
+    /// Lucide icon name or picture (`src`) shown before the label in the menu.
+    pub icon: Option<String>,
+    pub image: Option<String>,
 }
 
 /// A value picker in the app's own menu style: the trigger shows the current choice, the open menu
@@ -163,6 +166,8 @@ pub fn Select(
                     MenuItem {
                         key: "{o.value}",
                         label: o.label.clone(),
+                        icon: o.icon.clone(),
+                        image: o.image.clone(),
                         checked: o.value == value,
                         onselect: move |_| on_change.call(o.value.clone()),
                     }

@@ -38,6 +38,9 @@ pub enum MenuAlign {
 pub fn MenuItem(
     #[props(into)] label: String,
     #[props(into, default)] icon: Option<String>,
+    /// A picture (`src`, e.g. a flag) in the icon slot, used when there is no `icon`.
+    #[props(into, default)]
+    image: Option<String>,
     #[props(into, default)] shortcut: Option<String>,
     #[props(default)] danger: bool,
     #[props(default)] disabled: bool,
@@ -66,6 +69,12 @@ pub fn MenuItem(
             },
             if let Some(name) = icon {
                 Icon { name, size: 18 }
+            } else if let Some(src) = image {
+                img {
+                    src: "{src}",
+                    alt: "",
+                    class: "h-[14px] w-[18px] flex-none rounded-[3px] object-cover shadow-[0_0_0_1px_var(--ow-border)]",
+                }
             } else {
                 span { class: "w-[18px] flex-none" }
             }

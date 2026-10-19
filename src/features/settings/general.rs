@@ -24,10 +24,18 @@ fn language_options() -> Vec<SelectOption> {
     std::iter::once(SelectOption {
         value: "system".into(),
         label: t("settings.general.language.system"),
+        icon: Some("globe".into()),
+        image: None,
     })
     .chain(Lang::ALL.into_iter().map(|l| SelectOption {
         value: l.code().into(),
         label: l.native_name().into(),
+        icon: None,
+        // `#` starts a fragment in a URL; the SVGs have no `%` but escape it anyway.
+        image: Some(format!(
+            "data:image/svg+xml;utf8,{}",
+            l.flag_svg().replace('%', "%25").replace('#', "%23")
+        )),
     }))
     .collect()
 }
@@ -204,6 +212,19 @@ mod tests {
             assert_eq!(parse_theme(theme_value(p)), p);
         }
         assert_eq!(parse_theme("neon"), ThemePref::System);
+    }
+
+    #[test]
+    fn every_language_has_a_flag_that_is_a_valid_data_uri() {
+        for o in language_options().into_iter().skip(1) {
+            let src = o.image.expect("flag");
+            assert!(
+                src.starts_with("data:image/svg+xml;utf8,<svg"),
+                "{}",
+                o.value
+            );
+            assert!(!src.contains('#'), "{}", o.value);
+        }
     }
 
     #[test]

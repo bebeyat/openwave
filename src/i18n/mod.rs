@@ -129,6 +129,28 @@ impl Lang {
         }
     }
 
+    /// The language's flag (SVG from flag-icons, see `tools/extract-assets.mjs`) for the language
+    /// menu: Windows has no colour emoji flags.
+    pub fn flag_svg(self) -> &'static str {
+        match self {
+            Lang::Tr => include_str!("../../assets/flags/tr.svg"),
+            Lang::En => include_str!("../../assets/flags/en.svg"),
+            Lang::De => include_str!("../../assets/flags/de.svg"),
+            Lang::Es => include_str!("../../assets/flags/es.svg"),
+            Lang::Fr => include_str!("../../assets/flags/fr.svg"),
+            Lang::Pt => include_str!("../../assets/flags/pt.svg"),
+            Lang::It => include_str!("../../assets/flags/it.svg"),
+            Lang::Ru => include_str!("../../assets/flags/ru.svg"),
+            Lang::Uk => include_str!("../../assets/flags/uk.svg"),
+            Lang::Pl => include_str!("../../assets/flags/pl.svg"),
+            Lang::Nl => include_str!("../../assets/flags/nl.svg"),
+            Lang::Ja => include_str!("../../assets/flags/ja.svg"),
+            Lang::Ko => include_str!("../../assets/flags/ko.svg"),
+            Lang::Zh => include_str!("../../assets/flags/zh.svg"),
+            Lang::Id => include_str!("../../assets/flags/id.svg"),
+        }
+    }
+
     /// Parse `tr`, `tr-TR`, `en_US`, `pt-BR`, … (case-insensitive); anything else is `None`.
     pub fn from_code(code: &str) -> Option<Lang> {
         let primary = code
