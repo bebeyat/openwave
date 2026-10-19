@@ -35,7 +35,12 @@ pub const CSP: &str = concat!(
 
 /// Origin of the app's own web view (what WebView2/wry report as `location.origin`). The media proxy
 /// answers CORS for exactly this origin, and it is the one origin treated as a secure context.
+/// dioxus-desktop serves the page from `http://dioxus.index.html/` on Windows only; WebKit (macOS,
+/// Linux) loads it from the custom scheme `dioxus://index.html/`.
+#[cfg(windows)]
 pub const WEBVIEW_ORIGIN: &str = "http://dioxus.index.html";
+#[cfg(not(windows))]
+pub const WEBVIEW_ORIGIN: &str = "dioxus://index.html";
 
 /// Extra WebView2 arguments. Giving any replaces wry's defaults, so those are repeated here
 /// (`msWebOOUI` etc.: no mini menu / smart screen; autoplay: playback without a prior click).
@@ -126,7 +131,7 @@ mod csp_tests {
         assert!(
             args.contains("msSmartScreenProtection") && args.contains("no-user-gesture-required")
         );
-        assert!(args.ends_with("=http://dioxus.index.html"));
+        assert!(args.ends_with(&format!("={WEBVIEW_ORIGIN}")));
         assert_eq!(
             args.matches("--unsafely-treat-insecure-origin-as-secure=")
                 .count(),

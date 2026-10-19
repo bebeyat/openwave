@@ -30,6 +30,20 @@ pub fn binary_name() -> &'static str {
     }
 }
 
+/// The release asset to download: a standalone build for this OS. The plain `yt-dlp` asset is a
+/// Python zipapp, which a stock macOS or Linux desktop cannot run.
+pub fn asset_name() -> &'static str {
+    if cfg!(windows) {
+        "yt-dlp.exe"
+    } else if cfg!(target_os = "macos") {
+        "yt-dlp_macos"
+    } else if cfg!(target_arch = "aarch64") {
+        "yt-dlp_linux_aarch64"
+    } else {
+        "yt-dlp_linux"
+    }
+}
+
 /// `<data dir>/bin`, where the downloaded copy lives.
 pub fn managed_dir() -> PathBuf {
     super::api::data_dir().join("bin")
@@ -93,7 +107,9 @@ pub async fn status() -> Status {
 pub(crate) async fn status_of(located: Option<Located>) -> Status {
     let version = match &located {
         Some(l) if l.origin == Origin::DataDir => {
-            run_version(&l.path, Duration::from_secs(8)).await.ok()
+            // Generous: a one-file build unpacks itself on every run, and the first run after a
+            // download is slowed further by antivirus scans.
+            run_version(&l.path, Duration::from_secs(30)).await.ok()
         }
         Some(_) => Some(UNVERIFIED_VERSION.to_owned()),
         None => None,
@@ -269,4 +285,4 @@ fn hex(bytes: &[u8]) -> String {
 
 #[path = "ytdlp_install.rs"]
 mod install;
-pub use install::install_latest;
+pub use install::{adopt, install_latest};

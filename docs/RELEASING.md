@@ -86,6 +86,21 @@ creates a **draft** release. Watch the workflow under the Actions tab.
 3. Paste the `CHANGELOG.md` section into the release notes.
 4. Click **Publish release**. This is the moment the release becomes public.
 
+Publishing is also what ships the update: every OpenWave with "Update automatically" on finds the
+new version on its next check (start-up, then every 6 hours). The installed Windows app downloads
+`OpenWave-windows-x64-setup.exe`, checks it against `SHA256SUMS` and installs it silently when the
+user presses **Update** or closes the app. Portable, macOS and Linux copies get an **Update** button
+that opens the release page. So never rename those two assets, never publish a release whose tag
+differs from the `Cargo.toml` version (CI refuses to build one), and do not mark a broken build as
+the latest release.
+
+## Share page
+
+`site/` is the static page behind share links (`https://openwave.pages.dev`, Cloudflare Pages project
+`openwave`). It does not change with releases; after editing it run
+`npx wrangler@4.151.2 pages deploy site --project-name openwave --branch main`. Keep its relay list in sync
+with `RELAYS` in `src/backend/share.rs`, and never change the link format: shared links must keep working.
+
 ## If something goes wrong
 
 Delete the draft release and the tag (`git push origin :refs/tags/v0.1.0`; `git tag -d v0.1.0`), fix, and tag

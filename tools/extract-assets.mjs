@@ -1,4 +1,4 @@
-// Copies the bundled font files, Lucide SVGs and license texts out of node_modules.
+// Copies the bundled font files, Lucide SVGs, language flags and license texts out of node_modules.
 // Run with `npm run assets` after editing icons.txt (build.rs picks icons up automatically).
 import { copyFileSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -43,6 +43,16 @@ for (const name of names) {
   writeFileSync(join(iconDir, `${name}.svg`), svg);
 }
 console.log(`fonts: 4, icons: ${names.length}`);
+
+// Flags for the language picker (flag-icons, MIT), keyed by our language code.
+const FLAGS = { tr: "tr", en: "gb", de: "de", es: "es", fr: "fr", pt: "br", it: "it", ru: "ru", uk: "ua", pl: "pl", nl: "nl", ja: "jp", ko: "kr", zh: "cn", id: "id" };
+const flagDir = join(root, "assets", "flags");
+mkdirSync(flagDir, { recursive: true });
+for (const [lang, country] of Object.entries(FLAGS)) {
+  copyFileSync(join(nm, "flag-icons/flags/4x3", `${country}.svg`), join(flagDir, `${lang}.svg`));
+}
+copyFileSync(join(nm, "flag-icons/LICENSE"), join(licDir, "flag-icons-MIT.txt"));
+console.log(`flags: ${Object.keys(FLAGS).length}`);
 
 // fonts.css: @font-face with the WOFF2 inlined as data URIs so no request is ever made.
 const ranges = {

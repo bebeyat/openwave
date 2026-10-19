@@ -15,6 +15,8 @@ pub mod media;
 pub mod palette;
 mod palette_net;
 mod proxy;
+pub mod share;
+pub mod update;
 pub mod ytdlp;
 
 pub use api::{data_dir, init};

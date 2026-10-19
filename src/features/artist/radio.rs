@@ -23,8 +23,10 @@ pub fn start_radio(seed: Track, mut busy: Signal<bool>) {
         return;
     }
     busy.set(true);
+    let ticket = controller::play_request();
     spawn(async move {
         match api::radio(&seed.id).await {
+            _ if !controller::is_latest_play(ticket) => {}
             Ok(similar) if !similar.is_empty() => {
                 controller::play_now(&radio_queue(&seed, similar), 0);
             }

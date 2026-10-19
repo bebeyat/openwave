@@ -165,6 +165,36 @@ pub struct PlaylistItem {
     pub cover: Option<Cover>,
 }
 
+/// The cards of one discovery row; a row holds one kind.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ShelfItems {
+    Tracks(Vec<Track>),
+    Albums(Vec<AlbumItem>),
+    Playlists(Vec<PlaylistItem>),
+    Artists(Vec<ArtistItem>),
+}
+
+/// One discovery row with the catalog's own, already translated title.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Shelf {
+    pub title: String,
+    pub items: ShelfItems,
+}
+
+/// A mood filter of the discovery feed; `params` asks the catalog for its rows.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct MoodChip {
+    pub label: String,
+    pub params: String,
+}
+
+/// What the catalog suggests for a language and country: mood chips and rows.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Discover {
+    pub chips: Vec<MoodChip>,
+    pub shelves: Vec<Shelf>,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SearchResults {
     pub tracks: Vec<Track>,

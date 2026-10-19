@@ -43,6 +43,7 @@ pub fn TrackMenuItems(
     let (t_next, t_last, t_add) = (track.clone(), track.clone(), track.clone());
     let t_like = track.clone();
     let t_dl = track.clone();
+    let t_share = (!track.is_local()).then(|| track.clone());
     let dl_state = if downloads::downloadable(&track) {
         Some(downloads::state(&track.id))
     } else {
@@ -86,6 +87,13 @@ pub fn TrackMenuItems(
             icon: "heart",
             label: like_label,
             onselect: move |_| toggle_like(&t_like),
+        }
+        if let Some(t_share) = t_share {
+            MenuItem {
+                icon: "share-2",
+                label: t("share.action"),
+                onselect: move |_| crate::features::share::share_track(&t_share),
+            }
         }
         match dl_state {
             Some(DlState::None) => rsx! {

@@ -16,9 +16,9 @@ pub struct WipeReport {
 }
 
 /// `settings.json`, `library.json.tmp`, `library.json.corrupt-123`, `library.json.v2.bak`,
-/// `library.json.quarantine-9.json`, `local-files.tmp`, `crash.log` ...
+/// `library.json.quarantine-9.json`, `local-files.<uuid>.tmp` (older versions), `crash.log` ...
 pub fn is_own_file(name: &str) -> bool {
-    if name == CRASH_LOG || name == "local-files.tmp" {
+    if name == CRASH_LOG || (name.starts_with("local-files.") && name.ends_with(".tmp")) {
         return true;
     }
     OWN_FILES.iter().any(|base| {
@@ -94,16 +94,28 @@ pub fn wipe_own_data(dir: &Path) -> Result<WipeReport, Refusal> {
     delete_matching(&dir.join("downloads"), is_cache_file, &mut report);
     delete_matching(&dir.join("covers"), is_cover_file, &mut report);
     delete_matching(&dir.join("bin"), is_helper_file, &mut report);
+    delete_matching(
+        &dir.join(crate::backend::update::DIR),
+        |n| n.starts_with("OpenWave-") && (n.ends_with("-setup.exe") || n.ends_with("-setup.part")),
+        &mut report,
+    );
     // Only folders that are now empty; anything else in them is not ours.
-    for sub in ["cache", "downloads", "covers", "bin"] {
+    for sub in [
+        "cache",
+        "downloads",
+        "covers",
+        "bin",
+        crate::backend::update::DIR,
+    ] {
         let _ = std::fs::remove_dir(dir.join(sub));
     }
     Ok(report)
 }
 
-/// Stop everything that could write the files again: playback, then the background writers.
-/// The in-memory library and settings are reset to defaults.
+/// Stop everything that could write the files again: downloads, playback, then the background
+/// writers. The in-memory library and settings are reset to defaults.
 pub fn quiesce() {
+    crate::features::downloads::cancel_all();
     crate::player::controller::pause();
     crate::player::controller::clear_queue();
     crate::store::halt_all();
@@ -147,6 +159,7 @@ mod tests {
             "library.json.quarantine-5.json",
             "library.json.1234-7.tmp",
             "home_mixes.json.55-1.tmp",
+            "local-files.0b6c3a1e-9f2d-4f5e-8a7b-1c2d3e4f5a6b.tmp",
             "crash.log",
             "cache/dQw4w9WgXcQ.audio",
             "cache/dQw4w9WgXcQ.json",
@@ -159,12 +172,13 @@ mod tests {
         // Unrelated things that must survive, including foreign files inside bin and cache.
         touch(&d.join("holiday.jpg"));
         touch(&d.join("library.json.mine.txt"));
+        touch(&d.join("local-files.txt"));
         touch(&d.join("Documents/thesis.docx"));
         touch(&d.join("bin/my-tool.exe"));
         touch(&d.join("cache/notes.txt"));
 
         let r = wipe_own_data(&d).expect("wipe");
-        assert_eq!(r.deleted, 16);
+        assert_eq!(r.deleted, 17);
         assert!(r.locked.is_empty());
         for gone in [
             "settings.json",
@@ -179,6 +193,7 @@ mod tests {
         for kept in [
             "holiday.jpg",
             "library.json.mine.txt",
+            "local-files.txt",
             "Documents/thesis.docx",
             "bin/my-tool.exe",
             "cache/notes.txt",

@@ -11,6 +11,8 @@ pub mod onboarding;
 pub mod player;
 pub mod search;
 pub mod settings;
+pub mod share;
 pub mod shell;
 pub mod store_health;
 pub mod tracks;
+pub mod update;

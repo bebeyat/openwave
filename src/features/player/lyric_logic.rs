@@ -33,9 +33,121 @@ pub fn line_opacity(active: Option<usize>, i: usize) -> f32 {
     }
 }
 
+/// Estimated singing pace for lines without word stamps, and the bounds of one line's fill.
+const MS_PER_CHAR: u64 = 110;
+const MIN_FILL_MS: u64 = 1_200;
+
+/// One word of a lyric line with the time span its karaoke fill runs over. `text` keeps the
+/// trailing space so the spans join back into the line.
+#[derive(Clone, Debug, PartialEq)]
+pub struct WordSpan {
+    pub text: String,
+    pub start_ms: u64,
+    pub end_ms: u64,
+}
+
+/// Word fill timings for line `i`: the enhanced-LRC word stamps when the line has them, otherwise
+/// the words spread over the line by length. An estimated line ends at the next line or after a
+/// singing-pace guess, whichever comes first, so an instrumental gap does not stretch the fill.
+pub fn word_spans(lines: &[LyricLine], i: usize) -> Vec<WordSpan> {
+    let Some(line) = lines.get(i) else {
+        return vec![];
+    };
+    if !line.words.is_empty() {
+        return line
+            .words
+            .iter()
+            .map(|w| WordSpan {
+                text: w.text.clone(),
+                start_ms: w.start_ms,
+                end_ms: w.end_ms.max(w.start_ms + 1),
+            })
+            .collect();
+    }
+    let words: Vec<&str> = line.text.trim().split_inclusive(' ').collect();
+    let weight = |w: &str| w.trim().chars().count().max(1) as u64;
+    let total: u64 = words.iter().map(|w| weight(w)).sum();
+    let guess = (total * MS_PER_CHAR).max(MIN_FILL_MS);
+    let next = lines.get(i + 1).map_or(u64::MAX, |l| l.start_ms);
+    let end = (line.start_ms + guess).min(next).max(line.start_ms + 1);
+    let span = end - line.start_ms;
+    let mut done = 0;
+    words
+        .into_iter()
+        .map(|w| {
+            let start_ms = line.start_ms + span * done / total;
+            done += weight(w);
+            WordSpan {
+                text: w.to_owned(),
+                start_ms,
+                end_ms: line.start_ms + span * done / total,
+            }
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::LyricWord;
+
+    fn line(start_ms: u64, text: &str) -> LyricLine {
+        LyricLine {
+            start_ms,
+            text: text.into(),
+            words: vec![],
+        }
+    }
+
+    #[test]
+    fn words_share_the_line_by_length_and_join_back() {
+        let l = [line(1_000, "ab abcd"), line(2_200, "next")];
+        let w = word_spans(&l, 0);
+        assert_eq!(
+            w.iter().map(|w| w.text.as_str()).collect::<String>(),
+            "ab abcd"
+        );
+        // 6 letters over 1.2 s (the next line comes before the pace guess runs out).
+        assert_eq!((w[0].start_ms, w[0].end_ms), (1_000, 1_400));
+        assert_eq!((w[1].start_ms, w[1].end_ms), (1_400, 2_200));
+    }
+
+    #[test]
+    fn a_long_gap_does_not_stretch_the_fill() {
+        let l = [line(0, "hey you"), line(60_000, "after the solo")];
+        let w = word_spans(&l, 0);
+        assert_eq!(w.last().unwrap().end_ms, MIN_FILL_MS);
+        // The last line has no next line: it uses the pace guess.
+        let last = word_spans(&l, 1);
+        assert_eq!(last.last().unwrap().end_ms, 60_000 + 12 * MS_PER_CHAR);
+    }
+
+    #[test]
+    fn stamped_words_are_used_as_they_are() {
+        let mut l = line(1_000, "Hello");
+        l.words = vec![
+            LyricWord {
+                start_ms: 1_000,
+                end_ms: 1_500,
+                text: "Hel".into(),
+            },
+            LyricWord {
+                start_ms: 1_500,
+                end_ms: 1_500,
+                text: "lo".into(),
+            },
+        ];
+        let w = word_spans(&[l], 0);
+        assert_eq!((w[0].start_ms, w[0].end_ms), (1_000, 1_500));
+        assert_eq!((w[1].start_ms, w[1].end_ms), (1_500, 1_501));
+    }
+
+    #[test]
+    fn empty_and_missing_lines() {
+        assert!(word_spans(&[], 0).is_empty());
+        let w = word_spans(&[line(500, "  ")], 0);
+        assert!(w.iter().all(|w| w.end_ms > w.start_ms));
+    }
 
     fn lines(starts: &[u64]) -> Vec<LyricLine> {
         starts

@@ -18,6 +18,8 @@ use ytmapi_rs::query::search::{
 use ytmapi_rs::query::GetMoodPlaylistsQuery;
 use ytmapi_rs::{auth::noauth::NoAuthToken, YtMusic};
 
+#[path = "catalog_discover.rs"]
+pub mod discover;
 #[path = "catalog_moods.rs"]
 mod moods;
 #[path = "catalog_parse.rs"]

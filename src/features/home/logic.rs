@@ -3,14 +3,12 @@
 use std::collections::HashSet;
 
 use super::cache::Mix;
-use crate::i18n::Lang;
 use crate::model::{Cover, Track};
 use crate::store::library::HistoryEntry;
 
 pub const MAX_SEEDS: usize = 3;
 pub const MIX_MAX_TRACKS: usize = 25;
 pub const RECENT_MAX: usize = 12;
-pub const TRY_SONGS: usize = 6;
 
 /// A song the mixes are built around.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -71,28 +69,6 @@ pub fn build_mix(seed: &Seed, radio: Vec<Track>) -> Option<Mix> {
 /// The newest `n` played tracks.
 pub fn recent_tracks(history: &[HistoryEntry], n: usize) -> Vec<Track> {
     history.iter().take(n).map(|h| h.track.clone()).collect()
-}
-
-/// What the "try a song" suggestions search for. A fixed, honest query: the catalog has no
-/// charts feed, so these are simply the top results of a popular search.
-pub fn featured_query(lang: Lang) -> &'static str {
-    match lang {
-        Lang::Tr => "türkçe pop hit şarkılar",
-        Lang::En => "top hits",
-        Lang::De => "deutsche hits",
-        Lang::Es => "éxitos en español",
-        Lang::Fr => "hits français",
-        Lang::Pt => "sucessos brasileiros",
-        Lang::It => "successi italiani",
-        Lang::Ru => "русские хиты",
-        Lang::Uk => "українські хіти",
-        Lang::Pl => "polskie hity",
-        Lang::Nl => "nederlandse hits",
-        Lang::Ja => "J-POP ヒット",
-        Lang::Ko => "K-POP 히트곡",
-        Lang::Zh => "华语流行 热门",
-        Lang::Id => "lagu hits indonesia",
-    }
 }
 
 #[cfg(test)]
@@ -185,12 +161,5 @@ mod tests {
         let r = recent_tracks(&history, RECENT_MAX);
         assert_eq!(r.len(), RECENT_MAX);
         assert_eq!(r[0].id, "t0");
-    }
-
-    #[test]
-    fn featured_query_exists_for_each_language() {
-        for l in Lang::ALL {
-            assert!(!featured_query(l).is_empty());
-        }
     }
 }

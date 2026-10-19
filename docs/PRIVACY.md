@@ -13,13 +13,16 @@ This is the complete list of outbound network destinations, checked against the 
 | Destination | When | What is sent | Why |
 |---|---|---|---|
 | `music.youtube.com` (YouTube Music InnerTube API, via `ytmapi-rs`, no login) | When you search or open an artist, album, list or radio | The search text or the item id, plus the standard anonymous client context | Catalog: search results, artist/album/playlist pages, similar songs |
+| `music.youtube.com` (YouTube Music home, explore and charts pages, no login) | When Home shows the Discover rows (at most every 6 hours, or when you pick a mood) | The app language and your computer's region setting (for example `tr` and `TR`); never your history or likes | Quick picks, new releases, trending songs, charts and top artists for your country. Turn the rows off under Settings > Customize > Home |
 | `www.youtube.com` (`/youtubei/v1/visitor_id`) | Once when OpenWave starts, and again after about 2 hours | An anonymous client context (no cookies, no account, no song) | Gets an anonymous visitor id that the stream lookup needs; also opens the connection |
 | `www.youtube.com` (`/youtubei/v1/player`) | When you play a song, and ahead of time for the next two queue entries, the "continue where you left off" song and the first Home cards | The song id, an anonymous client context and the anonymous visitor id (no cookies, no account). Only the stream address is requested ahead of time, never audio | Finds the audio stream address |
 | `*.googlevideo.com` (HTTPS port 443 only) | While a song plays or is cached | Range requests for the audio of that song | The audio data itself. Only OpenWave's local proxy fetches it; redirects to any other host are refused |
 | `i.ytimg.com`, `*.ggpht.com`, `*.googleusercontent.com` | When a cover picture is shown, when the app takes the colors of a cover, and for the Windows media overlay | (1) A normal image request from the app window. (2) A download of a small copy of the cover by OpenWave's own code (user agent `OpenWave/<version>`, https and these hosts only, no cookies) to pick the accent colors; the result is cached in `cache/palette.json`. (3) The Windows media overlay (volume pop-up, lock screen) receives the cover address and fetches the picture itself | Cover and artist pictures, the cover-colored look. The backend only hands out image URLs on these hosts |
 | `lrclib.net` | **Only if you turn on lyrics** (Settings > Lyrics; off by default) | Song title, artist, album and length | Finds synchronized lyrics. With the setting off, the lyrics code returns before any request is made (unit test: `disabled_never_touches_the_network`) |
 | `open.spotify.com` (`/embed/playlist/<id>`) | **Only while you import a Spotify link** | The playlist id from the link you pasted | Reads the public playlist page to get song names. No Spotify login or key. The page is read through at most 2 MB; anything larger is rejected as unreadable |
+| Nostr relays `relay.damus.io`, `nos.lol`, `relay.primal.net`, `nostr.mom`, `relay.nostr.net` (WebSocket over TLS) | **Only when you share** a playlist or song, or **open a share link** | Sharing: the song list (song ids, titles, artists, albums, covers, lengths) and the list name, compressed, as a NIP-78 event signed with a new random key that is thrown away afterwards (nothing ties two shares together). Opening: the 10-character share id. Files from your computer are never included | Short share links (`https://openwave.pages.dev/#<id>`) without an OpenWave server or account. **The list is public**: anyone with the link, and anyone browsing those relays, can read it. The id is a hash of the content, so a relay cannot swap the list for another one. Relays may delete old data, after which the link stops working |
 | `github.com`, then `objects.githubusercontent.com` or `release-assets.githubusercontent.com` (the only two hosts GitHub redirects release files to; any other host is refused) | **Only after you agree** to download or update the audio engine | A plain request for the official `yt-dlp` release and its `SHA2-256SUMS` file | Installs yt-dlp. The download is checked against the published SHA-256 before it is installed; a mismatch installs nothing |
+| `github.com/bebeyat/openwave/releases`, then `release-assets.githubusercontent.com` or `objects.githubusercontent.com` | When OpenWave starts (after 20 seconds) and every 6 hours, **unless you turn off** Settings > General > Update automatically | A request for `releases/latest` (only the redirect is read). If a newer version exists and this is the installed Windows app: its `SHA256SUMS` and `OpenWave-windows-x64-setup.exe` | Updates. The installer is checked against the published SHA-256, kept in `updates/` and run silently when you press **Update** or close the app |
 | `www.youtube.com` and its media hosts, contacted by the **yt-dlp** program | Only when the direct stream lookup fails or is still pending after 1.2 seconds, and yt-dlp is installed (the slower of the two is cancelled) | What yt-dlp normally sends to YouTube for one song id | Fallback way to find the audio stream. OpenWave runs it with `--ignore-config --no-plugin-dirs --no-cache-dir`, from OpenWave's own `bin` folder as working directory |
 
 Notes:
@@ -34,6 +37,10 @@ Notes:
   needed. If you do not want that, do not install yt-dlp on your `PATH` or remove it.
 * YouTube and Spotify can see your IP address like any website you visit. If that matters to you,
   use a VPN.
+* **Share links in a browser.** `https://openwave.pages.dev` is a static page (Cloudflare Pages,
+  source in `site/`). It reads the list from the relays above in the visitor's browser and offers to
+  open OpenWave; the share id sits after `#`, which browsers never send to the page's server.
+  Clicking "Open in OpenWave" starts the app with `openwave://s/<id>`.
 * Reading the clipboard for a playlist link (import dialog) happens locally; the text is not sent
   anywhere unless it is a supported link and you continue.
 * Access to YouTube is governed by YouTube's own terms of service. OpenWave is not affiliated with
@@ -88,4 +95,5 @@ them at start-up; nothing is evaluated from text.)
 | `settings.json`, `library.json` | Your settings and library. Written atomically; a damaged file is moved aside as `*.corrupt-<time>` and OpenWave starts clean |
 | `cache/` | Optional song copies (size limit in Settings > Storage). Half-finished downloads (`*.part`) older than an hour are removed at start |
 | `local-files.json` | Paths of the music files you added from your computer |
+| `open-link.txt` | A share link passed from a second launch to the open window; deleted as soon as it is read |
 | `bin/yt-dlp.exe` | The audio engine, if you chose to download it |

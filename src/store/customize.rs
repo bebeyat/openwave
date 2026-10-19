@@ -86,6 +86,7 @@ pub struct Customization {
     // Home sections
     pub home_recommended: bool,
     pub home_mixes: bool,
+    pub home_discover: bool,
     pub home_genres: bool,
     pub home_recent: bool,
     pub home_liked: bool,
@@ -127,6 +128,7 @@ impl Default for Customization {
             animations: true,
             home_recommended: true,
             home_mixes: true,
+            home_discover: true,
             home_genres: true,
             home_recent: true,
             home_liked: true,

@@ -84,3 +84,4 @@ minimize-2
 circle-help
 loader-circle
 image
+share-2

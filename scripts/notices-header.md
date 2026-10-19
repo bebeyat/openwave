@@ -12,6 +12,7 @@ zip and the installer, and is regenerated with `node scripts/gen-notices.mjs` (s
 | Inter (variable font, via `@fontsource-variable/inter`) | see `tools/package-lock.json` | OFL-1.1 | Embedded in `assets/fonts.css` and `assets/fonts/` (the UI typeface) |
 | Plus Jakarta Sans (variable font, via `@fontsource-variable/plus-jakarta-sans`) | see `tools/package-lock.json` | OFL-1.1 | Display typeface (headings, hero titles): embedded in `assets/fonts.css` and `assets/fonts/`; license text in `licenses/PlusJakartaSans-OFL-1.1.txt` |
 | Lucide icons (via `lucide-static` 1.59.0) | 1.59.0 | ISC (some icons derived from Feather, MIT) | `assets/icons/*.svg`, embedded at compile time |
+| flag-icons (`flag-icons` 7.6.0) | 7.6.0 | MIT | Language menu flags: `assets/flags/*.svg`, embedded at compile time; license text in `licenses/flag-icons-MIT.txt` |
 | Tailwind CSS | 4.x | MIT | Build-time only: compiles `tools/tailwind.css` into `assets/main.css`. The generated CSS keeps Tailwind's license banner. |
 | Signalsmith Stretch (`signalsmith-stretch` 1.3.2, JS/WASM build) | 1.3.2 | MIT | Pitch shifting for the sound effects: `assets/fx_stretch.js` (vendored unmodified, wrapped in a function), run in an AudioWorklet |
 | yt-dlp | latest official release | Unlicense (public domain dedication) | **Not distributed in this repository or in OpenWave's release files.** If you agree, OpenWave downloads the official release from github.com/yt-dlp/yt-dlp at runtime (verified against the published SHA2-256SUMS) and runs it as a separate program. |
@@ -44,6 +45,32 @@ bundling it with software. The full license text:
 
 ```text
 {{LUCIDE}}
+```
+
+## flag-icons (MIT)
+
+```text
+The MIT License (MIT)
+
+Copyright (c) 2013 Panayiotis Lipiridis
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 ## Tailwind CSS (MIT, build-time tool)

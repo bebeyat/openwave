@@ -12,6 +12,7 @@
   "devDependencies": {
     "@fontsource-variable/inter": "^5.2.8",
     "@tailwindcss/cli": "^4.1.0",
+    "flag-icons": "7.6.0",
     "lucide-static": "1.59.0",
     "tailwindcss": "^4.1.0"
   },

@@ -90,7 +90,16 @@ fn window_config() -> Config {
         .with_menu(None)
         .with_background_color((0, 0, 0, 0))
         .with_custom_head(app::head_html())
-        .with_windows_browser_args(app::browser_args());
+        .with_windows_browser_args(app::browser_args())
+        // macOS hands clicked `openwave://` links to the app as an event, not as arguments.
+        .with_custom_event_handler(|event, _| {
+            if let dioxus::desktop::tao::event::Event::Opened { urls } = event {
+                features::share::hand_over(
+                    &backend::data_dir(),
+                    urls.iter().map(|u| u.to_string()),
+                );
+            }
+        });
     with_debug_cdp(config)
 }
 
@@ -114,6 +123,8 @@ fn main() {
     }
     // Mark the folder as ours before anything else is created in it (the wipe checks this).
     store::datadir::ensure_marker(&dir, std::env::var_os("OPENWAVE_DATA_DIR").is_none());
+    // A clicked share link (`openwave://s/<id>`) is picked up by the window, this one or the running one.
+    features::share::hand_over(&dir, std::env::args().skip(1));
     // Two instances must never write the same files. Held until the process exits.
     let _instance = match startup::try_lock(&dir) {
         startup::Instance::First(guard) => guard,
@@ -130,5 +141,5 @@ fn main() {
     dioxus::LaunchBuilder::desktop()
         .with_cfg(window_config())
         .launch(app::App);
-    store::flush_all();
+    // Never reached: the window loop ends the process. Saving happens on close (see `WindowControls`).
 }

@@ -4,13 +4,14 @@
 //!   announced (`aria-invalid` + `aria-describedby`).
 //! * `SearchInput { value, oninput, onsubmit, placeholder, aria_label }`: search icon, clear
 //!   button, Enter submits. Give it `id: "ow-global-search"` to join `/` and Ctrl+K focus.
-//! * `Select { options, value, on_change, label }`: styled native `<select>` (the OS list is
-//!   keyboard- and screen-reader-complete, and follows the dark theme through `color-scheme`).
+//! * `Select { options, value, on_change, aria_label }`: a `DropdownMenu` of the options, the
+//!   current one ticked.
 
 use dioxus::prelude::*;
 
 use super::cls::next_id;
 use super::icon::Icon;
+use super::menu::{DropdownMenu, MenuAlign, MenuItem};
 
 const FIELD: &str = "w-full border text-sm text-fg placeholder:text-placeholder \
 transition-colors duration-(--ow-dur-hover) hover:border-line-strong focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent-text \
@@ -138,47 +139,39 @@ pub fn SearchInput(
 pub struct SelectOption {
     pub value: String,
     pub label: String,
+    /// Lucide icon name or picture (`src`) shown before the label in the menu.
+    pub icon: Option<String>,
+    pub image: Option<String>,
 }
 
-impl SelectOption {
-    pub fn new(value: impl Into<String>, label: impl Into<String>) -> Self {
-        Self {
-            value: value.into(),
-            label: label.into(),
-        }
-    }
-}
-
+/// A value picker in the app's own menu style: the trigger shows the current choice, the open menu
+/// ticks it.
 #[component]
 pub fn Select(
     options: Vec<SelectOption>,
     #[props(into)] value: String,
     on_change: EventHandler<String>,
-    #[props(into, default)] label: Option<String>,
     #[props(into, default)] aria_label: Option<String>,
-    #[props(default)] disabled: bool,
-    #[props(into, default)] id: Option<String>,
     #[props(default)] class: String,
 ) -> Element {
-    let auto = use_hook(|| next_id("select"));
-    let id = id.unwrap_or(auto);
+    let current = options
+        .iter()
+        .find(|o| o.value == value)
+        .map(|o| o.label.clone())
+        .unwrap_or_default();
     rsx! {
-        div { class: "flex flex-col gap-1.5 {class}",
-            if let Some(l) = label {
-                label { r#for: "{id}", class: "text-sm font-semibold text-fg", "{l}" }
-            }
-            div { class: "relative",
-                select {
-                    id: "{id}",
-                    class: "{FIELD} h-10 rounded-md bg-surface-2 cursor-pointer appearance-none border-line pl-3 pr-10",
-                    disabled,
-                    "aria-label": aria_label,
-                    onchange: move |e| on_change.call(e.value()),
-                    for o in options {
-                        option { key: "{o.value}", value: "{o.value}", selected: o.value == value, "{o.label}" }
+        div { class: "{class}",
+            DropdownMenu { label: current, aria_label, align: MenuAlign::End,
+                for o in options {
+                    MenuItem {
+                        key: "{o.value}",
+                        label: o.label.clone(),
+                        icon: o.icon.clone(),
+                        image: o.image.clone(),
+                        checked: o.value == value,
+                        onselect: move |_| on_change.call(o.value.clone()),
                     }
                 }
-                Icon { name: "chevron-down", size: 18, class: "pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-muted" }
             }
         }
     }

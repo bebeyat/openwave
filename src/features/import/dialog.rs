@@ -7,7 +7,7 @@ use super::flow::{use_ctx, Ctx, Outcome};
 use super::link_step::{BusyStep, LinkStep, SourceStep};
 use super::result_steps::{FailedStep, MatchingStep, PreviewStep, ResultStep};
 use super::state::{check_link, focus_target, needs_close_confirm, LinkCheck, Step};
-use crate::features::shell::slots::OPEN_IMPORT;
+use crate::features::shell::slots::{OPEN_IMPORT, PENDING_IMPORT};
 use crate::i18n::t;
 use crate::player::controller;
 use crate::routes::Route;
@@ -37,7 +37,10 @@ pub fn ImportDialog() -> Element {
     use_effect(move || {
         if OPEN_IMPORT() {
             ctx.reset();
-            ctx.peek_clipboard();
+            match PENDING_IMPORT.write().take() {
+                Some(prepared) => ctx.show(prepared),
+                None => ctx.peek_clipboard(),
+            }
         }
     });
     // Keep keyboard focus on the natural control of each step.

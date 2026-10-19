@@ -17,7 +17,15 @@ impl Media {
         &self,
         ext: &str,
     ) -> Result<Vec<(PathBuf, std::fs::Metadata)>, MediaError> {
-        let mut dir = tokio::fs::read_dir(self.root.join("cache")).await?;
+        self.files_in("cache", ext).await
+    }
+
+    async fn files_in(
+        &self,
+        sub: &str,
+        ext: &str,
+    ) -> Result<Vec<(PathBuf, std::fs::Metadata)>, MediaError> {
+        let mut dir = tokio::fs::read_dir(self.root.join(sub)).await?;
         let mut out = vec![];
         while let Some(e) = dir.next_entry().await? {
             if e.path().extension().is_some_and(|s| s == ext) {
@@ -38,11 +46,13 @@ impl Media {
         Ok((bytes, files.len() as u64))
     }
 
-    /// Remove `.part` files left behind by a crash (older than an hour). Returns how many went.
+    /// Remove `.part` files left behind by a crash (older than an hour) in the cache and the
+    /// offline downloads. Returns how many went.
     pub(super) async fn remove_stale_parts(&self) -> u64 {
-        let Ok(parts) = self.cache_files("part").await else {
-            return 0;
-        };
+        let mut parts = vec![];
+        for sub in ["cache", "downloads"] {
+            parts.extend(self.files_in(sub, "part").await.unwrap_or_default());
+        }
         let mut removed = 0;
         for (path, meta) in parts {
             let age = meta

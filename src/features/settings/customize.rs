@@ -304,6 +304,7 @@ pub fn Customize(
         Card {
             {toggle!(t("home.recommended"), None::<String>, home_recommended)}
             {toggle!(t("home.mixes"), None::<String>, home_mixes)}
+            {toggle!(t("home.discover"), None::<String>, home_discover)}
             {toggle!(t("home.genres"), None::<String>, home_genres)}
             {toggle!(t("home.recent"), None::<String>, home_recent)}
             {toggle!(t("home.liked"), None::<String>, home_liked)}

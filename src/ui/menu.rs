@@ -38,9 +38,15 @@ pub enum MenuAlign {
 pub fn MenuItem(
     #[props(into)] label: String,
     #[props(into, default)] icon: Option<String>,
+    /// A picture (`src`, e.g. a flag) in the icon slot, used when there is no `icon`.
+    #[props(into, default)]
+    image: Option<String>,
     #[props(into, default)] shortcut: Option<String>,
     #[props(default)] danger: bool,
     #[props(default)] disabled: bool,
+    /// Makes the item one choice of a set (`menuitemradio`), ticked when true.
+    #[props(default)]
+    checked: Option<bool>,
     #[props(default)] onselect: EventHandler<()>,
 ) -> Element {
     let ctx = use_context::<MenuCtx>();
@@ -52,7 +58,8 @@ pub fn MenuItem(
     rsx! {
         button {
             r#type: "button",
-            role: "menuitem",
+            role: if checked.is_some() { "menuitemradio" } else { "menuitem" },
+            "aria-checked": checked.map(|c| c.to_string()),
             tabindex: "-1",
             disabled,
             class: "flex h-9 w-full items-center gap-3 rounded-md px-3 text-left text-sm font-normal outline-offset-[-2px] hover:bg-hover focus-visible:bg-hover disabled:opacity-50 {tone}",
@@ -62,10 +69,19 @@ pub fn MenuItem(
             },
             if let Some(name) = icon {
                 Icon { name, size: 18 }
+            } else if let Some(src) = image {
+                img {
+                    src: "{src}",
+                    alt: "",
+                    class: "h-[14px] w-[18px] flex-none rounded-[3px] object-cover shadow-[0_0_0_1px_var(--ow-border)]",
+                }
             } else {
                 span { class: "w-[18px] flex-none" }
             }
             span { class: "min-w-0 flex-1 truncate", "{label}" }
+            if checked == Some(true) {
+                Icon { name: "check", size: 16, class: "text-accent-text" }
+            }
             if let Some(keys) = shortcut {
                 span { class: "text-muted", Shortcut { keys } }
             }
@@ -105,7 +121,7 @@ fn MenuPanel(
             tabindex: "-1",
             "aria-label": "{label}",
             "data-ow-overlay": "menu",
-            class: "fixed z-50 max-h-[calc(100vh-16px)] min-w-[220px] max-w-[320px] overflow-y-auto rounded-lg p-1.5 ow-glass {anim}",
+            class: "fixed z-50 max-h-[calc(100vh-16px)] min-w-[220px] max-w-[380px] overflow-y-auto rounded-lg p-1.5 ow-glass {anim}",
             style: "visibility:hidden;left:0;top:0",
             onkeydown: move |e| match e.key() {
                 Key::Escape => {

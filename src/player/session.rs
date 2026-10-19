@@ -41,6 +41,13 @@ pub fn persist_now() {
     update_library(|lib| lib.set_last_queue(snapshot));
 }
 
+/// Save the queue and write every store now. The window loop ends with `process::exit`, so
+/// nothing runs after the window closes: call this before it does.
+pub fn save_before_exit() {
+    persist_now();
+    store::flush_all();
+}
+
 /// Called with every time update from the engine: saves the position now and then.
 pub fn position_tick() {
     let now = library::now_ms();

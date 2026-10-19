@@ -9,15 +9,21 @@ use std::path::{Path, PathBuf};
 pub const MARKER: &str = ".openwave-data";
 pub const LOCK_FILE: &str = ".openwave.lock";
 pub const CRASH_LOG: &str = "crash.log";
+/// A share link handed over by a second launch (see `features::share::inbox`).
+pub const OPEN_LINK: &str = "open-link.txt";
 
 /// Base names of the documents OpenWave keeps in its data directory (each may also exist with a
 /// `.tmp`, `.bak`, `.corrupt-*` or `.quarantine-*` suffix).
-pub const OWN_FILES: [&str; 5] = [
+pub const OWN_FILES: [&str; 9] = [
     "settings.json",
     "library.json",
     "last-queue.json",
     "home_mixes.json",
+    "home_recs.json",
+    "home_genres.json",
+    "home_discover.json",
     "local-files.json",
+    OPEN_LINK,
 ];
 
 /// Why a directory may not be wiped.

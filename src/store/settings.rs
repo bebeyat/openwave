@@ -187,6 +187,7 @@ pub struct Settings {
     pub pause_on_device_change: bool,
     #[serde(deserialize_with = "lenient")]
     pub audio_quality: AudioQuality,
+    /// Not shown any more (nothing fills the cache); kept so settings files round-trip.
     #[serde(deserialize_with = "lenient_cache")]
     pub cache_limit_mb: u64,
     /// Opt-in: fetch lyrics from LRCLIB (sends title/artist/album/duration).
@@ -208,6 +209,9 @@ pub struct Settings {
     /// Show the current song as "Listening to" in Discord (opt-in; talks only to local Discord).
     #[serde(deserialize_with = "lenient")]
     pub discord_enabled: bool,
+    /// Look for a new version on GitHub (and install it on the installed Windows build).
+    #[serde(deserialize_with = "lenient_true")]
+    pub auto_update: bool,
     /// Look-and-layout choices (Ayarlar › Özelleştirme).
     #[serde(deserialize_with = "lenient")]
     pub custom: Customization,
@@ -233,6 +237,7 @@ impl Default for Settings {
             fx_bass_db: 0,
             fx_linked: false,
             discord_enabled: false,
+            auto_update: yes(),
             custom: Customization::default(),
         }
     }
@@ -250,7 +255,6 @@ pub enum SettingsChange {
     ResumeQueue(bool),
     PauseOnDeviceChange(bool),
     AudioQuality(AudioQuality),
-    CacheLimitMb(u64),
     LyricsEnabled(bool),
     OnboardingDone(bool),
     FxReverb(ReverbPreset),
@@ -258,6 +262,7 @@ pub enum SettingsChange {
     FxBassDb(u8),
     FxLinked(bool),
     DiscordEnabled(bool),
+    AutoUpdate(bool),
     Custom(Customization),
 }
 
@@ -275,7 +280,6 @@ impl Settings {
             SettingsChange::ResumeQueue(v) => next.resume_queue = v,
             SettingsChange::PauseOnDeviceChange(v) => next.pause_on_device_change = v,
             SettingsChange::AudioQuality(v) => next.audio_quality = v,
-            SettingsChange::CacheLimitMb(v) => next.cache_limit_mb = v,
             SettingsChange::LyricsEnabled(v) => next.lyrics_enabled = v,
             SettingsChange::OnboardingDone(v) => next.onboarding_done = v,
             SettingsChange::FxReverb(v) => next.fx_reverb = v,
@@ -283,6 +287,7 @@ impl Settings {
             SettingsChange::FxBassDb(v) => next.fx_bass_db = v,
             SettingsChange::FxLinked(v) => next.fx_linked = v,
             SettingsChange::DiscordEnabled(v) => next.discord_enabled = v,
+            SettingsChange::AutoUpdate(v) => next.auto_update = v,
             SettingsChange::Custom(v) => next.custom = v,
         }
         next.sanitize()
@@ -396,16 +401,9 @@ mod tests {
     }
 
     #[test]
-    fn apply_normalizes_accent_and_cache_limit() {
-        let s = Settings::default()
-            .apply(SettingsChange::Accent("hotpink".into()))
-            .apply(SettingsChange::CacheLimitMb(1));
-        assert_eq!((s.accent.as_str(), s.cache_limit_mb), ("teal", 64));
-        assert_eq!(
-            s.apply(SettingsChange::CacheLimitMb(1 << 40))
-                .cache_limit_mb,
-            4096
-        );
+    fn apply_normalizes_accent() {
+        let s = Settings::default().apply(SettingsChange::Accent("hotpink".into()));
+        assert_eq!(s.accent.as_str(), "teal");
         assert_eq!(
             s.apply(SettingsChange::Accent("violet".into())).accent,
             "violet"

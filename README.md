@@ -188,21 +188,26 @@ OpenWave uses the Microsoft Edge **WebView2 Runtime**, which is already part of 
 1. Download **[OpenWave-macos-arm64.zip](https://github.com/bebeyat/openwave/releases/latest/download/OpenWave-macos-arm64.zip)**
    and unzip it.
 2. Drag **OpenWave.app** into your **Applications** folder.
-3. The app is not notarized, so the first time **right-click → Open** (or run the command below once).
+3. The app is not notarized. Before the first start, run this once in Terminal (otherwise macOS may say
+   *"OpenWave is damaged"* or refuse to open it):
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/OpenWave.app
 ```
 
+If macOS still blocks it: on macOS 15+ open **System Settings → Privacy & Security** and click **Open Anyway**;
+on older versions **right-click → Open**.
+
 On an Intel Mac, [build from source](#build-from-source).
 
 ### Linux (x86_64) · experimental
 
-OpenWave needs WebKitGTK 4.1 and GTK 3 at runtime.
+OpenWave needs WebKitGTK 4.1, GTK 3, OpenSSL 3 and glibc 2.34 or newer at runtime (Ubuntu 22.04+,
+Debian 12+, Fedora 36+).
 
 ```bash
 # Debian / Ubuntu (22.04+)
-sudo apt install libwebkit2gtk-4.1-0 libgtk-3-0 libxdo3
+sudo apt install libwebkit2gtk-4.1-0 libgtk-3-0 libxdo3 libssl3
 # Fedora
 sudo dnf install webkit2gtk4.1 gtk3 libxdo
 # Arch
@@ -225,8 +230,8 @@ To add it to your app menu, copy `OpenWave/openwave` to `~/.local/bin/`, `openwa
 1. Start OpenWave. There is nothing to sign in to. Pick your language if the guess was wrong.
 2. Search for a song, import a playlist from a link, or add a folder of music from your computer.
 3. For some songs OpenWave uses the helper **[yt-dlp](https://github.com/yt-dlp/yt-dlp)** as a fallback. On
-   Windows the app offers to download the official release for you (after asking). On macOS and Linux,
-   install it yourself, e.g. `brew install yt-dlp` or `pipx install yt-dlp`.
+   Windows, macOS and Linux the app offers to download the official release for you (after asking).
+   You can also install it yourself, e.g. `brew install yt-dlp` or `pipx install yt-dlp`.
 4. Press <kbd>?</kbd> in the player bar to see every keyboard shortcut.
 
 <details>

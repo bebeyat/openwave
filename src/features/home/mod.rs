@@ -1,6 +1,7 @@
 //! Home screen (`/`): welcome and starter actions on first run, the user's own music afterwards.
 
 pub mod cache;
+pub mod discover;
 pub mod logic;
 pub mod page;
 pub mod recommend;

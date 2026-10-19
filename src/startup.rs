@@ -130,7 +130,7 @@ pub enum Instance {
     Running,
 }
 
-/// Open `<dir>/.openwave.lock` exclusively (Windows share mode 0). The OS releases it when the
+/// Open `<dir>/.openwave.lock` exclusively (Windows share mode 0, an advisory lock elsewhere). The OS releases it when the
 /// process ends, even after a crash, so a stale file never blocks the next start.
 pub fn try_lock(dir: &Path) -> Instance {
     let _ = std::fs::create_dir_all(dir);
@@ -142,6 +142,11 @@ pub fn try_lock(dir: &Path) -> Instance {
         options.share_mode(0);
     }
     match options.open(dir.join(LOCK_FILE)) {
+        // Unix has no share mode: an advisory lock does the same job (released on exit too).
+        #[cfg(not(windows))]
+        Ok(file) if matches!(file.try_lock(), Err(std::fs::TryLockError::WouldBlock)) => {
+            Instance::Running
+        }
         Ok(file) => Instance::First(Some(file)),
         Err(e) if is_in_use(&e) => Instance::Running,
         // Cannot create the lock for some other reason: do not block the app over it.
@@ -201,7 +206,6 @@ mod tests {
         assert!(runtime_in(&root));
     }
 
-    #[cfg(windows)]
     #[test]
     fn second_instance_is_detected_and_a_stale_lock_file_does_not_block() {
         let d = temp();

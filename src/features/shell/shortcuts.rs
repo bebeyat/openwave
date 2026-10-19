@@ -52,8 +52,10 @@ impl Action {
     }
 }
 
-/// Latest action with a sequence number so repeated presses are distinct events.
-pub static SHORTCUT: GlobalSignal<Option<(u64, Action)>> = Signal::global(|| None);
+/// Recent actions with sequence numbers, so repeated presses are distinct events and presses that
+/// land before the effects run are not lost. Only the last [`SHORTCUT_LOG`] are kept.
+pub static SHORTCUT: GlobalSignal<Vec<(u64, Action)>> = Signal::global(Vec::new);
+const SHORTCUT_LOG: usize = 32;
 
 /// Starts the JS listener and forwards actions to `SHORTCUT`. Call once (the shell does).
 pub fn use_shortcut_bridge() {
@@ -63,7 +65,11 @@ pub fn use_shortcut_bridge() {
         while let Ok(name) = eval.recv::<String>().await {
             if let Some(action) = Action::parse(&name) {
                 seq += 1;
-                *SHORTCUT.write() = Some((seq, action));
+                let mut log = SHORTCUT.write();
+                if log.len() == SHORTCUT_LOG {
+                    log.remove(0);
+                }
+                log.push((seq, action));
             }
         }
     });
@@ -71,13 +77,20 @@ pub fn use_shortcut_bridge() {
 
 /// Runs `handler` for every shortcut action while the calling component is mounted.
 pub fn use_shortcuts(mut handler: impl FnMut(Action) + 'static) {
-    let mut last_seen = use_signal(|| (*SHORTCUT.peek()).map(|(n, _)| n).unwrap_or(0));
+    let mut last_seen = use_signal(|| SHORTCUT.peek().last().map_or(0, |&(n, _)| n));
     use_effect(move || {
-        if let Some((n, action)) = SHORTCUT() {
-            if n != *last_seen.peek() {
-                last_seen.set(n);
-                handler(action);
-            }
+        let seen = *last_seen.peek();
+        let fresh: Vec<_> = SHORTCUT
+            .read()
+            .iter()
+            .filter(|&&(n, _)| n > seen)
+            .copied()
+            .collect();
+        if let Some(&(n, _)) = fresh.last() {
+            last_seen.set(n);
+        }
+        for (_, action) in fresh {
+            handler(action);
         }
     });
 }

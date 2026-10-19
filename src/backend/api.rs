@@ -3,12 +3,12 @@
 use super::{
     catalog::Catalog,
     convert,
-    error::{ApiError, ApiResult, CatalogError, ImportError},
+    error::{ApiError, ApiResult, CatalogError, ImportError, ShareError},
     import::{self, Source},
     import_flow::{self, ImportResult, PreparedImport},
     lyrics::{self, LyricsQuery},
     media::Media,
-    ytdlp,
+    share, ytdlp,
 };
 use crate::model::*;
 use serde_json::Value;
@@ -196,6 +196,48 @@ pub async fn radio(track_id: &str) -> ApiResult<Vec<Track>> {
         .collect())
 }
 
+/// Discovery rows for language `hl` (`tr`, `pt-BR`…) and country `gl` (`TR`; `None` lets the
+/// server use the connection's country), or only the rows of one mood `chip`.
+pub async fn discover(hl: String, gl: Option<String>, chip: Option<String>) -> ApiResult<Discover> {
+    use super::catalog::discover;
+    let raw = run(async move {
+        tokio::time::timeout(
+            CATALOG_TIMEOUT,
+            discover::discover(&hl, gl.as_deref(), chip.as_deref()),
+        )
+        .await
+        .map_err(|_| CatalogError::Network("timeout".into()))?
+    })
+    .await?
+    .map_err(ApiError::from)?;
+    let shelves = raw
+        .shelves
+        .into_iter()
+        .map(|s| Shelf {
+            title: s.title,
+            items: match s.kind {
+                "track" => ShelfItems::Tracks(s.items.iter().map(convert::track).collect()),
+                "album" => {
+                    ShelfItems::Albums(s.items.into_iter().map(convert::album_item).collect())
+                }
+                "list" => {
+                    ShelfItems::Playlists(s.items.into_iter().map(convert::playlist_item).collect())
+                }
+                _ => ShelfItems::Artists(s.items.into_iter().map(convert::artist_item).collect()),
+            },
+        })
+        .collect();
+    let chips = raw
+        .chips
+        .into_iter()
+        .map(|c| MoodChip {
+            label: c.label,
+            params: c.params,
+        })
+        .collect();
+    Ok(Discover { chips, shelves })
+}
+
 fn links(v: &Value) -> Vec<CatalogLink> {
     v["items"]
         .as_array()
@@ -380,7 +422,46 @@ pub async fn import_prepare(source: &Source) -> Result<PreparedImport, ImportErr
                 .map_err(import_err)?;
             import_flow::prepare_tracks(c.title.to_string(), c.cover, c.tracks)
         }
+        Source::Shared(id) => shared_import(open_share(id).await.map_err(|e| match e {
+            ShareError::Offline => ImportError::Offline,
+            _ => ImportError::ShareGone,
+        })?),
     }
+}
+
+/// The newest OpenWave release on GitHub (`None` when it cannot be read).
+pub async fn update_latest() -> Option<String> {
+    run(super::update::latest()).await.ok()?.ok()
+}
+
+/// Download and verify the installer of `version` (installed Windows build only).
+pub async fn update_download(version: String) -> Option<PathBuf> {
+    let dir = data_dir().join(super::update::DIR);
+    run(async move { super::update::download(&version, &dir).await })
+        .await
+        .ok()?
+        .ok()
+}
+
+/// Store a playlist (or one song, `single`) on the share relays and return its short link.
+pub async fn share(name: String, tracks: Vec<Track>, single: bool) -> Result<String, ShareError> {
+    run(async move { share::publish(&name, &tracks, single).await })
+        .await
+        .unwrap_or(Err(ShareError::Offline))
+}
+
+/// Read the list behind a share id (checked against the id, cleaned like any outside input).
+pub async fn open_share(id: &str) -> Result<share::Shared, ShareError> {
+    let id = id.to_owned();
+    run(async move { share::fetch(&id).await })
+        .await
+        .unwrap_or(Err(ShareError::Offline))
+}
+
+/// A shared list as an import: it already holds catalog tracks, so nothing needs matching.
+pub fn shared_import(shared: share::Shared) -> Result<PreparedImport, ImportError> {
+    let cover = shared.tracks.iter().find_map(|t| t.cover.clone());
+    import_flow::prepare_tracks(shared.name, cover, shared.tracks)
 }
 
 /// Match a prepared import against the catalog. `progress(done, total)` fires after each track.
@@ -440,6 +521,11 @@ pub async fn ytdlp_install(
     on_progress: impl Fn(ytdlp::Progress) + Send + Sync + 'static,
 ) -> ApiResult<ytdlp::Installed> {
     Ok(run(ytdlp::install_latest(on_progress)).await??)
+}
+
+/// Check and install a yt-dlp executable the user picked.
+pub async fn ytdlp_adopt(src: std::path::PathBuf) -> ApiResult<ytdlp::Installed> {
+    Ok(run(async move { ytdlp::adopt(&src).await }).await??)
 }
 
 #[cfg(test)]

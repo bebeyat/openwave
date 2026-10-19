@@ -93,6 +93,7 @@ pub(super) fn queue_similar(seed: Track) {
 
 pub(super) fn on_queue_end() {
     set_status(Status::Paused);
+    with_core(|c| c.ended = true);
     let settings = store::settings().get();
     let Some(track) = current_track() else { return };
     if !settings.autoplay_similar || track.is_local() {

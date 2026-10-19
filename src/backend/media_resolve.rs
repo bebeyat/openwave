@@ -129,11 +129,14 @@ impl Media {
         key: &str,
         quality: &str,
     ) -> Result<innertube::AudioStream, MediaError> {
-        let program = ytdlp::locate().ok_or(MediaError::YtDlpMissing)?.path;
-        let mut cmd = ytdlp::command(&program);
+        let located = ytdlp::locate().ok_or(MediaError::YtDlpMissing)?;
+        let mut cmd = ytdlp::command(&located.path);
+        // Older copies on PATH (distro packages) reject this option and would always fail.
+        if located.origin == ytdlp::Origin::DataDir {
+            cmd.arg("--no-plugin-dirs");
+        }
         cmd.args([
             "--ignore-config",
-            "--no-plugin-dirs",
             "--no-cache-dir",
             "--no-playlist",
             "--no-warnings",

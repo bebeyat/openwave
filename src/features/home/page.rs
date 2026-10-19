@@ -1,11 +1,13 @@
-//! `/`: first-run welcome, or the user's own music (recommended, mixes, genres, recent, liked) with an import card.
+//! `/`: first-run welcome, the user's own music (recommended, mixes, genres, recent, liked) and
+//! what the catalog suggests for their language and country (discover), with an import card.
 
 use dioxus::prelude::*;
 
+use super::discover::DiscoverRows;
 use super::logic::{pick_seeds, recent_tracks, MAX_SEEDS, RECENT_MAX};
 use super::recommend::{GenreRows, Recommended};
 use super::row::RowHeading;
-use super::sections::{Mixes, TrackCards, TrySongs};
+use super::sections::{Mixes, TrackCards};
 use super::welcome::{finish_onboarding, ActionCards, WelcomeCard};
 use crate::features::shell::pages::Page;
 use crate::features::shell::slots::OPEN_IMPORT;
@@ -47,6 +49,7 @@ pub fn Home() -> Element {
         || !lib.local_files.is_empty();
     let starter = history.is_empty() && lib.liked.is_empty();
     let seeds = pick_seeds(history, &lib.liked, MAX_SEEDS);
+    let has_seeds = !seeds.is_empty();
     let recent = recent_tracks(history, RECENT_MAX);
     let liked: Vec<_> = lib.liked.iter().take(RECENT_MAX).cloned().collect();
     let custom = crate::features::settings::boot::CUSTOM.read().clone();
@@ -65,7 +68,6 @@ pub fn Home() -> Element {
                 section { class: "mb-10", "aria-label": t("home.action.label"),
                     ActionCards {}
                 }
-                TrySongs {}
             }
             if !seeds.is_empty() {
                 if custom.home_recommended {
@@ -74,9 +76,12 @@ pub fn Home() -> Element {
                 if custom.home_mixes {
                     Mixes { seeds }
                 }
-                if custom.home_genres {
-                    GenreRows {}
-                }
+            }
+            if custom.home_discover {
+                DiscoverRows {}
+            }
+            if has_seeds && custom.home_genres {
+                GenreRows {}
             }
             if !recent.is_empty() && custom.home_recent {
                 section { class: "mb-10", "aria-labelledby": "ow-home-recent",

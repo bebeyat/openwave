@@ -69,6 +69,8 @@ pub struct Media {
     cache_lock: tokio::sync::Mutex<()>,
     /// Serialises writes of `local-files.json` so an older snapshot never lands after a newer one.
     registry_lock: tokio::sync::Mutex<()>,
+    /// `local-files.json` existed but could not be read at start: nothing may write it yet.
+    registry_unreadable: std::sync::atomic::AtomicBool,
     pub(super) client: reqwest::Client,
     pub(super) tickets: Mutex<HashMap<String, Ticket>>,
     files: Mutex<HashMap<String, PathBuf>>,
@@ -128,10 +130,13 @@ impl Media {
             }))
             .build()
             .map_err(|e| MediaError::Network(e.to_string()))?;
-        let files = local::load_registry(&root).await;
+        let loaded = local::load_registry(&root).await;
+        let registry_unreadable = std::sync::atomic::AtomicBool::new(loaded.is_none());
+        let files = loaded.unwrap_or_default();
         let state = Arc::new(Self {
             cache_lock: tokio::sync::Mutex::new(()),
             registry_lock: tokio::sync::Mutex::new(()),
+            registry_unreadable,
             client,
             tickets: Mutex::new(HashMap::new()),
             files: Mutex::new(files),
@@ -231,6 +236,14 @@ impl Media {
         key: &str,
         quality: &str,
     ) -> Result<(Resolved, &'static str), MediaError> {
+        if key.starts_with("local-")
+            && self
+                .registry_unreadable
+                .load(std::sync::atomic::Ordering::SeqCst)
+        {
+            let _one_writer = self.registry_lock.lock().await;
+            self.reload_if_unreadable().await;
+        }
         let local = locked(&self.files).get(key).cloned();
         if let Some(path) = local {
             let path = local::validate(&path).await?;

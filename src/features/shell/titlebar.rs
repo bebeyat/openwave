@@ -5,7 +5,8 @@
 //! round buttons. The drag region is always a sibling of the buttons, never a parent or overlay,
 //! so it cannot swallow clicks.
 
-use dioxus::desktop::use_window;
+use dioxus::desktop::tao::event::{Event, WindowEvent};
+use dioxus::desktop::{use_window, use_wry_event_handler};
 use dioxus::prelude::*;
 
 use crate::i18n::t;
@@ -39,6 +40,17 @@ pub fn DragRegion(#[props(default)] class: String) -> Element {
 #[component]
 pub fn WindowControls() -> Element {
     let window = use_window();
+    // Alt+F4 and the taskbar close the window without our button; save before it goes.
+    use_wry_event_handler(|event, _| {
+        if let Event::WindowEvent {
+            event: WindowEvent::CloseRequested,
+            ..
+        } = event
+        {
+            crate::player::session::save_before_exit();
+            crate::features::update::install_on_exit();
+        }
+    });
     // Bumped on resize so `is_maximized()` is re-read (maximize via keyboard, snap, double-click).
     let mut tick = use_signal(|| 0u32);
     let _ = tick();
@@ -93,7 +105,11 @@ pub fn WindowControls() -> Element {
                 class: "ow-no-drag flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors duration-(--ow-dur-hover) hover:bg-danger-solid hover:text-on-danger",
                 "aria-label": t("window.close"),
                 title: t("window.close"),
-                onclick: move |_| w_close.close(),
+                onclick: move |_| {
+                    crate::player::session::save_before_exit();
+                    crate::features::update::install_on_exit();
+                    w_close.close();
+                },
                 Icon { name: "x", size: 16 }
             }
         }
