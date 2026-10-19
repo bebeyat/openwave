@@ -48,6 +48,7 @@ pub fn WindowControls() -> Element {
         } = event
         {
             crate::player::session::save_before_exit();
+            crate::features::update::install_on_exit();
         }
     });
     // Bumped on resize so `is_maximized()` is re-read (maximize via keyboard, snap, double-click).
@@ -106,6 +107,7 @@ pub fn WindowControls() -> Element {
                 title: t("window.close"),
                 onclick: move |_| {
                     crate::player::session::save_before_exit();
+                    crate::features::update::install_on_exit();
                     w_close.close();
                 },
                 Icon { name: "x", size: 16 }

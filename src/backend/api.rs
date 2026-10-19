@@ -429,6 +429,20 @@ pub async fn import_prepare(source: &Source) -> Result<PreparedImport, ImportErr
     }
 }
 
+/// The newest OpenWave release on GitHub (`None` when it cannot be read).
+pub async fn update_latest() -> Option<String> {
+    run(super::update::latest()).await.ok()?.ok()
+}
+
+/// Download and verify the installer of `version` (installed Windows build only).
+pub async fn update_download(version: String) -> Option<PathBuf> {
+    let dir = data_dir().join(super::update::DIR);
+    run(async move { super::update::download(&version, &dir).await })
+        .await
+        .ok()?
+        .ok()
+}
+
 /// Store a playlist (or one song, `single`) on the share relays and return its short link.
 pub async fn share(name: String, tracks: Vec<Track>, single: bool) -> Result<String, ShareError> {
     run(async move { share::publish(&name, &tracks, single).await })

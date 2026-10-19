@@ -188,6 +188,13 @@ pub fn General(settings: Arc<Settings>, on_change: EventHandler<SettingsChange>)
                 on_change: move |v| on_change.call(SettingsChange::LowPower(v)),
             }
         }
+        Card { class: "mt-5",
+            ToggleRow {
+                label: t("settings.general.auto_update"),
+                checked: settings.auto_update,
+                on_change: move |v| on_change.call(SettingsChange::AutoUpdate(v)),
+            }
+        }
         DiscordCard { settings: settings.clone(), on_change }
     }
 }

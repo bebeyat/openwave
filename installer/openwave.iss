@@ -74,6 +74,8 @@ Root: HKA; Subkey: "Software\Classes\openwave\shell\open\command"; ValueType: st
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
+; The in-app updater runs this installer with /VERYSILENT /RELAUNCH=1 and expects OpenWave to come back.
+Filename: "{app}\{#AppExe}"; Flags: nowait runasoriginaluser; Check: RelaunchAfterUpdate
 
 [UninstallDelete]
 ; Only what the app or WebView2 may create next to the executable: never "{app}" itself recursively, because
@@ -98,6 +100,11 @@ begin
       if not RegQueryStringValue(HKLM, WebView2ClientKey, 'pv', v) then
         v := '';
   Result := v;
+end;
+
+function RelaunchAfterUpdate(): Boolean;
+begin
+  Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
 end;
 
 function IsWebView2Installed(): Boolean;

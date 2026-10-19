@@ -86,6 +86,14 @@ creates a **draft** release. Watch the workflow under the Actions tab.
 3. Paste the `CHANGELOG.md` section into the release notes.
 4. Click **Publish release**. This is the moment the release becomes public.
 
+Publishing is also what ships the update: every OpenWave with "Update automatically" on finds the
+new version on its next check (start-up, then every 6 hours). The installed Windows app downloads
+`OpenWave-windows-x64-setup.exe`, checks it against `SHA256SUMS` and installs it silently when the
+user presses **Update** or closes the app. Portable, macOS and Linux copies get an **Update** button
+that opens the release page. So never rename those two assets, never publish a release whose tag
+differs from the `Cargo.toml` version (CI refuses to build one), and do not mark a broken build as
+the latest release.
+
 ## Share page
 
 `site/` is the static page behind share links (`https://openwave.pages.dev`, Cloudflare Pages project

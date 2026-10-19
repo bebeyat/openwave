@@ -70,6 +70,7 @@ fn TopBar() -> Element {
                 },
             }
             DragRegion { class: "h-full min-w-6 flex-1" }
+            crate::features::update::UpdateButton {}
             WindowControls {}
         }
     }
@@ -113,6 +114,7 @@ pub fn Shell() -> Element {
             crate::features::import::ImportDialog {}
             crate::features::share::ShareDialog {}
             crate::features::share::LinkInbox {}
+            crate::features::update::UpdateWatcher {}
         }
     }
 }

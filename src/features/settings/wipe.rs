@@ -94,8 +94,19 @@ pub fn wipe_own_data(dir: &Path) -> Result<WipeReport, Refusal> {
     delete_matching(&dir.join("downloads"), is_cache_file, &mut report);
     delete_matching(&dir.join("covers"), is_cover_file, &mut report);
     delete_matching(&dir.join("bin"), is_helper_file, &mut report);
+    delete_matching(
+        &dir.join(crate::backend::update::DIR),
+        |n| n.starts_with("OpenWave-") && (n.ends_with("-setup.exe") || n.ends_with("-setup.part")),
+        &mut report,
+    );
     // Only folders that are now empty; anything else in them is not ours.
-    for sub in ["cache", "downloads", "covers", "bin"] {
+    for sub in [
+        "cache",
+        "downloads",
+        "covers",
+        "bin",
+        crate::backend::update::DIR,
+    ] {
         let _ = std::fs::remove_dir(dir.join(sub));
     }
     Ok(report)

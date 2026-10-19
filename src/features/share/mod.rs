@@ -11,7 +11,7 @@ use dioxus::prelude::*;
 
 use crate::backend::api;
 use crate::backend::error::Coded;
-use crate::backend::share::{parse_link, SCHEME};
+use crate::backend::share::{parse_open, SCHEME};
 use crate::features::shell::slots::{OPEN_IMPORT, PENDING_IMPORT};
 use crate::i18n::t;
 use crate::model::Track;
@@ -51,16 +51,21 @@ pub fn share_track(track: &Track) {
 
 /// Hand a link from the command line to the running window (this process or the first one).
 pub fn hand_over(dir: &std::path::Path, args: impl Iterator<Item = String>) {
-    if let Some(id) = args.filter_map(|a| parse_link(&a)).next() {
-        let _ = std::fs::write(dir.join(OPEN_LINK), format!("{SCHEME}{id}"));
+    if let Some((id, start)) = args.filter_map(|a| parse_open(&a)).next() {
+        let song = start.map(|n| format!("/{n}")).unwrap_or_default();
+        let _ = std::fs::write(dir.join(OPEN_LINK), format!("{SCHEME}{id}{song}"));
     }
 }
 
-fn open(id: String) {
+/// `start`: a song clicked on the share page; the list plays from it.
+fn open(id: String, start: Option<usize>) {
     toast(t("share.opening"));
     spawn(async move {
         match api::open_share(&id).await {
-            Ok(shared) if shared.single => controller::play_now(&shared.tracks, 0),
+            Ok(shared) if shared.single || start.is_some() => {
+                let at = start.unwrap_or(0).min(shared.tracks.len() - 1);
+                controller::play_now(&shared.tracks, at);
+            }
             Ok(shared) => match api::shared_import(shared) {
                 Ok(prepared) => {
                     *PENDING_IMPORT.write() = Some(prepared);
@@ -81,8 +86,8 @@ pub fn LinkInbox() -> Element {
         loop {
             if let Ok(text) = std::fs::read_to_string(&path) {
                 let _ = std::fs::remove_file(&path);
-                if let Some(id) = parse_link(&text) {
-                    open(id);
+                if let Some((id, start)) = parse_open(&text) {
+                    open(id, start);
                 }
             }
             tokio::time::sleep(Duration::from_millis(500)).await;

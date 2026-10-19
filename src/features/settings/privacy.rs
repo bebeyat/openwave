@@ -10,7 +10,7 @@ use crate::i18n::{t, t_args};
 use crate::ui::{Banner, BannerKind, Button, ButtonVariant, Dialog, DialogSize, Icon, TextInput};
 
 /// (destination shown as-is, i18n key of "when and what is sent"). Keep in sync with PRIVACY.md.
-pub const NETWORK: [(&str, &str); 10] = [
+pub const NETWORK: [(&str, &str); 11] = [
     ("music.youtube.com", "settings.privacy.row.catalog"),
     (
         "www.youtube.com (visitor id)",
@@ -33,6 +33,10 @@ pub const NETWORK: [(&str, &str); 10] = [
         "settings.privacy.row.github",
     ),
     ("yt-dlp → www.youtube.com", "settings.privacy.row.ytdlp"),
+    (
+        "github.com/bebeyat/openwave · release-assets.githubusercontent.com",
+        "settings.privacy.row.update",
+    ),
 ];
 
 /// Close the app (after a wipe the in-memory copies must not be written back).

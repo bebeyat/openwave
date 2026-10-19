@@ -209,6 +209,9 @@ pub struct Settings {
     /// Show the current song as "Listening to" in Discord (opt-in; talks only to local Discord).
     #[serde(deserialize_with = "lenient")]
     pub discord_enabled: bool,
+    /// Look for a new version on GitHub (and install it on the installed Windows build).
+    #[serde(deserialize_with = "lenient_true")]
+    pub auto_update: bool,
     /// Look-and-layout choices (Ayarlar › Özelleştirme).
     #[serde(deserialize_with = "lenient")]
     pub custom: Customization,
@@ -234,6 +237,7 @@ impl Default for Settings {
             fx_bass_db: 0,
             fx_linked: false,
             discord_enabled: false,
+            auto_update: yes(),
             custom: Customization::default(),
         }
     }
@@ -258,6 +262,7 @@ pub enum SettingsChange {
     FxBassDb(u8),
     FxLinked(bool),
     DiscordEnabled(bool),
+    AutoUpdate(bool),
     Custom(Customization),
 }
 
@@ -282,6 +287,7 @@ impl Settings {
             SettingsChange::FxBassDb(v) => next.fx_bass_db = v,
             SettingsChange::FxLinked(v) => next.fx_linked = v,
             SettingsChange::DiscordEnabled(v) => next.discord_enabled = v,
+            SettingsChange::AutoUpdate(v) => next.auto_update = v,
             SettingsChange::Custom(v) => next.custom = v,
         }
         next.sanitize()

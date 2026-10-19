@@ -70,6 +70,16 @@ pub fn parse_link(input: &str) -> Option<String> {
     (id.len() == ID_LEN && id.bytes().all(|b| b.is_ascii_alphanumeric())).then(|| id.to_owned())
 }
 
+/// What an `openwave://` link asks for: the share id, and the song to start from when one song was
+/// clicked on the share page (`openwave://s/<id>/<index>`).
+pub fn parse_open(input: &str) -> Option<(String, Option<usize>)> {
+    let s = input.trim().trim_end_matches('/');
+    if let Some((id, n)) = s.strip_prefix(SCHEME).and_then(|r| r.split_once('/')) {
+        return Some((parse_link(&format!("{SCHEME}{id}"))?, Some(n.parse().ok()?)));
+    }
+    parse_link(s).map(|id| (id, None))
+}
+
 pub fn link(id: &str) -> String {
     format!("{BASE_URL}{id}")
 }
