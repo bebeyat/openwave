@@ -76,6 +76,10 @@ pub(super) struct Core {
     pub recorded: bool,
     pub last_persist_ms: u64,
     pub persist_token: u64,
+    /// The last song finished and nothing followed; cleared once audio plays again.
+    pub ended: bool,
+    /// Bumped by every `play_now`, so a slower "look up, then play" never overrides a newer play.
+    pub play_request: u64,
 }
 
 thread_local! {
@@ -105,6 +109,9 @@ pub fn display_duration() -> f64 {
 // ---- state plumbing ----------------------------------------------------------------------
 
 pub(super) fn set_status(status: Status) {
+    if status == Status::Playing {
+        with_core(|c| c.ended = false);
+    }
     if *STATUS.peek() != status {
         *STATUS.write() = status;
     }
@@ -138,6 +145,7 @@ pub(super) fn commit_queue(next: Queue) {
 
 /// Replace the queue with `tracks` and start playing at `start`.
 pub fn play_now(tracks: &[Track], start: usize) {
+    with_core(|c| c.play_request += 1);
     let next = QUEUE.peek().play_now(tracks, start, fresh_seed());
     let empty = next.is_empty();
     commit_queue(next);
@@ -146,6 +154,17 @@ pub fn play_now(tracks: &[Track], start: usize) {
     } else {
         start_current(0.0, true);
     }
+}
+
+/// Ticket for a "look the songs up, then play" request; check it with [`is_latest_play`]
+/// before playing the result.
+pub fn play_request() -> u64 {
+    with_core(|c| c.play_request)
+}
+
+/// No play started since `ticket` was taken.
+pub fn is_latest_play(ticket: u64) -> bool {
+    with_core(|c| c.play_request == ticket)
 }
 
 /// Play `track` alone and queue songs similar to it behind it (from the catalog radio), so
@@ -171,6 +190,8 @@ fn add_tracks(tracks: &[Track], next: bool) {
         return;
     }
     let was_empty = QUEUE.peek().is_empty();
+    // After the queue ended, Play would restart the finished song: move on to the added one.
+    let ended = with_core(|c| c.ended) && !STATUS.peek().is_active();
     let base = QUEUE.peek().clone();
     let updated = if next {
         base.add_next(tracks)
@@ -182,6 +203,8 @@ fn add_tracks(tracks: &[Track], next: bool) {
         let step = QUEUE.peek().next(false);
         commit_queue(step.queue);
         start_current(0.0, true);
+    } else if ended {
+        advance(false);
     } else {
         prefetch_next();
     }

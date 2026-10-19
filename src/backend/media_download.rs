@@ -65,6 +65,12 @@ fn net(e: reqwest::Error) -> MediaError {
 }
 
 /// `Content-Range: bytes a-b/total` as (a, b, total).
+/// A download is whole when its size matches the one recorded after it finished; a crash right
+/// after the rename can leave it shorter. Records without a size (none are written so) pass.
+fn intact(meta: &Value, len: u64) -> bool {
+    meta["bytes"].as_u64().is_none_or(|b| b == len)
+}
+
 fn content_range(resp: &reqwest::Response) -> Option<(u64, u64, u64)> {
     let v = resp.headers().get("content-range")?.to_str().ok()?;
     let rest = v.strip_prefix("bytes ")?;
@@ -85,14 +91,19 @@ impl Media {
         }
         let dir = self.downloads_dir();
         let path = dir.join(format!("{key}.audio"));
-        if !tokio::fs::metadata(&path).await.is_ok_and(|m| m.is_file()) {
-            return None;
-        }
+        let len = tokio::fs::metadata(&path)
+            .await
+            .ok()
+            .filter(|m| m.is_file())?
+            .len();
         let meta: Value = tokio::fs::read(dir.join(format!("{key}.json")))
             .await
             .ok()
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or(Value::Null);
+        if !intact(&meta, len) {
+            return None;
+        }
         Some((
             path,
             meta["mime"].as_str().unwrap_or("audio/mp4").to_owned(),
@@ -114,14 +125,24 @@ impl Media {
         tokio::fs::create_dir_all(&dir).await?;
         let audio = dir.join(format!("{key}.audio"));
         if let Ok(m) = tokio::fs::metadata(&audio).await {
-            return Ok(m.len());
+            if self.downloaded_file(key).await.is_some() {
+                return Ok(m.len());
+            }
+            // Cut short by a crash: fetch it again.
+            tokio::fs::remove_file(&audio).await?;
         }
         let Some(_flight) = FlightGuard::claim(key) else {
             return Err(MediaError::Io("download already running".into()));
         };
+        let epoch = CANCEL_EPOCH.load(std::sync::atomic::Ordering::SeqCst);
         let (stream, _) = self.fetch_stream(key, quality).await?;
         let part = dir.join(format!("{key}.part"));
         let written = self.fetch_to(&stream.url, &part).await;
+        // Cancelled right as it finished ("delete all my data"): keep nothing.
+        let written = match written {
+            Ok(_) if cancelled_since(epoch) => Err(MediaError::Io("cancelled".into())),
+            other => other,
+        };
         let bytes = match written {
             Ok(n) => n,
             Err(e) => {
@@ -191,6 +212,8 @@ impl Media {
             }
         }
         file.flush().await?;
+        // On disk before it is recorded as downloaded: a power cut must not leave a short file.
+        file.sync_all().await?;
         if next == 0 {
             return Err(MediaError::BadResponse);
         }
@@ -213,15 +236,17 @@ impl Media {
             else {
                 continue;
             };
-            if p.extension().is_none_or(|x| x != "json")
-                || !dir.join(format!("{key}.audio")).is_file()
-            {
+            if p.extension().is_none_or(|x| x != "json") {
                 continue;
             }
+            let Ok(audio) = tokio::fs::metadata(dir.join(format!("{key}.audio"))).await else {
+                continue;
+            };
             let Some(v) = tokio::fs::read(&p)
                 .await
                 .ok()
                 .and_then(|b| serde_json::from_slice::<Value>(&b).ok())
+                .filter(|v| audio.is_file() && intact(v, audio.len()))
             else {
                 continue;
             };
@@ -263,6 +288,13 @@ mod tests {
     };
 
     const BODY_LEN: usize = 10 * 1024 * 1024 + 123;
+
+    #[test]
+    fn a_download_shorter_than_its_record_is_not_intact() {
+        assert!(intact(&json!({ "bytes": 10 }), 10));
+        assert!(!intact(&json!({ "bytes": 10 }), 4), "cut short by a crash");
+        assert!(intact(&Value::Null, 4), "no record: trust the file");
+    }
 
     fn body() -> Vec<u8> {
         (0..BODY_LEN).map(|i| (i % 251) as u8).collect()

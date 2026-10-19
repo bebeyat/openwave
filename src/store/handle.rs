@@ -81,7 +81,6 @@ impl<T: Versioned> Store<T> {
         }
     }
 
-    #[cfg(test)]
     pub fn report(&self) -> LoadReport {
         lock(&self.inner.report).clone()
     }

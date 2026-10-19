@@ -124,10 +124,12 @@ pub fn Album(id: String) -> Element {
     rsx! {
         div { class: "ow-enter ow-page pb-10 pt-4",
             BackButton {}
+            // A restarted resource keeps the old value: show the skeleton, not the previous page.
             match &*res.read_unchecked() {
+                _ if matches!(*res.state().read(), UseResourceState::Pending) => rsx! { Loading {} },
                 None => rsx! { Loading {} },
                 Some(Err(e)) => rsx! { ErrorState { message: e.user_message(), on_retry: move |_| nonce += 1 } },
-                Some(Ok(details)) => rsx! { Loaded { details: with_track_covers(details.clone()) } },
+                Some(Ok(details)) => rsx! { Loaded { key: "{id}", details: with_track_covers(details.clone()) } },
             }
         }
     }

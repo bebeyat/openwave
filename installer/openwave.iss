@@ -69,9 +69,12 @@ Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; Tasks: desktopico
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-; Files the app or WebView2 may create next to the executable. User data lives in %APPDATA%\OpenWave and is
+; Only what the app or WebView2 may create next to the executable: never "{app}" itself recursively, because
+; the user may have picked an existing folder holding other files. User data lives in %APPDATA%\OpenWave and is
 ; handled (with a question) in the [Code] section below.
-Type: filesandordirs; Name: "{app}"
+Type: filesandordirs; Name: "{app}\openwave.exe.WebView2"
+Type: files; Name: "{app}\*.log"
+Type: dirifempty; Name: "{app}"
 
 [Code]
 const

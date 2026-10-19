@@ -1,5 +1,6 @@
 //! Things a discovery screen does with catalog items: play them, open them, shuffle them.
 
+use dioxus::core::spawn_forever;
 use dioxus::prelude::*;
 
 use crate::backend::{api, Coded};
@@ -61,19 +62,31 @@ fn play_or_say_empty(tracks: &[Track]) {
 
 /// Fetch an artist's top songs and play them (hover play button on artist cards).
 pub fn play_artist(id: String) {
-    spawn(async move {
-        match api::artist(&id).await {
-            Ok(a) => play_or_say_empty(&a.tracks),
-            Err(e) => toast_error(e.user_message()),
-        }
-    });
+    play_after(async move { api::artist(&id).await.map(|a| a.tracks) });
 }
 
 /// Fetch an album or playlist and play it from the first track.
 pub fn play_collection(id: String) {
-    spawn(async move {
-        match api::collection(collection_kind(&id), &id).await {
-            Ok(c) => play_or_say_empty(&c.tracks),
+    play_after(async move {
+        api::collection(collection_kind(&id), &id)
+            .await
+            .map(|c| c.tracks)
+    });
+}
+
+/// Play what `fetch` returns, unless the user started something else meanwhile. Not tied to the
+/// page, so leaving it right after pressing Play still plays.
+fn play_after(
+    fetch: impl std::future::Future<Output = Result<Vec<Track>, crate::backend::ApiError>> + 'static,
+) {
+    let ticket = controller::play_request();
+    spawn_forever(async move {
+        let result = fetch.await;
+        if !controller::is_latest_play(ticket) {
+            return;
+        }
+        match result {
+            Ok(tracks) => play_or_say_empty(&tracks),
             Err(e) => toast_error(e.user_message()),
         }
     });

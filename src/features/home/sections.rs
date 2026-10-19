@@ -74,6 +74,7 @@ fn use_mixes(seeds: Vec<Seed>) -> (Signal<Vec<Mix>>, Signal<MixStatus>, Signal<u
     let mut mixes = use_signal(|| cache::load(&api::data_dir()).mixes);
     let mut status = use_signal(|| MixStatus::Idle);
     let nonce = use_signal(|| 0u32);
+    let mut running = use_signal(|| None::<dioxus::core::Task>);
     use_effect(use_reactive!(|seeds, nonce| {
         let _ = nonce;
         let ids: Vec<String> = seeds.iter().map(|s| s.id.clone()).collect();
@@ -82,7 +83,11 @@ fn use_mixes(seeds: Vec<Seed>) -> (Signal<Vec<Mix>>, Signal<MixStatus>, Signal<u
             return;
         }
         status.set(MixStatus::Loading);
-        spawn(async move {
+        // A rebuild for older seeds must not finish after this one and overwrite it.
+        if let Some(old) = running.take() {
+            old.cancel();
+        }
+        running.set(Some(spawn(async move {
             let mut built = vec![];
             for seed in &seeds {
                 if let Ok(radio) = api::radio(&seed.id).await {
@@ -103,7 +108,7 @@ fn use_mixes(seeds: Vec<Seed>) -> (Signal<Vec<Mix>>, Signal<MixStatus>, Signal<u
             );
             mixes.set(built);
             status.set(MixStatus::Idle);
-        });
+        })));
     }));
     (mixes, status, nonce)
 }

@@ -442,6 +442,11 @@ pub async fn ytdlp_install(
     Ok(run(ytdlp::install_latest(on_progress)).await??)
 }
 
+/// Check and install a yt-dlp executable the user picked.
+pub async fn ytdlp_adopt(src: std::path::PathBuf) -> ApiResult<ytdlp::Installed> {
+    Ok(run(async move { ytdlp::adopt(&src).await }).await??)
+}
+
 #[cfg(test)]
 mod browse_id_tests {
     use super::browse_list_id;

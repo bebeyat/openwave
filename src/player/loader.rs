@@ -26,6 +26,7 @@ pub(super) fn start_current(start_secs: f64, autoplay: bool) {
         c.retried = false;
         c.recorded = false;
         c.resume_secs = 0.0;
+        c.ended = false;
         c.generation
     });
     *POSITION.write() = start_secs;
@@ -70,7 +71,10 @@ pub(super) fn on_failure(generation: u64, track: &Track, start: f64, detail: Str
         return;
     }
     with_core(|c| c.fail_streak += 1);
-    let skipping = step == Failure::Skip && !QUEUE.peek().upcoming().is_empty();
+    let skipping = step == Failure::Skip && {
+        let queue = QUEUE.peek();
+        !queue.upcoming().is_empty() || (queue.repeat() == Repeat::All && queue.len() > 1)
+    };
     let mut msg = format!("\"{}\": {detail}", track.title);
     if skipping {
         msg = format!("{msg} {}", t("player.skipping"));
@@ -79,7 +83,8 @@ pub(super) fn on_failure(generation: u64, track: &Track, start: f64, detail: Str
     // The source that just failed is dead: a "restart" of this song (repeat-one) must reload it.
     mark_source_dead();
     if skipping {
-        advance(true);
+        // Not `auto`: repeat-one would reload the same dead song.
+        advance(false);
     } else {
         set_status(Status::Paused);
     }

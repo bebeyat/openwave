@@ -130,5 +130,5 @@ fn main() {
     dioxus::LaunchBuilder::desktop()
         .with_cfg(window_config())
         .launch(app::App);
-    store::flush_all();
+    // Never reached: the window loop ends the process. Saving happens on close (see `WindowControls`).
 }

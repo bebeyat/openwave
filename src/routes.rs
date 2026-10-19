@@ -16,7 +16,9 @@ pub enum Route {
     #[layout(Shell)]
         #[route("/")]
         Home {},
-        #[route("/search?:q")]
+        // `?:..q` takes the whole query as the text: `?:q` splits on `&`, so "R&B" became "R".
+        // shortcut: a literal "%41"-style escape typed in the box is decoded once, rare in searches.
+        #[route("/search?:..q")]
         Search { q: String },
         /// `tab`: playlists | liked | history | local
         #[route("/library/:tab")]
@@ -62,7 +64,16 @@ mod tests {
                 tab: "liked".into()
             }
         );
-        let r: Route = "/search?q=abc".parse().expect("route");
+        let r: Route = "/search?abc".parse().expect("route");
         assert_eq!(r, Route::Search { q: "abc".into() });
+    }
+
+    #[test]
+    fn search_text_round_trips() {
+        for q in ["R&B", "a=b%c", "50% off", "a+b", "ç ğ ü", "", "a?b#c"] {
+            let route = Route::Search { q: q.into() };
+            let back: Route = route.to_string().parse().expect("route");
+            assert_eq!(back, route, "{q:?}");
+        }
     }
 }

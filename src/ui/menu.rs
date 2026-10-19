@@ -105,7 +105,7 @@ fn MenuPanel(
             tabindex: "-1",
             "aria-label": "{label}",
             "data-ow-overlay": "menu",
-            class: "fixed z-50 max-h-[calc(100vh-16px)] min-w-[220px] max-w-[320px] overflow-y-auto rounded-lg p-1.5 ow-glass {anim}",
+            class: "fixed z-50 max-h-[calc(100vh-16px)] min-w-[220px] max-w-[380px] overflow-y-auto rounded-lg p-1.5 ow-glass {anim}",
             style: "visibility:hidden;left:0;top:0",
             onkeydown: move |e| match e.key() {
                 Key::Escape => {

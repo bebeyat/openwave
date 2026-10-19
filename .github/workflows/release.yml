@@ -185,6 +185,8 @@ jobs:
             <key>NSHighResolutionCapable</key><true/>
           </dict></plist>
           EOF
+          # Ad-hoc seal of the whole bundle: an unsealed .app is reported as "damaged" by Gatekeeper.
+          codesign --force --deep --sign - stage/OpenWave.app
           ditto -c -k --keepParent stage/OpenWave.app "dist/OpenWave-$v-macos-arm64.zip"
           cp "dist/OpenWave-$v-macos-arm64.zip" dist/OpenWave-macos-arm64.zip
 

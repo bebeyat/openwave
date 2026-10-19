@@ -133,7 +133,7 @@ pub fn Settings(section: String) -> Element {
                         Section::Customize => rsx! { customize::Customize { settings, on_change } },
                         Section::Playback => rsx! { playback::Playback { settings, on_change } },
                         Section::Lyrics => rsx! { playback::Lyrics { settings, on_change } },
-                        Section::Storage => rsx! { storage::Storage { settings, on_change } },
+                        Section::Storage => rsx! { storage::Storage {} },
                         Section::Privacy => rsx! { privacy::Privacy {} },
                         Section::Shortcuts => rsx! { shortcuts::Shortcuts {} },
                         Section::About => rsx! { about::About {} },

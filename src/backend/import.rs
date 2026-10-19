@@ -187,6 +187,16 @@ fn http() -> Result<&'static reqwest::Client, ImportError> {
         .ok_or(ImportError::Unreadable)
 }
 
+/// Only "not found" means the playlist is private or gone; a rate limit, redirect or server error
+/// is temporary ("try again in a moment").
+fn spotify_status_error(status: reqwest::StatusCode) -> Option<ImportError> {
+    match status.as_u16() {
+        200..=299 => None,
+        401 | 403 | 404 | 410 => Some(ImportError::PrivateOrEmpty),
+        _ => Some(ImportError::Unreadable),
+    }
+}
+
 /// Download and parse a Spotify playlist (fixed host, validated 22-character id).
 pub async fn fetch_spotify(id: &str) -> Result<SpotifyPlaylist, ImportError> {
     let id = spotify_id(id).ok_or(ImportError::BadLink)?;
@@ -195,8 +205,8 @@ pub async fn fetch_spotify(id: &str) -> Result<SpotifyPlaylist, ImportError> {
         .send()
         .await
         .map_err(|_| ImportError::Offline)?;
-    if !response.status().is_success() {
-        return Err(ImportError::PrivateOrEmpty);
+    if let Some(e) = spotify_status_error(response.status()) {
+        return Err(e);
     }
     let html = read_capped(response, MAX_PAGE_BYTES).await?;
     let list = parse_spotify_embed(&html)?;
@@ -287,4 +297,25 @@ pub fn best_match(want: &SpotifyTrack, candidates: &[Track]) -> Option<usize> {
 pub fn search_term(want: &SpotifyTrack) -> String {
     let first_artist = want.artists.split(',').next().unwrap_or("").trim();
     format!("{} {}", want.title, first_artist).trim().to_owned()
+}
+
+#[cfg(test)]
+mod status_tests {
+    use super::*;
+    use reqwest::StatusCode as S;
+
+    #[test]
+    fn only_not_found_reads_as_private_and_rate_limits_ask_to_retry() {
+        assert_eq!(spotify_status_error(S::OK), None);
+        assert_eq!(
+            spotify_status_error(S::NOT_FOUND),
+            Some(ImportError::PrivateOrEmpty)
+        );
+        for temporary in [S::TOO_MANY_REQUESTS, S::FOUND, S::SERVICE_UNAVAILABLE] {
+            assert_eq!(
+                spotify_status_error(temporary),
+                Some(ImportError::Unreadable)
+            );
+        }
+    }
 }

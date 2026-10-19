@@ -1,7 +1,6 @@
 //! State and actions of the audio engine (yt-dlp). Shared by the startup banner and the
 //! Hakkında section. Nothing is downloaded until the user presses the install button.
 
-use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -116,37 +115,26 @@ pub fn install() {
     });
 }
 
-/// Copy a chosen yt-dlp executable into OpenWave's own folder. The caller verifies that it runs.
-pub fn copy_into(src: &Path, dir: &Path) -> std::io::Result<PathBuf> {
-    std::fs::create_dir_all(dir)?;
-    let dest = dir.join(ytdlp::binary_name());
-    if src != dest {
-        std::fs::copy(src, &dest)?;
-    }
-    Ok(dest)
-}
-
-/// "Elle seç": let the user point at an existing yt-dlp.exe.
+/// "Elle seç": let the user point at an existing yt-dlp executable. It replaces the current copy
+/// only after it ran; a wrong pick keeps a working engine.
 pub fn pick_manual() {
     spawn_forever(async move {
-        let picked = rfd::AsyncFileDialog::new()
-            .add_filter("yt-dlp", &["exe"])
-            .pick_file()
-            .await;
-        let Some(file) = picked else { return };
-        let dir = ytdlp::managed_dir();
-        if copy_into(file.path(), &dir).is_err() {
-            *ENGINE.write() = Engine::Failed {
-                message: t("error.io"),
-            };
+        let dialog = rfd::AsyncFileDialog::new();
+        // The macOS and Linux builds have no extension.
+        #[cfg(windows)]
+        let dialog = dialog.add_filter("yt-dlp", &["exe"]);
+        let Some(file) = dialog.pick_file().await else {
             return;
-        }
-        let next = engine_from_status(&api::ytdlp_status().await);
-        if !matches!(next, Engine::Ready { .. }) {
-            // The file did not behave like yt-dlp: do not keep it.
-            let _ = std::fs::remove_file(dir.join(ytdlp::binary_name()));
-        }
-        *ENGINE.write() = next;
+        };
+        *ENGINE.write() = match api::ytdlp_adopt(file.path().to_path_buf()).await {
+            Ok(done) => Engine::Ready {
+                version: done.version,
+                managed: true,
+            },
+            Err(e) => Engine::Failed {
+                message: e.user_message(),
+            },
+        };
     });
 }
 
@@ -198,20 +186,5 @@ mod tests {
         assert_eq!(percent(5, Some(0)), None);
         assert_eq!(percent(50, Some(200)), Some(25.0));
         assert_eq!(percent(500, Some(200)), Some(100.0));
-    }
-
-    #[test]
-    fn manual_pick_is_copied_into_the_managed_folder() {
-        let base = std::env::temp_dir().join(format!("ow-engine-{}", uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&base).expect("tmp");
-        let src = base.join("picked.exe");
-        std::fs::write(&src, b"x").expect("write");
-        let dest = copy_into(&src, &base.join("bin")).expect("copy");
-        assert!(dest.is_file());
-        assert_eq!(
-            dest.file_name().and_then(|n| n.to_str()),
-            Some(ytdlp::binary_name())
-        );
-        let _ = std::fs::remove_dir_all(&base);
     }
 }
