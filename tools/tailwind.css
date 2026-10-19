@@ -680,21 +680,22 @@
 .ow-lyric[aria-current] { transform: none; }
 :root[data-low-power] .ow-lyric, :root[data-low-power] .ow-lyric[aria-current] { transition: none; transform: none; }
 @media (prefers-reduced-motion: reduce) { .ow-lyric, .ow-lyric[aria-current] { transition: none; transform: none; } }
-/* Karaoke fill: a word of the active line lights up left to right as --p goes 0..1 (set per frame by
+/* Karaoke fill: a word of the active line lights up left to right as --ow-kp goes 0..1 (set per frame by
    assets/lyrics_fill.js); the soft 0.6em edge sweeps across letters, sung words glow. Other lines
-   show plain text (--p pinned to 1) and a line that ends fades its glow out. */
-@property --p { syntax: "<number>"; inherits: false; initial-value: 1; }
+   show plain text (--ow-kp pinned to 1) and a line that ends fades its glow out. Not --p: the
+   slider uses that name and a registered non-inheriting --p would stop its fill and thumb. */
+@property --ow-kp { syntax: "<number>"; inherits: false; initial-value: 1; }
 .ow-w {
-  --p: 1;
+  --ow-kp: 1;
   color: transparent;
-  background-image: linear-gradient(90deg, var(--ow-text) calc(var(--p) * (100% + 0.6em) - 0.6em), color-mix(in oklab, var(--ow-text) 42%, transparent) calc(var(--p) * (100% + 0.6em)));
+  background-image: linear-gradient(90deg, var(--ow-text) calc(var(--ow-kp) * (100% + 0.6em) - 0.6em), color-mix(in oklab, var(--ow-text) 42%, transparent) calc(var(--ow-kp) * (100% + 0.6em)));
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow: 0 0 0 transparent;
   transition: text-shadow 500ms var(--ow-ease);
 }
-.ow-lyric:not([aria-current]) .ow-w { --p: 1 !important; }
-.ow-lyric[aria-current] .ow-w { text-shadow: 0 0 calc(var(--p) * 18px) color-mix(in srgb, var(--ow-lyric-glow) calc(var(--p) * 100%), transparent); transition: none; }
+.ow-lyric:not([aria-current]) .ow-w { --ow-kp: 1 !important; }
+.ow-lyric[aria-current] .ow-w { text-shadow: 0 0 calc(var(--ow-kp) * 18px) color-mix(in srgb, var(--ow-lyric-glow) calc(var(--ow-kp) * 100%), transparent); transition: none; }
 :root[data-low-power] .ow-lyric[aria-current] .ow-w { text-shadow: none; }
 
 /* Fullscreen player backdrop: the same blurred cover as the app backdrop, one static layer. */

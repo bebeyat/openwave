@@ -1,5 +1,5 @@
 /* Karaoke fill for synced lyrics. Words of the active line are .ow-w spans inside
- * .ow-lyric[aria-current], with their fill span in ms as data-s / data-e. Each frame sets --p
+ * .ow-lyric[aria-current], with their fill span in ms as data-s / data-e. Each frame sets --ow-kp
  * (0..1) on those words from the <audio> clock, so seeking, pausing and speed changes stay in
  * sync without any message to Rust. The frame loop only runs while audio plays and a lyrics view
  * has an active line; low power and reduced motion update on "timeupdate" only, word by word.
@@ -24,7 +24,7 @@
       var w = words[i], s = +w.dataset.s, e = +w.dataset.e;
       var p = t <= s ? 0 : t >= e ? 1 : step ? 1 : (t - s) / (e - s);
       var v = p.toFixed(3);
-      if (w.style.getPropertyValue('--p') !== v) w.style.setProperty('--p', v);
+      if (w.style.getPropertyValue('--ow-kp') !== v) w.style.setProperty('--ow-kp', v);
       if (p < 1) pending = true;
     }
     return pending;
