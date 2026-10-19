@@ -817,6 +817,17 @@
   pointer-events: none;
   background: rgba(0, 0, 0, var(--ow-bd-dim));
 }
+/* The title bar (wordmark, window buttons) sits right on the backdrop: a theme-coloured fade keeps
+   it readable over any cover, a near-white one in the dark theme or a black one in the light. */
+.ow-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 76px;
+  z-index: 7;
+  pointer-events: none;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--ow-bg) 88%, transparent) 0, color-mix(in srgb, var(--ow-bg) 70%, transparent) 48px, transparent 100%);
+}
 /* No cover behind the panels: the flat backdrop (with the soft accent lights). */
 :root[data-no-cover-bg] .ow-bd-layer { display: none; }
 :root[data-no-cover-bg] .ow-backdrop {
