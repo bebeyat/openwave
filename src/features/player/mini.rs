@@ -2,7 +2,7 @@
 //! and the seek bar. The rest of the app stays mounted underneath, so playback is untouched.
 //!
 //! When the pointer has been away for [`IDLE_AFTER`] and the song has synced lyrics, the transport
-//! fades out for the current lyric line and the seek bar thins to a progress line; the pointer
+//! fades out for the lyric lines and the seek bar thins to a progress line; the pointer
 //! coming back reverses it.
 
 use std::time::Duration;
@@ -11,13 +11,15 @@ use dioxus::desktop::use_window;
 use dioxus::prelude::*;
 
 use super::controls::{SeekRow, Transport};
-use super::lyric_logic::{active_line, shifted, word_spans, WordSpan};
+use super::lyric_logic::{active_line, shifted, word_spans};
 use super::lyrics::LYRICS_FILL_JS;
 use super::lyrics_state::{self, LyricsView, LYRICS};
 use crate::features::shell::titlebar::DragRegion;
 use crate::features::shell::window::{request_close, toggle_mini, MINI};
 use crate::features::tracks::state::library;
 use crate::i18n::t;
+use std::sync::Arc;
+
 use crate::model::Lyrics;
 use crate::player::controller::{self as ctl, POSITION};
 use crate::ui::{CoverThumb, IconButton, IconButtonSize, TooltipAlign, TooltipSide};
@@ -26,28 +28,8 @@ const IDLE_AFTER: Duration = Duration::from_secs(3);
 /// Shared by both layers of each swap; motion-reduce turns the animation off.
 const FADE: &str = "transition-all duration-300 ease-out motion-reduce:transition-none";
 
-/// What the idle mini player shows at `position` (seconds, offset already applied).
-#[derive(Clone, Debug, PartialEq)]
-pub enum Shown {
-    /// The song has no synced lyrics: keep the controls.
-    Nothing,
-    /// Before the first line or on an empty (instrumental) line.
-    Note,
-    /// The active line: its index and its words with their fill times.
-    Line(usize, Vec<WordSpan>),
-}
-
-pub fn shown_at(lyrics: &Lyrics, position: f64) -> Shown {
-    if !lyrics.is_synced() {
-        return Shown::Nothing;
-    }
-    match active_line(&lyrics.synced, position) {
-        Some(i) if !lyrics.synced[i].text.trim().is_empty() => {
-            Shown::Line(i, word_spans(&lyrics.synced, i))
-        }
-        _ => Shown::Note,
-    }
-}
+/// Height of one lyric row; the stack moves by whole rows.
+const ROW_PX: usize = 48;
 
 #[component]
 pub fn MiniPlayer() -> Element {
@@ -92,13 +74,18 @@ fn Surface() -> Element {
         }
     }));
     let offset_ms = track.as_ref().map_or(0, |t| library().lyric_offset(&t.id));
-    let line = match (&LYRICS.read().view, &track) {
-        (LyricsView::Ready(l), Some(t)) if LYRICS.read().track_id.as_ref() == Some(&t.id) => {
-            shown_at(l, shifted(*POSITION.read(), offset_ms))
+    let synced = match (&LYRICS.read().view, &track) {
+        (LyricsView::Ready(l), Some(t))
+            if l.is_synced() && LYRICS.read().track_id.as_ref() == Some(&t.id) =>
+        {
+            Some(l.clone())
         }
-        _ => Shown::Nothing,
+        _ => None,
     };
-    let quiet = idle() && line != Shown::Nothing;
+    let active = synced
+        .as_ref()
+        .and_then(|l| active_line(&l.synced, shifted(*POSITION.read(), offset_ms)));
+    let quiet = idle() && synced.is_some();
 
     let title = track.as_ref().map(|t| t.title.clone()).unwrap_or_default();
     let artists = track
@@ -178,24 +165,9 @@ fn Surface() -> Element {
                     Transport { modes: false }
                 }
                 div {
-                    class: "absolute inset-0 flex items-center justify-center px-2 text-center {lyric}",
-                    "data-ow-offset": "{offset_ms}",
-                    match line {
-                        Shown::Line(i, words) => rsx! {
-                            // Keyed by line so each new line mounts and fades in.
-                            p {
-                                key: "{i}",
-                                class: "ow-lyric ow-display ow-fade-in line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-tight text-fg",
-                                style: "--lo:1",
-                                "data-dark": "true",
-                                "aria-current": "true",
-                                for w in words {
-                                    span { class: "ow-w", "data-s": "{w.start_ms}", "data-e": "{w.end_ms}", "{w.text}" }
-                                }
-                            }
-                        },
-                        Shown::Note => rsx! { p { class: "ow-fade-in text-lg text-muted", "♪" } },
-                        Shown::Nothing => rsx! {},
+                    class: "absolute inset-0 overflow-hidden {lyric}",
+                    if let Some(lyrics) = synced {
+                        MiniLyrics { lyrics, active, offset_ms }
                     }
                 }
             }
@@ -214,8 +186,35 @@ fn Surface() -> Element {
     }
 }
 
-// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
-#[cfg(all(test, private_tests))]
-mod tests {
-    include!("mini_tests.rs");
+/// Every line stays mounted and only `aria-current` moves, exactly like the big lyrics views, so
+/// `lyrics_fill.js` and the `.ow-lyric` styles fill, glow and dim the lines the same way; the
+/// stack slides by one row per line.
+#[component]
+fn MiniLyrics(lyrics: Arc<Lyrics>, active: Option<usize>, offset_ms: i32) -> Element {
+    let shift = active.unwrap_or(0) * ROW_PX;
+    rsx! {
+        div {
+            class: "transition-transform duration-500 ease-out motion-reduce:transition-none",
+            style: "transform:translateY(-{shift}px)",
+            "data-ow-offset": "{offset_ms}",
+            for (i, line) in lyrics.synced.iter().enumerate() {
+                if line.text.trim().is_empty() {
+                    p { key: "{i}", class: "flex h-12 items-center justify-center text-lg text-muted", "♪" }
+                } else {
+                    p {
+                        key: "{i}",
+                        class: "ow-lyric ow-display flex h-12 items-center justify-center px-2 text-center text-[20px] font-extrabold leading-[1.15] tracking-tight text-fg",
+                        style: if active == Some(i) { "--lo:1" } else { "--lo:.35" },
+                        "data-dark": "true",
+                        "aria-current": (active == Some(i)).then_some("true"),
+                        span { class: "line-clamp-2",
+                            for w in word_spans(&lyrics.synced, i) {
+                                span { class: "ow-w", "data-s": "{w.start_ms}", "data-e": "{w.end_ms}", "{w.text}" }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
