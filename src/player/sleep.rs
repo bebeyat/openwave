@@ -28,6 +28,16 @@ pub fn step_minutes(minutes: u64, up: bool) -> u64 {
     next.clamp(MINUTES_MIN, MINUTES_MAX)
 }
 
+/// "29:58", or "1:05:09" from an hour up.
+pub fn countdown_text(secs: u64) -> String {
+    let (h, m, s) = (secs / 3600, secs / 60 % 60, secs % 60);
+    if h > 0 {
+        format!("{h}:{m:02}:{s:02}")
+    } else {
+        format!("{m:02}:{s:02}")
+    }
+}
+
 /// Typed minutes, clamped to the allowed range; `None` when it is not a number.
 pub fn parse_minutes(text: &str) -> Option<u64> {
     let n: u64 = text.trim().parse().ok()?;
