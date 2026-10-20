@@ -33,7 +33,10 @@ fn artwork(e: &Value) -> String {
         .to_owned()
 }
 
-/// Song entries of a `yt-dlp --flat-playlist -J scsearchN:` answer.
+/// Without an account SoundCloud plays only a 30-second preview of many label songs.
+const PREVIEW_SECONDS: u64 = 30;
+
+/// Song entries of a `yt-dlp --flat-playlist -J scsearchN:` answer (previews left out).
 pub(crate) fn entries(v: &Value) -> Vec<Entry> {
     let Some(list) = v["entries"].as_array() else {
         return vec![];
@@ -54,7 +57,7 @@ pub(crate) fn entries(v: &Value) -> Vec<Entry> {
                 ..Entry::default()
             })
         })
-        .filter(|e| !e.name.is_empty())
+        .filter(|e| !e.name.is_empty() && e.seconds != PREVIEW_SECONDS)
         .collect()
 }
 
