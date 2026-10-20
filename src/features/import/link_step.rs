@@ -53,7 +53,7 @@ pub fn SourceStep(ctx: Ctx) -> Element {
     rsx! {
         div { class: "flex flex-col gap-3",
             p { class: "text-sm text-muted", {t("import.source.title")} }
-            div { class: "grid grid-cols-3 gap-3",
+            div { class: "grid grid-cols-2 gap-3 sm:grid-cols-4",
                 SourceButton {
                     id: "ow-imp-first-source",
                     brand: Brand::Spotify,
@@ -68,6 +68,13 @@ pub fn SourceStep(ctx: Ctx) -> Element {
                     help: t("import.source.youtube.help"),
                     chip: chip(Kind::Youtube),
                     onclick: move |_| ctx.pick(Kind::Youtube),
+                }
+                SourceButton {
+                    brand: Brand::Apple,
+                    name: t("import.source.apple"),
+                    help: t("import.source.apple.help"),
+                    chip: chip(Kind::Apple),
+                    onclick: move |_| ctx.pick(Kind::Apple),
                 }
                 SourceButton {
                     brand: Brand::Local,
@@ -85,6 +92,7 @@ fn placeholder(kind: Kind) -> String {
     match kind {
         Kind::Spotify => t("import.link.placeholder_spotify"),
         Kind::Youtube => t("import.link.placeholder_youtube"),
+        Kind::Apple => t("import.link.placeholder_apple"),
     }
 }
 
@@ -92,6 +100,7 @@ fn where_text(kind: Kind) -> String {
     match kind {
         Kind::Spotify => t("import.where.spotify"),
         Kind::Youtube => t("import.where.youtube"),
+        Kind::Apple => t("import.where.apple"),
     }
 }
 
@@ -124,6 +133,7 @@ pub fn LinkStep(ctx: Ctx) -> Element {
     let heading = match kind {
         Kind::Spotify => t("import.source.spotify"),
         Kind::Youtube => t("import.source.youtube"),
+        Kind::Apple => t("import.source.apple"),
     };
     rsx! {
         div { class: "flex flex-col gap-4",
@@ -169,6 +179,9 @@ pub fn LinkStep(ctx: Ctx) -> Element {
                     },
                     {e.user_message()}
                 }
+            }
+            if kind == Kind::Spotify && *super::account::SIGNED_IN.read() {
+                super::account::AccountPicker { ctx }
             }
             details { class: "ow-card-glass group px-4 py-2",
                 summary { class: "flex min-h-9 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-fg",

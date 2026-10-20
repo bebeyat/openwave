@@ -11,6 +11,7 @@ mod fullscreen;
 mod lyric_logic;
 mod lyrics;
 mod lyrics_state;
+mod lyrics_tools;
 mod mini;
 mod queue_list;
 mod save_dialog;

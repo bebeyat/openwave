@@ -6,6 +6,7 @@ use dioxus::prelude::*;
 use crate::i18n::t;
 use crate::model::Track;
 use crate::ui::{Select, SelectOption};
+use crate::util::fold;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SortBy {
@@ -40,13 +41,9 @@ impl SortBy {
 
 fn text_key(t: &Track, by: SortBy) -> String {
     match by {
-        SortBy::Title => t.title.to_lowercase(),
-        SortBy::Artist => t.artists_label().to_lowercase(),
-        SortBy::Album => t
-            .album
-            .as_ref()
-            .map(|a| a.title.to_lowercase())
-            .unwrap_or_default(),
+        SortBy::Title => fold(&t.title),
+        SortBy::Artist => fold(&t.artists_label()),
+        SortBy::Album => t.album.as_ref().map(|a| fold(&a.title)).unwrap_or_default(),
         SortBy::Default | SortBy::Duration => String::new(),
     }
 }

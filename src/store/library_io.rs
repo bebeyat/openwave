@@ -6,7 +6,7 @@ use super::library::{
 use super::persist::{self, Read};
 use super::versioned::{LoadReport, Sidecar, Versioned};
 use crate::{
-    model::{Playlist, Track},
+    model::{Id, Playlist, Track},
     player::queue::QueueSnapshot,
 };
 use serde::{de::DeserializeOwned, Deserialize};
@@ -135,6 +135,7 @@ impl Versioned for Library {
                 .get("last_queue")
                 .and_then(|v| QueueSnapshot::deserialize(v).ok()),
             local_files: salvage_items(o.get("local_files"), dropped, has_id),
+            lyric_offsets: salvage_items(o.get("lyric_offsets"), dropped, |_: &(Id, i32)| true),
         })
     }
 

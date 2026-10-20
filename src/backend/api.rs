@@ -3,12 +3,13 @@
 use super::{
     catalog::Catalog,
     convert,
-    error::{ApiError, ApiResult, CatalogError, ImportError, ShareError},
+    error::{ApiError, ApiResult, CatalogError, ImportError, LyricsError, ShareError},
     import::{self, Source},
     import_flow::{self, ImportResult, PreparedImport},
     lyrics::{self, LyricsQuery},
+    lyrics_cache,
     media::Media,
-    share, ytdlp,
+    share, soundcloud, spotify_account, spotify_auth, translate, ytdlp,
 };
 use crate::model::*;
 use serde_json::Value;
@@ -102,6 +103,8 @@ pub enum SearchKind {
     Artist,
     Album,
     Playlist,
+    /// Songs on SoundCloud (through yt-dlp).
+    SoundCloud,
 }
 
 impl SearchKind {
@@ -123,6 +126,16 @@ pub async fn search(kind: SearchKind, term: &str) -> ApiResult<SearchResults> {
     let term = term.trim();
     if term.is_empty() {
         return Ok(SearchResults::default());
+    }
+    if kind == SearchKind::SoundCloud {
+        let v = run(soundcloud::search(term.to_owned())).await??;
+        return Ok(SearchResults {
+            tracks: convert::entries(&v, "items")
+                .iter()
+                .map(convert::track)
+                .collect(),
+            ..SearchResults::default()
+        });
     }
     let (t, ar, al, pl) = futures_util::join!(
         section(kind.wants(SearchKind::Track), "tracks", term),
@@ -321,6 +334,12 @@ pub async fn downloads() -> ApiResult<Vec<Downloaded>> {
         .collect())
 }
 
+/// Copy a downloaded track into `dir` as a tagged `Artist - Title.m4a`; returns the new file.
+pub async fn export_download(track_id: &str, dir: PathBuf) -> ApiResult<PathBuf> {
+    let (b, id) = (backend_ref()?, track_id.to_owned());
+    Ok(run(async move { b.media.export_download(&id, &dir).await }).await??)
+}
+
 pub async fn remove_download(track_id: &str) -> ApiResult<()> {
     let (b, id) = (backend_ref()?, track_id.to_owned());
     Ok(run(async move { b.media.remove_download(&id).await }).await??)
@@ -350,6 +369,16 @@ pub async fn stream_fresh(track_id: &str, quality: Quality) -> ApiResult<Stream>
         mime: r.mime,
         seconds: r.seconds,
     })
+}
+
+/// When YouTube cannot play `track` at all: the same song from SoundCloud, if one with the same
+/// length (within 5 s) is found.
+pub async fn stream_soundcloud_copy(track: &Track, quality: Quality) -> ApiResult<Stream> {
+    let (artist, title) = (track.artists_label(), track.title.to_string());
+    let seconds = track.duration_ms as f64 / 1000.0;
+    let found = run(soundcloud::find_match(artist, title, seconds)).await?;
+    let id = found.ok_or(ApiError::Media(super::error::MediaError::Unavailable))?;
+    stream(&id, quality).await
 }
 
 /// Warm the stream cache for tracks likely to play next. Fire and forget.
@@ -390,8 +419,59 @@ pub fn open_cache_folder() {
 }
 
 /// LRCLIB lookup. Makes no request and returns `Disabled` unless `enabled` (the user's opt-in).
+/// Lyrics found once are kept on disk and answered from there.
 pub async fn lyrics(enabled: bool, query: &LyricsQuery<'_>) -> ApiResult<Option<Lyrics>> {
-    Ok(lyrics::fetch(enabled, query).await?)
+    if !enabled {
+        return Err(LyricsError::Disabled.into());
+    }
+    let dir = backend_ref()?.root.join(lyrics_cache::DIR);
+    let key = lyrics_cache::cache_key(query);
+    let (d, k) = (dir.clone(), key.clone());
+    let cached = run(async move { lyrics_cache::get(&d, &k) }).await?;
+    if let Some(l) = cached.as_ref().and_then(|e| e.lyrics.clone()) {
+        return Ok(Some(l));
+    }
+    let found = lyrics::fetch(true, query).await?;
+    if let Some(l) = &found {
+        let entry = lyrics_cache::Entry {
+            lyrics: Some(l.clone()),
+            ..cached.unwrap_or_default()
+        };
+        // A full disk only costs the next lookup a request.
+        let _ = run(async move { lyrics_cache::put(&dir, &key, &entry) }).await;
+    }
+    Ok(found)
+}
+
+/// `lines` translated into `lang` (a UI language code), one entry per line. Translations are kept
+/// on disk next to the song's lyrics.
+pub async fn translate_lyrics(
+    query: &LyricsQuery<'_>,
+    lines: Vec<String>,
+    lang: &'static str,
+) -> ApiResult<Vec<String>> {
+    let dir = backend_ref()?.root.join(lyrics_cache::DIR);
+    let key = lyrics_cache::cache_key(query);
+    let (d, k) = (dir.clone(), key.clone());
+    let cached = run(async move { lyrics_cache::get(&d, &k) }).await?;
+    let hit = cached
+        .as_ref()
+        .and_then(|e| e.translations.get(lang))
+        .filter(|t| t.len() == lines.len());
+    if let Some(t) = hit {
+        return Ok(t.clone());
+    }
+    let out = run(async move { translate::translate_from(translate::BASE, &lines, lang).await })
+        .await??;
+    let old = cached.unwrap_or_default();
+    let mut translations = old.translations.clone();
+    translations.insert(lang.to_owned(), out.clone());
+    let entry = lyrics_cache::Entry {
+        translations,
+        ..old
+    };
+    let _ = run(async move { lyrics_cache::put(&dir, &key, &entry) }).await;
+    Ok(out)
 }
 
 // ---- Import -------------------------------------------------------------------------------
@@ -416,6 +496,15 @@ fn browse_list_id(id: &str) -> String {
 pub async fn import_prepare(source: &Source) -> Result<PreparedImport, ImportError> {
     match source {
         Source::Spotify(id) => import_flow::prepare_spotify(import::fetch_spotify(id).await?),
+        Source::Apple(link) => import_flow::prepare_spotify(import::apple::fetch(link).await?),
+        Source::SpotifyAccount { pick, name } => {
+            let token = spotify_token()
+                .await
+                .map_err(|_| ImportError::PrivateOrEmpty)?;
+            let list =
+                spotify_account::tracks(spotify_account::API, &token, pick, name.clone()).await?;
+            import_flow::prepare_spotify(list)
+        }
         Source::Youtube(id) => {
             let c = collection(CollectionKind::Playlist, &browse_list_id(id))
                 .await
@@ -503,6 +592,41 @@ pub fn cover_src(url: &str) -> String {
         }
         _ => String::new(),
     }
+}
+
+// ---- Spotify account ------------------------------------------------------------------------
+
+pub fn spotify_signed_in() -> bool {
+    spotify_auth::load(&data_dir()).is_some()
+}
+
+/// Sign in with the user's own Spotify app (opens the browser; waits up to five minutes).
+pub async fn spotify_sign_in(client_id: String) -> Result<(), spotify_auth::AuthError> {
+    let dir = data_dir();
+    run(async move { spotify_auth::sign_in(&dir, &client_id).await })
+        .await
+        .map_err(|_| spotify_auth::AuthError::BadResponse)?
+}
+
+pub fn spotify_sign_out() -> std::io::Result<()> {
+    spotify_auth::sign_out(&data_dir())
+}
+
+async fn spotify_token() -> Result<String, spotify_auth::AuthError> {
+    let dir = data_dir();
+    run(async move { spotify_auth::access_token(&dir, spotify_auth::ACCOUNTS).await })
+        .await
+        .map_err(|_| spotify_auth::AuthError::BadResponse)?
+}
+
+/// The signed-in user's playlists.
+pub async fn spotify_playlists() -> Result<Vec<spotify_account::UserPlaylist>, ImportError> {
+    let token = spotify_token()
+        .await
+        .map_err(|_| ImportError::PrivateOrEmpty)?;
+    run(async move { spotify_account::playlists(spotify_account::API, &token).await })
+        .await
+        .map_err(|_| ImportError::Unreadable)?
 }
 
 // ---- yt-dlp ---------------------------------------------------------------------------------

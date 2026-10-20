@@ -16,16 +16,22 @@ const MAX_DOWNLOAD: usize = 1_500_000;
 pub(super) const CACHE_ENTRIES: usize = 256;
 pub(super) const CACHE_VERSION: u32 = 2;
 
-/// Same rule as the catalog's allow-list: https, no credentials, three image host families.
+/// Same rule as the catalog's allow-list: https, no credentials, the YouTube image host families
+/// plus SoundCloud's artwork host.
 pub fn allowed_image_url(s: &str) -> bool {
     reqwest::Url::parse(s).is_ok_and(|u| {
         u.scheme() == "https"
             && u.username().is_empty()
             && u.password().is_none()
             && u.host_str().is_some_and(|h| {
-                ["ytimg.com", "ggpht.com", "googleusercontent.com"]
-                    .iter()
-                    .any(|d| h == *d || h.ends_with(&format!(".{d}")))
+                [
+                    "ytimg.com",
+                    "ggpht.com",
+                    "googleusercontent.com",
+                    "sndcdn.com",
+                ]
+                .iter()
+                .any(|d| h == *d || h.ends_with(&format!(".{d}")))
             })
     })
 }
@@ -58,7 +64,7 @@ fn http() -> Result<&'static reqwest::Client, String> {
         .map_err(Clone::clone)
 }
 
-async fn download(url: &str) -> Result<Vec<u8>, String> {
+pub(super) async fn download(url: &str) -> Result<Vec<u8>, String> {
     if !allowed_image_url(url) {
         return Err("image host not allowed".into());
     }

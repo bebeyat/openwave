@@ -110,6 +110,15 @@ impl Media {
         ))
     }
 
+    /// The track metadata saved with the download of `key`.
+    pub(super) async fn downloaded_track(&self, key: &str) -> Option<crate::model::Track> {
+        let bytes = tokio::fs::read(self.downloads_dir().join(format!("{key}.json")))
+            .await
+            .ok()?;
+        let v: Value = serde_json::from_slice(&bytes).ok()?;
+        serde_json::from_value(v["track"].clone()).ok()
+    }
+
     /// Download `key` completely and keep it with `track` (its metadata). Returns the size.
     /// Already downloaded tracks return at once.
     pub async fn download(
@@ -134,7 +143,12 @@ impl Media {
         let Some(_flight) = FlightGuard::claim(key) else {
             return Err(MediaError::Io("download already running".into()));
         };
+        if super::soundcloud_id(key).is_some() {
+            return self.download_soundcloud(key, track).await;
+        }
         let epoch = CANCEL_EPOCH.load(std::sync::atomic::Ordering::SeqCst);
+        // MP4 (itag 140) so the export can be tagged; economy keeps its small stream.
+        let quality = if quality == "economy" { quality } else { "m4a" };
         let (stream, _) = self.fetch_stream(key, quality).await?;
         let part = dir.join(format!("{key}.part"));
         let written = self.fetch_to(&stream.url, &part).await;
@@ -150,15 +164,45 @@ impl Media {
                 return Err(e);
             }
         };
+        self.keep_download(key, &part, &stream.mime, bytes, track)
+            .await?;
+        Ok(bytes)
+    }
+
+    /// Record a finished `part` file as the download of `key`.
+    async fn keep_download(
+        &self,
+        key: &str,
+        part: &PathBuf,
+        mime: &str,
+        bytes: u64,
+        track: Value,
+    ) -> Result<(), MediaError> {
+        let dir = self.downloads_dir();
         let record = json!({
-            "mime": stream.mime,
+            "mime": mime,
             "bytes": bytes,
             "saved_ms": super::resolve::unix_now() * 1000,
             "track": track,
         });
         let meta = serde_json::to_vec(&record).map_err(|e| MediaError::Io(e.to_string()))?;
         tokio::fs::write(dir.join(format!("{key}.json")), meta).await?;
-        tokio::fs::rename(&part, &audio).await?;
+        tokio::fs::rename(part, dir.join(format!("{key}.audio"))).await?;
+        Ok(())
+    }
+
+    /// A SoundCloud download is a copy of the song fetched for playback (see `media_soundcloud`).
+    async fn download_soundcloud(&self, key: &str, track: Value) -> Result<u64, MediaError> {
+        let (cached, mime) = self.soundcloud_file(key).await?;
+        let part = self.downloads_dir().join(format!("{key}.part"));
+        let bytes = match tokio::fs::copy(&cached, &part).await {
+            Ok(n) => n,
+            Err(e) => {
+                let _ = tokio::fs::remove_file(&part).await;
+                return Err(e.into());
+            }
+        };
+        self.keep_download(key, &part, &mime, bytes, track).await?;
         Ok(bytes)
     }
 

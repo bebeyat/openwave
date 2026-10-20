@@ -2,7 +2,7 @@
 //! progress). Matching is injected so the flow is testable without a network.
 use super::{
     error::ImportError,
-    import::{SpotifyPlaylist, SpotifyTrack, SPOTIFY_EMBED_LIMIT},
+    import::{SpotifyPlaylist, SpotifyTrack},
 };
 use crate::model::{Cover, Track};
 use futures_util::{stream, StreamExt};
@@ -47,9 +47,9 @@ pub struct ImportResult {
     pub warning: Option<ImportError>,
 }
 
-fn truncation(count: usize) -> Option<ImportError> {
-    (count >= SPOTIFY_EMBED_LIMIT).then_some(ImportError::Truncated {
-        limit: SPOTIFY_EMBED_LIMIT,
+fn truncation(list: &SpotifyPlaylist) -> Option<ImportError> {
+    (!list.complete).then_some(ImportError::Truncated {
+        limit: list.tracks.len(),
     })
 }
 
@@ -57,11 +57,12 @@ pub(super) fn prepare_spotify(list: SpotifyPlaylist) -> Result<PreparedImport, I
     if list.tracks.is_empty() {
         return Err(ImportError::PrivateOrEmpty);
     }
+    let warning = truncation(&list);
     let preview = ImportPreview {
         name: list.name,
         count: list.tracks.len(),
         cover: None,
-        warning: truncation(list.tracks.len()),
+        warning,
     };
     Ok(PreparedImport {
         preview,
@@ -158,6 +159,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::backend::import::SPOTIFY_EMBED_LIMIT;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     fn want(n: usize) -> SpotifyTrack {
@@ -180,6 +182,7 @@ mod tests {
         SpotifyPlaylist {
             name: "List".into(),
             tracks: (0..n).map(want).collect(),
+            complete: n < SPOTIFY_EMBED_LIMIT,
         }
     }
 

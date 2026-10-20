@@ -164,15 +164,15 @@ fn ResultsBody(tab: Tab, phase: Phase, on_retry: EventHandler<()>) -> Element {
         Phase::Loading => rsx! {
             div { "aria-hidden": "true",
                 match tab {
-                    Tab::Songs => rsx! { SongSkeletons {} },
+                    Tab::Songs | Tab::SoundCloud => rsx! { SongSkeletons {} },
                     _ => rsx! { CardPlaceholders { round: tab == Tab::Artists } },
                 }
             }
         },
         Phase::Failed(message) => rsx! { ErrorState { message, on_retry } },
         Phase::Done(results) => match tab {
-            Tab::Songs => rsx! {
-                TrackList { tracks: results.tracks.clone(), label: t("search.tab.songs"), similar_after: true }
+            Tab::Songs | Tab::SoundCloud => rsx! {
+                TrackList { tracks: results.tracks.clone(), label: t(tab.label_key()), similar_after: tab == Tab::Songs }
             },
             _ => rsx! { Cards { tab, results } },
         },

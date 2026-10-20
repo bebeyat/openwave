@@ -253,6 +253,9 @@ pub struct Settings {
     /// Look-and-layout choices (Ayarlar › Özelleştirme).
     #[serde(deserialize_with = "lenient")]
     pub custom: Customization,
+    /// The user's own Spotify app id, for "Sign in with Spotify" (empty: not set).
+    #[serde(deserialize_with = "lenient")]
+    pub spotify_client_id: String,
 }
 
 impl Default for Settings {
@@ -284,6 +287,7 @@ impl Default for Settings {
             close_to_tray: false,
             user_css: String::new(),
             custom: Customization::default(),
+            spotify_client_id: String::new(),
         }
     }
 }
@@ -316,6 +320,7 @@ pub enum SettingsChange {
     CloseToTray(bool),
     UserCss(String),
     Custom(Customization),
+    SpotifyClientId(String),
 }
 
 impl Settings {
@@ -348,6 +353,9 @@ impl Settings {
             SettingsChange::CloseToTray(v) => next.close_to_tray = v,
             SettingsChange::UserCss(v) => next.user_css = v,
             SettingsChange::Custom(v) => next.custom = v,
+            SettingsChange::SpotifyClientId(v) => {
+                next.spotify_client_id = v.trim().chars().take(64).collect();
+            }
         }
         next.sanitize()
     }
