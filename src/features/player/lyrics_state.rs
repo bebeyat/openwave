@@ -102,9 +102,7 @@ async fn fetch_task(track: Track) {
             return;
         }
     }
-    let artist = track.artists_label();
-    let album = track.album.as_ref().map(|a| a.title.to_string());
-    let duration = (track.duration_ms > 0).then(|| track.duration_ms as f64 / 1000.0);
+    let (artist, album, duration) = query_parts(&track);
     let query = LyricsQuery {
         title: &track.title,
         artist: &artist,
@@ -117,6 +115,72 @@ async fn fetch_task(track: Track) {
         Err(e) => LyricsView::Failed(e.user_message()),
     };
     set(&track.id, view);
+}
+
+/// Artist label, album and duration (s) of a lookup, owned so a query can borrow them.
+fn query_parts(track: &Track) -> (String, Option<String>, Option<f64>) {
+    let album = track.album.as_ref().map(|a| a.title.to_string());
+    let duration = (track.duration_ms > 0).then(|| track.duration_ms as f64 / 1000.0);
+    (track.artists_label(), album, duration)
+}
+
+/// The "Translate" toggle of the lyrics pane (off at every start).
+pub static TRANSLATE: GlobalSignal<bool> = Signal::global(|| false);
+/// Translated lines of one song: (track, language, lines). Empty lines while it loads.
+type Translation = (Id, &'static str, Arc<Vec<String>>);
+static TRANSLATION: GlobalSignal<Option<Translation>> = Signal::global(|| None);
+
+/// The translation of `track_id` in the UI language, when ready and matching `lines` lines.
+pub fn translation_for(track_id: &Id, lines: usize) -> Option<Arc<Vec<String>>> {
+    if !*TRANSLATE.read() {
+        return None;
+    }
+    let lang = crate::i18n::language().code();
+    match TRANSLATION.read().as_ref() {
+        Some((id, l, t)) if id == track_id && *l == lang && t.len() == lines => Some(t.clone()),
+        _ => None,
+    }
+}
+
+/// Whether the translation slot holds (or is loading) `track_id` in `lang`.
+fn pending_or_done(track_id: &Id, lang: &str) -> bool {
+    TRANSLATION
+        .peek()
+        .as_ref()
+        .is_some_and(|(id, l, _)| id == track_id && *l == lang)
+}
+
+/// Translate `lines` of `track` into the UI language (once per song and language).
+pub fn request_translation(track: &Track, lines: Vec<String>) {
+    let lang = crate::i18n::language().code();
+    if pending_or_done(&track.id, lang) {
+        return;
+    }
+    *TRANSLATION.write() = Some((track.id.clone(), lang, Arc::new(vec![])));
+    let track = track.clone();
+    spawn_forever(async move {
+        let (artist, album, duration) = query_parts(&track);
+        let query = LyricsQuery {
+            title: &track.title,
+            artist: &artist,
+            album: album.as_deref(),
+            duration_secs: duration,
+        };
+        match api::translate_lyrics(&query, lines, lang).await {
+            Ok(t) => {
+                if pending_or_done(&track.id, lang) {
+                    *TRANSLATION.write() = Some((track.id.clone(), lang, Arc::new(t)));
+                }
+            }
+            Err(_) => {
+                if pending_or_done(&track.id, lang) {
+                    *TRANSLATION.write() = None;
+                    *TRANSLATE.write() = false;
+                }
+                crate::ui::toast_error(crate::i18n::t("lyrics.translate.failed"));
+            }
+        }
+    });
 }
 
 /// The user pressed "Etkinleştir": flip the setting and look the lyrics up.

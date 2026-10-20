@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "그 밖에는 아무것도 전송되지 않아요. 설정 > 가사에서 언제든지 끌 수 있어요.",
   "lyrics.optin.sent": "가사를 찾기 위해 lrclib.net으로 다음 정보만 전송돼요:",
   "lyrics.title": "가사",
+  "lyrics.translate.failed": "가사를 번역하지 못했어요. 나중에 다시 시도해 주세요.",
+  "lyrics.translate.toggle": "번역",
   "lyrics.unsynced": "이 가사는 곡과 동기화되어 있지 않아요.",
   "nav.all": "모두 보기",
   "nav.home": "홈",

@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Nothing else is sent. You can turn this off any time in Settings > Lyrics.",
   "lyrics.optin.sent": "To find lyrics, only this is sent to lrclib.net:",
   "lyrics.title": "Lyrics",
+  "lyrics.translate.failed": "Could not translate the lyrics. Please try again later.",
+  "lyrics.translate.toggle": "Translate",
   "lyrics.unsynced": "These lyrics are not timed to the song.",
   "nav.all": "See all",
   "nav.home": "Home",

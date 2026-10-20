@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Non viene inviato nient'altro. Puoi disattivarlo quando vuoi in Impostazioni > Testi.",
   "lyrics.optin.sent": "Per trovare i testi, a lrclib.net viene inviato solo questo:",
   "lyrics.title": "Testo",
+  "lyrics.translate.failed": "Impossibile tradurre il testo. Riprova più tardi.",
+  "lyrics.translate.toggle": "Traduci",
   "lyrics.unsynced": "Questo testo non è sincronizzato con il brano.",
   "nav.all": "Mostra tutto",
   "nav.home": "Home",

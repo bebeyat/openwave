@@ -5,16 +5,16 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 
 use super::lyric_logic::{
-    active_line, is_rtl, line_opacity, offset_label, shifted, should_autoscroll, word_spans,
-    WordSpan, OFFSET_STEP_MS,
+    active_line, is_rtl, line_opacity, shifted, should_autoscroll, word_spans, WordSpan,
 };
-use super::lyrics_state::{self, lyrics_enabled, LyricsView, LYRICS};
-use crate::features::tracks::state::{library as library_state, update_library};
+use super::lyrics_state::{self, lyrics_enabled, translation_for, LyricsView, LYRICS};
+use super::lyrics_tools::LyricsTools;
+use crate::features::tracks::state::library as library_state;
 use crate::i18n::t;
-use crate::model::{Id, Lyrics, Track};
+use crate::model::{Lyrics, Track};
 use crate::player::controller::{self as ctl, POSITION};
 use crate::store::library;
-use crate::ui::{cx, next_id, Button, ButtonVariant, Icon, IconButton, IconButtonSize, Skeleton};
+use crate::ui::{cx, next_id, Button, ButtonVariant, Icon, Skeleton};
 
 /// Lyrics for the playing song. `large` is the fullscreen look (giant type), `panel` the docked /
 /// drawer look (big bold type); `on_dark` forces light text.
@@ -61,7 +61,7 @@ pub fn LyricsPane(
         LyricsView::Ready(lyrics) => {
             if lyrics.is_synced() {
                 rsx! {
-                    Synced { key: "{track.id}", track_id: track.id.clone(), lyrics, large, panel, on_dark }
+                    Synced { key: "{track.id}", track, lyrics, large, panel, on_dark }
                 }
             } else {
                 rsx! {
@@ -190,12 +190,8 @@ var top=e.offsetTop-c.clientHeight/2+e.offsetHeight/2;c.scrollTo({{top:Math.max(
     )
 }
 
-fn shift_offset(id: &Id, delta: i32) {
-    update_library(|lib| lib.set_lyric_offset(id, lib.lyric_offset(id) + delta));
-}
-
 #[component]
-fn Synced(track_id: Id, lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
+fn Synced(track: Track, lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
     let ids = use_hook(|| next_id("lyrics"));
     use_hook(|| {
         document::eval(LYRICS_FILL_JS);
@@ -203,8 +199,8 @@ fn Synced(track_id: Id, lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: 
     let box_id = format!("{ids}-box");
     let mut last_manual = use_signal(|| None::<u64>);
     let lines = lyrics.clone();
-    let offset_ms = library_state().lyric_offset(&track_id);
-    let memo_id = track_id.clone();
+    let offset_ms = library_state().lyric_offset(&track.id);
+    let memo_id = track.id.clone();
     let active = use_memo(move || {
         let offset = library_state().lyric_offset(&memo_id);
         active_line(&lines.synced, shifted(*POSITION.read(), offset))
@@ -223,60 +219,53 @@ fn Synced(track_id: Id, lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: 
     } else {
         "text-[calc(14px*var(--ow-lyric-scale))]"
     };
+    let translated = translation_for(&track.id, lyrics.synced.len());
+    let translation_of = |i: usize| {
+        translated
+            .as_ref()
+            .and_then(|t| t.get(i))
+            .filter(|s| !s.is_empty())
+            .cloned()
+    };
     let mut manual = move || last_manual.set(Some(now_ms()));
-    let (earlier_id, later_id) = (track_id.clone(), track_id.clone());
-    let note = if on_dark { "text-fg/70" } else { "text-muted" };
     rsx! {
         div { class: "relative h-full",
-        div { class: "absolute right-4 top-2 z-10 flex items-center gap-1",
-            IconButton {
-                icon: "minus",
-                label: t("lyrics.offset.earlier"),
-                size: IconButtonSize::Sm,
-                onclick: move |_| shift_offset(&earlier_id, -OFFSET_STEP_MS),
-            }
-            span { class: "w-12 text-center text-xs tabular-nums {note}", {offset_label(offset_ms)} }
-            IconButton {
-                icon: "plus",
-                label: t("lyrics.offset.later"),
-                size: IconButtonSize::Sm,
-                onclick: move |_| shift_offset(&later_id, OFFSET_STEP_MS),
-            }
-        }
-        div {
-            id: "{box_id}",
-            class: "ow-fade-edges relative h-full overflow-y-auto px-6",
-            "data-ow-offset": "{offset_ms}",
-            tabindex: "0",
-            role: "region",
-            "aria-label": t("lyrics.title"),
-            onwheel: move |_| manual(),
-            ontouchmove: move |_| manual(),
-            onkeydown: move |e| {
-                if matches!(
-                    e.key(),
-                    Key::ArrowUp | Key::ArrowDown | Key::PageUp | Key::PageDown | Key::Home | Key::End
-                ) {
-                    manual();
+            LyricsTools { track, lyrics: lyrics.clone(), on_dark }
+            div {
+                id: "{box_id}",
+                class: "ow-fade-edges relative h-full overflow-y-auto px-6",
+                "data-ow-offset": "{offset_ms}",
+                tabindex: "0",
+                role: "region",
+                "aria-label": t("lyrics.title"),
+                onwheel: move |_| manual(),
+                ontouchmove: move |_| manual(),
+                onkeydown: move |e| {
+                    if matches!(
+                        e.key(),
+                        Key::ArrowUp | Key::ArrowDown | Key::PageUp | Key::PageDown | Key::Home | Key::End
+                    ) {
+                        manual();
+                    }
+                },
+                // Spacers let the first and last line reach the middle of the box.
+                div { class: "h-[45%] flex-none", "aria-hidden": "true" }
+                for (i , line) in lyrics.synced.iter().enumerate() {
+                    LyricLineRow {
+                        key: "{i}",
+                        id: format!("{ids}-{i}"),
+                        text: line.text.clone(),
+                        words: word_spans(&lyrics.synced, i),
+                        translation: translation_of(i),
+                        start_ms: line.start_ms,
+                        active: active() == Some(i),
+                        size: size.to_string(),
+                        opacity: line_opacity(active(), i),
+                        on_dark,
+                    }
                 }
-            },
-            // Spacers let the first and last line reach the middle of the box.
-            div { class: "h-[45%] flex-none", "aria-hidden": "true" }
-            for (i , line) in lyrics.synced.iter().enumerate() {
-                LyricLineRow {
-                    key: "{i}",
-                    id: format!("{ids}-{i}"),
-                    text: line.text.clone(),
-                    words: word_spans(&lyrics.synced, i),
-                    start_ms: line.start_ms,
-                    active: active() == Some(i),
-                    size: size.to_string(),
-                    opacity: line_opacity(active(), i),
-                    on_dark,
-                }
+                div { class: "h-[45%] flex-none", "aria-hidden": "true" }
             }
-            div { class: "h-[45%] flex-none", "aria-hidden": "true" }
-        }
         }
     }
 }
@@ -286,6 +275,7 @@ fn LyricLineRow(
     id: String,
     text: String,
     words: Vec<WordSpan>,
+    translation: Option<String>,
     start_ms: u64,
     active: bool,
     size: String,
@@ -303,6 +293,7 @@ fn LyricLineRow(
         if rtl { "text-right" } else { "text-left" },
         &size,
     ]);
+    let tr_rtl = translation.as_deref().is_some_and(is_rtl);
     rsx! {
         button {
             id: "{id}",
@@ -319,6 +310,13 @@ fn LyricLineRow(
                     "data-s": "{w.start_ms}",
                     "data-e": "{w.end_ms}",
                     "{w.text}"
+                }
+            }
+            if let Some(tr) = translation {
+                span {
+                    class: "mt-1 block text-sm font-semibold leading-tight opacity-80",
+                    dir: if tr_rtl { "rtl" } else { "auto" },
+                    "{tr}"
                 }
             }
         }

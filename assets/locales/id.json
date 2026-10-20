@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Tidak ada lagi yang dikirim. Kamu bisa mematikannya kapan saja di Pengaturan > Lirik.",
   "lyrics.optin.sent": "Untuk mencari lirik, hanya ini yang dikirim ke lrclib.net:",
   "lyrics.title": "Lirik",
+  "lyrics.translate.failed": "Lirik tidak dapat diterjemahkan. Coba lagi nanti.",
+  "lyrics.translate.toggle": "Terjemahkan",
   "lyrics.unsynced": "Lirik ini tidak disinkronkan dengan lagu.",
   "nav.all": "Lihat semua",
   "nav.home": "Beranda",

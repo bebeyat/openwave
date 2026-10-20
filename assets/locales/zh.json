@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "不会发送其他任何内容。你可以随时在“设置 > 歌词”中关闭。",
   "lyrics.optin.sent": "为了查找歌词，只会向 lrclib.net 发送以下内容：",
   "lyrics.title": "歌词",
+  "lyrics.translate.failed": "无法翻译歌词，请稍后再试。",
+  "lyrics.translate.toggle": "翻译",
   "lyrics.unsynced": "这些歌词未与歌曲同步。",
   "nav.all": "查看全部",
   "nav.home": "首页",

@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Verder wordt er niets verstuurd. Je kunt dit altijd uitzetten via Instellingen > Songteksten.",
   "lyrics.optin.sent": "Om songteksten te vinden, wordt alleen dit naar lrclib.net gestuurd:",
   "lyrics.title": "Songtekst",
+  "lyrics.translate.failed": "De songtekst kon niet worden vertaald. Probeer het later opnieuw.",
+  "lyrics.translate.toggle": "Vertalen",
   "lyrics.unsynced": "Deze songtekst loopt niet synchroon met het nummer.",
   "nav.all": "Alles bekijken",
   "nav.home": "Home",

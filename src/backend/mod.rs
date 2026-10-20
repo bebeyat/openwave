@@ -17,6 +17,7 @@ pub mod palette;
 mod palette_net;
 mod proxy;
 pub mod share;
+pub mod translate;
 pub mod update;
 pub mod ytdlp;
 

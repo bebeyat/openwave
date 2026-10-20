@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Nada mais é enviado. Você pode desativar isso quando quiser em Configurações > Letras.",
   "lyrics.optin.sent": "Para encontrar letras, só isto é enviado ao lrclib.net:",
   "lyrics.title": "Letra",
+  "lyrics.translate.failed": "Não foi possível traduzir a letra. Tente novamente mais tarde.",
+  "lyrics.translate.toggle": "Traduzir",
   "lyrics.unsynced": "Esta letra não está sincronizada com a música.",
   "nav.all": "Ver tudo",
   "nav.home": "Início",

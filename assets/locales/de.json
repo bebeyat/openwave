@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Sonst wird nichts gesendet. Du kannst das jederzeit unter Einstellungen > Songtexte ausschalten.",
   "lyrics.optin.sent": "Um Songtexte zu finden, wird nur Folgendes an lrclib.net gesendet:",
   "lyrics.title": "Songtext",
+  "lyrics.translate.failed": "Der Text konnte nicht übersetzt werden. Bitte versuche es später erneut.",
+  "lyrics.translate.toggle": "Übersetzen",
   "lyrics.unsynced": "Dieser Songtext ist nicht mit dem Song synchronisiert.",
   "nav.all": "Alle anzeigen",
   "nav.home": "Startseite",

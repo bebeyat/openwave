@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Rien d'autre n'est envoyé. Tu peux désactiver cette option à tout moment dans Paramètres > Paroles.",
   "lyrics.optin.sent": "Pour trouver les paroles, seules ces infos sont envoyées à lrclib.net :",
   "lyrics.title": "Paroles",
+  "lyrics.translate.failed": "Impossible de traduire les paroles. Réessayez plus tard.",
+  "lyrics.translate.toggle": "Traduire",
   "lyrics.unsynced": "Ces paroles ne sont pas synchronisées avec le titre.",
   "nav.all": "Tout afficher",
   "nav.home": "Accueil",

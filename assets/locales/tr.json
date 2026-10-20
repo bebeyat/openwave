@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "Başka hiçbir şey gönderilmez. İstediğin zaman Ayarlar > Sözler bölümünden kapatabilirsin.",
   "lyrics.optin.sent": "Sözleri bulmak için lrclib.net'e yalnızca şunlar gönderilir:",
   "lyrics.title": "Sözler",
+  "lyrics.translate.failed": "Sözler çevrilemedi. Lütfen daha sonra tekrar deneyin.",
+  "lyrics.translate.toggle": "Çevir",
   "lyrics.unsynced": "Bu sözler şarkıyla zamanlanmamış.",
   "nav.all": "Tümü",
   "nav.home": "Ana Sayfa",

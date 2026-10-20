@@ -9,7 +9,7 @@ use super::{
     lyrics::{self, LyricsQuery},
     lyrics_cache,
     media::Media,
-    share, ytdlp,
+    share, translate, ytdlp,
 };
 use crate::model::*;
 use serde_json::Value;
@@ -419,6 +419,37 @@ pub async fn lyrics(enabled: bool, query: &LyricsQuery<'_>) -> ApiResult<Option<
         let _ = run(async move { lyrics_cache::put(&dir, &key, &entry) }).await;
     }
     Ok(found)
+}
+
+/// `lines` translated into `lang` (a UI language code), one entry per line. Translations are kept
+/// on disk next to the song's lyrics.
+pub async fn translate_lyrics(
+    query: &LyricsQuery<'_>,
+    lines: Vec<String>,
+    lang: &'static str,
+) -> ApiResult<Vec<String>> {
+    let dir = backend_ref()?.root.join(lyrics_cache::DIR);
+    let key = lyrics_cache::cache_key(query);
+    let (d, k) = (dir.clone(), key.clone());
+    let cached = run(async move { lyrics_cache::get(&d, &k) }).await?;
+    let hit = cached
+        .as_ref()
+        .and_then(|e| e.translations.get(lang))
+        .filter(|t| t.len() == lines.len());
+    if let Some(t) = hit {
+        return Ok(t.clone());
+    }
+    let out = run(async move { translate::translate_from(translate::BASE, &lines, lang).await })
+        .await??;
+    let old = cached.unwrap_or_default();
+    let mut translations = old.translations.clone();
+    translations.insert(lang.to_owned(), out.clone());
+    let entry = lyrics_cache::Entry {
+        translations,
+        ..old
+    };
+    let _ = run(async move { lyrics_cache::put(&dir, &key, &entry) }).await;
+    Ok(out)
 }
 
 // ---- Import -------------------------------------------------------------------------------

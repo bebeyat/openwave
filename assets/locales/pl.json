@@ -388,6 +388,8 @@
   "lyrics.optin.nothing_else": "Nic więcej nie jest wysyłane. Możesz to w każdej chwili wyłączyć w Ustawienia > Teksty.",
   "lyrics.optin.sent": "Aby znaleźć tekst, do lrclib.net wysyłane jest tylko to:",
   "lyrics.title": "Tekst",
+  "lyrics.translate.failed": "Nie udało się przetłumaczyć tekstu. Spróbuj ponownie później.",
+  "lyrics.translate.toggle": "Przetłumacz",
   "lyrics.unsynced": "Ten tekst nie jest zsynchronizowany z utworem.",
   "nav.all": "Pokaż wszystko",
   "nav.home": "Główna",

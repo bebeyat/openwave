@@ -368,6 +368,8 @@
   "lyrics.optin.nothing_else": "それ以外は何も送信されません。「設定 > 歌詞」でいつでもオフにできます。",
   "lyrics.optin.sent": "歌詞を探すため、lrclib.net には次の情報だけが送信されます:",
   "lyrics.title": "歌詞",
+  "lyrics.translate.failed": "歌詞を翻訳できませんでした。しばらくしてからもう一度お試しください。",
+  "lyrics.translate.toggle": "翻訳",
   "lyrics.unsynced": "この歌詞は曲と同期していません。",
   "nav.all": "すべて表示",
   "nav.home": "ホーム",
