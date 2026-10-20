@@ -1,6 +1,7 @@
 //! The import experience: ONE dialog (`ImportDialog`, opened through `OPEN_IMPORT`) for Spotify,
 //! YouTube / YouTube Music links and local files, plus drag-and-drop of audio files.
 
+pub mod account;
 mod brand;
 mod clipboard;
 mod dialog;

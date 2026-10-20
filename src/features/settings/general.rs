@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use dioxus::prelude::*;
 
-use super::integrations::DiscordCard;
+use super::integrations::{DiscordCard, SpotifyCard};
 use super::rows::{Card, Row, SectionTitle, ToggleRow};
 use crate::i18n::{t, Lang};
 use crate::store::{LanguagePref, Settings, SettingsChange, ThemePref, ACCENT_IDS};
@@ -196,6 +196,7 @@ pub fn General(settings: Arc<Settings>, on_change: EventHandler<SettingsChange>)
             }
         }
         DiscordCard { settings: settings.clone(), on_change }
+        SpotifyCard { settings: settings.clone(), on_change }
     }
 }
 

@@ -215,6 +215,9 @@ pub struct Settings {
     /// Look-and-layout choices (Ayarlar › Özelleştirme).
     #[serde(deserialize_with = "lenient")]
     pub custom: Customization,
+    /// The user's own Spotify app id, for "Sign in with Spotify" (empty: not set).
+    #[serde(deserialize_with = "lenient")]
+    pub spotify_client_id: String,
 }
 
 impl Default for Settings {
@@ -239,6 +242,7 @@ impl Default for Settings {
             discord_enabled: false,
             auto_update: yes(),
             custom: Customization::default(),
+            spotify_client_id: String::new(),
         }
     }
 }
@@ -264,6 +268,7 @@ pub enum SettingsChange {
     DiscordEnabled(bool),
     AutoUpdate(bool),
     Custom(Customization),
+    SpotifyClientId(String),
 }
 
 impl Settings {
@@ -289,6 +294,9 @@ impl Settings {
             SettingsChange::DiscordEnabled(v) => next.discord_enabled = v,
             SettingsChange::AutoUpdate(v) => next.auto_update = v,
             SettingsChange::Custom(v) => next.custom = v,
+            SettingsChange::SpotifyClientId(v) => {
+                next.spotify_client_id = v.trim().chars().take(64).collect();
+            }
         }
         next.sanitize()
     }

@@ -9,7 +9,7 @@ use super::{
     lyrics::{self, LyricsQuery},
     lyrics_cache,
     media::Media,
-    share, soundcloud, translate, ytdlp,
+    share, soundcloud, spotify_account, spotify_auth, translate, ytdlp,
 };
 use crate::model::*;
 use serde_json::Value;
@@ -497,6 +497,14 @@ pub async fn import_prepare(source: &Source) -> Result<PreparedImport, ImportErr
     match source {
         Source::Spotify(id) => import_flow::prepare_spotify(import::fetch_spotify(id).await?),
         Source::Apple(link) => import_flow::prepare_spotify(import::apple::fetch(link).await?),
+        Source::SpotifyAccount { pick, name } => {
+            let token = spotify_token()
+                .await
+                .map_err(|_| ImportError::PrivateOrEmpty)?;
+            let list =
+                spotify_account::tracks(spotify_account::API, &token, pick, name.clone()).await?;
+            import_flow::prepare_spotify(list)
+        }
         Source::Youtube(id) => {
             let c = collection(CollectionKind::Playlist, &browse_list_id(id))
                 .await
@@ -584,6 +592,41 @@ pub fn cover_src(url: &str) -> String {
         }
         _ => String::new(),
     }
+}
+
+// ---- Spotify account ------------------------------------------------------------------------
+
+pub fn spotify_signed_in() -> bool {
+    spotify_auth::load(&data_dir()).is_some()
+}
+
+/// Sign in with the user's own Spotify app (opens the browser; waits up to five minutes).
+pub async fn spotify_sign_in(client_id: String) -> Result<(), spotify_auth::AuthError> {
+    let dir = data_dir();
+    run(async move { spotify_auth::sign_in(&dir, &client_id).await })
+        .await
+        .map_err(|_| spotify_auth::AuthError::BadResponse)?
+}
+
+pub fn spotify_sign_out() -> std::io::Result<()> {
+    spotify_auth::sign_out(&data_dir())
+}
+
+async fn spotify_token() -> Result<String, spotify_auth::AuthError> {
+    let dir = data_dir();
+    run(async move { spotify_auth::access_token(&dir, spotify_auth::ACCOUNTS).await })
+        .await
+        .map_err(|_| spotify_auth::AuthError::BadResponse)?
+}
+
+/// The signed-in user's playlists.
+pub async fn spotify_playlists() -> Result<Vec<spotify_account::UserPlaylist>, ImportError> {
+    let token = spotify_token()
+        .await
+        .map_err(|_| ImportError::PrivateOrEmpty)?;
+    run(async move { spotify_account::playlists(spotify_account::API, &token).await })
+        .await
+        .map_err(|_| ImportError::Unreadable)?
 }
 
 // ---- yt-dlp ---------------------------------------------------------------------------------

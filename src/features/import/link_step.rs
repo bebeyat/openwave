@@ -180,6 +180,9 @@ pub fn LinkStep(ctx: Ctx) -> Element {
                     {e.user_message()}
                 }
             }
+            if kind == Kind::Spotify && *super::account::SIGNED_IN.read() {
+                super::account::AccountPicker { ctx }
+            }
             details { class: "ow-card-glass group px-4 py-2",
                 summary { class: "flex min-h-9 cursor-pointer list-none items-center gap-2 text-sm font-semibold text-fg",
                     Icon { name: "circle-help", size: 18, class: "text-muted" }

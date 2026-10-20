@@ -15,7 +15,7 @@ pub enum Kind {
 impl Kind {
     pub fn of(source: &Source) -> Kind {
         match source {
-            Source::Spotify(_) => Kind::Spotify,
+            Source::Spotify(_) | Source::SpotifyAccount { .. } => Kind::Spotify,
             Source::Apple(_) => Kind::Apple,
             // Shared lists are YouTube Music songs.
             Source::Youtube(_) | Source::Shared(_) => Kind::Youtube,

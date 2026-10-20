@@ -18,6 +18,8 @@ mod palette_net;
 mod proxy;
 pub mod share;
 pub mod soundcloud;
+pub mod spotify_account;
+pub mod spotify_auth;
 pub mod translate;
 pub mod update;
 pub mod ytdlp;

@@ -29,6 +29,11 @@ pub enum Source {
     Shared(String),
     /// An Apple Music album or playlist.
     Apple(apple::AppleLink),
+    /// Liked Songs or a playlist of the signed-in Spotify account; `name` names the new list.
+    SpotifyAccount {
+        pick: super::spotify_account::Pick,
+        name: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -46,7 +51,7 @@ pub struct SpotifyPlaylist {
     pub complete: bool,
 }
 
-fn spotify_id(s: &str) -> Option<String> {
+pub(crate) fn spotify_id(s: &str) -> Option<String> {
     (s.len() == 22 && s.bytes().all(|b| b.is_ascii_alphanumeric())).then(|| s.to_owned())
 }
 
@@ -158,7 +163,7 @@ pub fn parse_link(input: &str) -> Result<Source, ImportError> {
 }
 
 /// Trimmed and cut to [`MAX_TEXT_CHARS`] characters.
-fn capped(s: &str) -> String {
+pub(crate) fn capped(s: &str) -> String {
     s.trim().chars().take(MAX_TEXT_CHARS).collect()
 }
 
