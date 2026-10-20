@@ -152,6 +152,8 @@ pub fn TrackList(
     let sorted = sort() != SortBy::Default;
     let tracks: Vec<Track> = order.iter().map(|&i| tracks[i].clone()).collect();
     let on_reorder = on_reorder.filter(|_| !sorted);
+    let remove_stored = on_remove;
+    let stored_of = order.clone();
     let on_remove = on_remove.map(|cb| {
         EventHandler::new(move |i: usize| {
             if let Some(&stored) = order.get(i) {
@@ -287,7 +289,14 @@ pub fn TrackList(
     rsx! {
         if sortable && len > 1 {
             div { class: "mb-2 flex justify-end",
-                SortControl { value: sort(), on_change: move |s| sort.set(s) }
+                SortControl {
+                    value: sort(),
+                    on_change: move |s| {
+                        // Rows move: a selection would point at other songs.
+                        selected.write().clear();
+                        sort.set(s);
+                    },
+                }
             }
         }
         if framed && len > 1 {
@@ -314,10 +323,12 @@ pub fn TrackList(
                 on_playlist: move |_| dialog.set(Some(playlist_set.clone())),
                 on_download: move |_| crate::features::downloads::enqueue(&download_set),
                 on_remove: move |_| {
-                    if let Some(cb) = on_remove {
-                        // Highest index first, so earlier removals do not shift later ones.
-                        let order: Vec<usize> = selected.peek().iter().rev().copied().collect();
-                        for i in order {
+                    if let Some(cb) = remove_stored {
+                        // Highest stored index first, so earlier removals do not shift later ones.
+                        let mut stored: Vec<usize> =
+                            selected.peek().iter().filter_map(|&i| stored_of.get(i).copied()).collect();
+                        stored.sort_unstable_by(|a, b| b.cmp(a));
+                        for i in stored {
                             cb.call(i);
                         }
                         selected.write().clear();

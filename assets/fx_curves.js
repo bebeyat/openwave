@@ -45,5 +45,15 @@
     return { db: est, gain: Math.pow(10, adjust / 20) };
   }
 
-  return { EQ_FREQS: EQ_FREQS, eqType: eqType, shape: shape, curve: curve, makeup: makeup, rmsDb: rmsDb, level: level };
+  /* Crossfade gain at `pos` of a `dur`-second song played at `rate`: down to 0 over the last `fade`
+   * seconds, up from 0 over the first min(fade, 4). Songs shorter than three fades are left alone. */
+  function fadeGain(pos, dur, rate, fade) {
+    if (!(fade > 0) || !isFinite(dur) || dur < fade * 3) return 1;
+    var r = rate > 0 ? rate : 1;
+    var out = (dur - pos) / r / fade;
+    var into = pos / r / Math.min(fade, 4);
+    return Math.max(0, Math.min(1, out, into));
+  }
+
+  return { fadeGain: fadeGain, EQ_FREQS: EQ_FREQS, eqType: eqType, shape: shape, curve: curve, makeup: makeup, rmsDb: rmsDb, level: level };
 });

@@ -35,9 +35,11 @@ pub fn minutes_left(at: Instant, now: Instant) -> u64 {
     at.saturating_duration_since(now).as_secs().div_ceil(60)
 }
 
+/// A new choice replaces the old one: stop the old countdown and any fade it started.
 fn bump() -> u64 {
     let g = GENERATION.get() + 1;
     GENERATION.set(g);
+    engine::send(json!({ "c": "fade_cancel" }));
     g
 }
 

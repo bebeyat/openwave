@@ -49,8 +49,10 @@ pub fn on_close_requested() {
     }
 }
 
-/// The X button: hides to the tray or closes, as set in the settings.
+/// The X button: hides to the tray or closes, as set in the settings. (`close()` does not raise
+/// `CloseRequested`, so the save happens here.)
 pub fn request_close(window: &DesktopContext) {
+    on_close_requested();
     window.set_close_behavior(close_behaviour(hides_on_close()));
     window.close();
 }

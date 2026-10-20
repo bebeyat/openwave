@@ -17,7 +17,7 @@
  *  - Reverb: ConvolverNode with a generated impulse response + equal-power dry/wet. Bass: low shelf.
  *  - Equalizer: ten biquads (fx_curves.js has the layout). Distortion: WaveShaper + makeup gain.
  *  - Levelling: a meter before the `level` gain steers it toward one loudness (fx_curves.level).
- *  - Crossfade: the master gain ramps down over the last `fade` seconds and back up on the next song.
+ *  - Crossfade: the master gain falls over the last `fade` seconds and rises at the next song's start.
  *  - Visualizer: owFx.viz(true) builds the graph (sound unchanged) and draws into canvas#ow-viz.
  */
 (function () {
@@ -31,7 +31,6 @@
   var want = { speed: 1, pitch: 0, linked: false, reverb: 'off', mix: 0.3, bass: 0, eq: FLAT, drive: 0, level: false, fade: 0 };
   var vizOn = false, vizRunning = false;
   var levelTimer = 0, levelDb = null;
-  var fading = false, pendingIn = false;
   var g = null;             /* the graph, once built */
   var building = null;      /* Promise while it is being built */
   var failed = false;       /* graph or worklet failed: stay on the native path */
@@ -143,7 +142,7 @@
       n.makeup.gain.value = C.makeup(s.drive);
     }
     levelLoop(n, s.level);
-    if (s.fade <= 0 && fading) unfade(n);
+    if (s.fade <= 0) n.master.gain.setTargetAtTime(1, t, 0.05);
     var m = reverbOn ? clamp(s.mix, 0, 1) : 0;     /* equal-power crossfade */
     n.dry.gain.setTargetAtTime(Math.cos(m * Math.PI / 2), t, 0.02);
     n.wet.gain.setTargetAtTime(Math.sin(m * Math.PI / 2), t, 0.02);
@@ -214,50 +213,15 @@
     }
   }
 
-  /* Crossfade: seconds of the song left at the current speed. */
-  function remaining() {
-    var d = a.duration;
-    return isFinite(d) && d > 0 ? (d - a.currentTime) / (a.playbackRate || 1) : Infinity;
-  }
-  function unfade(n) {
-    fading = false;
-    var t = n.ctx.currentTime;
-    n.master.gain.cancelScheduledValues(t);
-    n.master.gain.setTargetAtTime(1, t, 0.05);
-  }
+  /* Crossfade: the master gain follows the position (fx_curves.fadeGain), so pausing, seeking or
+   * changing speed inside a fade can never leave the song silent. */
   function onTime() {
-    if (!g || want.fade <= 0 || a.paused) return;
-    if (!isFinite(a.duration) || a.duration < want.fade * 3) return;   /* too short to fade */
-    var left = remaining();
-    if (left <= want.fade && !fading) {
-      fading = true;
-      var t = g.ctx.currentTime;
-      g.master.gain.cancelScheduledValues(t);
-      g.master.gain.setValueAtTime(g.master.gain.value, t);
-      g.master.gain.linearRampToValueAtTime(0, t + Math.max(0.05, left));
-    } else if (left > want.fade + 0.5 && fading) {
-      unfade(g);                                  /* seeked back out of the fade */
-    }
-  }
-  function onLoadStart() { pendingIn = true; }
-  /* First "playing" of a new source: fade in (or make sure a finished fade-out does not stay silent). */
-  function onPlaying() {
-    if (!pendingIn || !g) return;
-    pendingIn = false;
-    var t = g.ctx.currentTime;
-    fading = false;
-    g.master.gain.cancelScheduledValues(t);
-    if (want.fade > 0) {
-      g.master.gain.setValueAtTime(0, t);
-      g.master.gain.linearRampToValueAtTime(1, t + Math.min(want.fade, 4));
-    } else {
-      g.master.gain.setValueAtTime(1, t);
-    }
+    if (!g) return;
+    var target = want.fade > 0 ? C.fadeGain(a.currentTime, a.duration, a.playbackRate, want.fade) : 1;
+    g.master.gain.setTargetAtTime(target, g.ctx.currentTime, 0.08);
   }
   a.addEventListener('timeupdate', onTime);
   a.addEventListener('seeked', onTime);
-  a.addEventListener('loadstart', onLoadStart);
-  a.addEventListener('playing', onPlaying);
 
   /* Visualizer: frequency bars in canvas#ow-viz, coloured with the canvas' CSS colour. */
   var BARS = 48;
@@ -314,8 +278,6 @@
       a.removeEventListener('play', onPlay);
       a.removeEventListener('timeupdate', onTime);
       a.removeEventListener('seeked', onTime);
-      a.removeEventListener('loadstart', onLoadStart);
-      a.removeEventListener('playing', onPlaying);
       if (levelTimer) clearInterval(levelTimer);
       vizOn = false;
     }
