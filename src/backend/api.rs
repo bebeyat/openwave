@@ -321,6 +321,12 @@ pub async fn downloads() -> ApiResult<Vec<Downloaded>> {
         .collect())
 }
 
+/// Copy a downloaded track into `dir` as a tagged `Artist - Title.m4a`; returns the new file.
+pub async fn export_download(track_id: &str, dir: PathBuf) -> ApiResult<PathBuf> {
+    let (b, id) = (backend_ref()?, track_id.to_owned());
+    Ok(run(async move { b.media.export_download(&id, &dir).await }).await??)
+}
+
 pub async fn remove_download(track_id: &str) -> ApiResult<()> {
     let (b, id) = (backend_ref()?, track_id.to_owned());
     Ok(run(async move { b.media.remove_download(&id).await }).await??)

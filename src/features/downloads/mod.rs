@@ -170,6 +170,30 @@ pub fn delete(id: &str) {
     });
 }
 
+/// Copy downloads into a folder the user picks (tagged `.m4a` files).
+pub fn export(ids: Vec<String>) {
+    if ids.is_empty() {
+        return;
+    }
+    spawn_forever(async move {
+        let Some(folder) = rfd::AsyncFileDialog::new().pick_folder().await else {
+            return;
+        };
+        let dir = folder.path().to_path_buf();
+        let (mut ok, mut failed) = (0usize, None);
+        for id in &ids {
+            match api::export_download(id, dir.clone()).await {
+                Ok(_) => ok += 1,
+                Err(e) => failed = Some(e.user_message()),
+            }
+        }
+        match failed {
+            Some(msg) => toast_error(format!("{} {msg}", t_count("downloads.toast.exported", ok))),
+            None => toast(t_count("downloads.toast.exported", ok)),
+        }
+    });
+}
+
 /// Stop the queue after the current track.
 pub fn cancel_pending() {
     PENDING.write().clear();

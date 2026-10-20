@@ -58,7 +58,7 @@ fn http() -> Result<&'static reqwest::Client, String> {
         .map_err(Clone::clone)
 }
 
-async fn download(url: &str) -> Result<Vec<u8>, String> {
+pub(super) async fn download(url: &str) -> Result<Vec<u8>, String> {
     if !allowed_image_url(url) {
         return Err("image host not allowed".into());
     }

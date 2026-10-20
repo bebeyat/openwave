@@ -110,6 +110,15 @@ impl Media {
         ))
     }
 
+    /// The track metadata saved with the download of `key`.
+    pub(super) async fn downloaded_track(&self, key: &str) -> Option<crate::model::Track> {
+        let bytes = tokio::fs::read(self.downloads_dir().join(format!("{key}.json")))
+            .await
+            .ok()?;
+        let v: Value = serde_json::from_slice(&bytes).ok()?;
+        serde_json::from_value(v["track"].clone()).ok()
+    }
+
     /// Download `key` completely and keep it with `track` (its metadata). Returns the size.
     /// Already downloaded tracks return at once.
     pub async fn download(
@@ -135,6 +144,8 @@ impl Media {
             return Err(MediaError::Io("download already running".into()));
         };
         let epoch = CANCEL_EPOCH.load(std::sync::atomic::Ordering::SeqCst);
+        // MP4 (itag 140) so the export can be tagged; economy keeps its small stream.
+        let quality = if quality == "economy" { quality } else { "m4a" };
         let (stream, _) = self.fetch_stream(key, quality).await?;
         let part = dir.join(format!("{key}.part"));
         let written = self.fetch_to(&stream.url, &part).await;

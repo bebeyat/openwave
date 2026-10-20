@@ -208,7 +208,18 @@ pub(crate) fn pick_format<'a>(player: &'a Value, quality: &str) -> Option<&'a Va
         })
         .collect();
     formats.sort_by_key(|f| std::cmp::Reverse(f["bitrate"].as_u64().unwrap_or(0)));
-    if quality == "economy" {
+    if quality == "m4a" {
+        // Downloads: MP4 when offered (taggable), else the best of the rest.
+        formats
+            .iter()
+            .find(|f| {
+                f["mimeType"]
+                    .as_str()
+                    .is_some_and(|m| m.starts_with("audio/mp4"))
+            })
+            .or(formats.first())
+            .copied()
+    } else if quality == "economy" {
         formats
             .iter()
             .find(|f| f["bitrate"].as_u64().unwrap_or(0) <= ECONOMY_MAX_BITRATE)

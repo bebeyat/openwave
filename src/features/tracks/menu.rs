@@ -50,6 +50,7 @@ pub fn TrackMenuItems(
         None
     };
     let dl_id = track.id.to_string();
+    let export_id = dl_id.clone();
     let like_label = if liked {
         t("track.unlike")
     } else {
@@ -103,6 +104,7 @@ pub fn TrackMenuItems(
                 MenuItem { icon: "download", label: t("downloads.menu.downloading"), disabled: true, onselect: move |_| {} }
             },
             Some(DlState::Done) => rsx! {
+                MenuItem { icon: "folder-open", label: t("downloads.menu.export"), onselect: move |_| downloads::export(vec![export_id.clone()]) }
                 MenuItem { icon: "trash-2", label: t("downloads.menu.delete"), onselect: move |_| downloads::delete(&dl_id) }
             },
             None => rsx! {},

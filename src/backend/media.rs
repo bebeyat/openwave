@@ -21,6 +21,8 @@ mod cache;
 #[path = "media_download.rs"]
 mod download;
 pub use download::cancel_all as cancel_downloads;
+#[path = "media_export.rs"]
+mod export;
 #[path = "media_local.rs"]
 mod local;
 #[path = "media_resolve.rs"]
