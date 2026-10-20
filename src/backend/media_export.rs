@@ -110,7 +110,7 @@ fn to_jpeg(bytes: &[u8]) -> Option<Vec<u8>> {
 
 impl Media {
     /// Copy the download of `key` into `dir`; returns the written file. MP4 downloads are tagged
-    /// (a cover that cannot be fetched is skipped, never fatal).
+    /// (a missing cover, or a file the tagger cannot handle, only leaves the copy less tagged).
     pub async fn export_download(&self, key: &str, dir: &Path) -> Result<PathBuf, MediaError> {
         if !video_key(key) {
             return Err(MediaError::InvalidTrackId);
@@ -137,10 +137,9 @@ impl Media {
         let tagged = tokio::task::spawn_blocking(move || write_tags(&path, &t, cover))
             .await
             .map_err(|e| MediaError::Io(e.to_string()))?;
-        if let Err(e) = tagged {
-            // A half-written copy is worse than none.
-            let _ = tokio::fs::remove_file(&dest).await;
-            return Err(MediaError::Io(e));
+        if tagged.is_err() {
+            // A file the tagger cannot rewrite (or left half-written) is copied again, untagged.
+            tokio::fs::copy(&audio, &dest).await?;
         }
         Ok(dest)
     }
