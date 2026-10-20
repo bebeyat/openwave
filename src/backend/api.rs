@@ -474,6 +474,7 @@ fn browse_list_id(id: &str) -> String {
 pub async fn import_prepare(source: &Source) -> Result<PreparedImport, ImportError> {
     match source {
         Source::Spotify(id) => import_flow::prepare_spotify(import::fetch_spotify(id).await?),
+        Source::Apple(link) => import_flow::prepare_spotify(import::apple::fetch(link).await?),
         Source::Youtube(id) => {
             let c = collection(CollectionKind::Playlist, &browse_list_id(id))
                 .await

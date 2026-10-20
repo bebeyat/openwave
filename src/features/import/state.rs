@@ -9,12 +9,14 @@ use crate::backend::import::{parse_link, parse_source, Source};
 pub enum Kind {
     Spotify,
     Youtube,
+    Apple,
 }
 
 impl Kind {
     pub fn of(source: &Source) -> Kind {
         match source {
             Source::Spotify(_) => Kind::Spotify,
+            Source::Apple(_) => Kind::Apple,
             // Shared lists are YouTube Music songs.
             Source::Youtube(_) | Source::Shared(_) => Kind::Youtube,
         }

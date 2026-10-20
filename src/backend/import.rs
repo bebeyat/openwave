@@ -7,6 +7,8 @@ use serde_json::Value;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+#[path = "import_apple.rs"]
+pub mod apple;
 #[path = "import_spotify_pages.rs"]
 mod spotify_pages;
 
@@ -25,6 +27,8 @@ pub enum Source {
     Youtube(String),
     /// An OpenWave share link (`share::BASE_URL`); holds the share id.
     Shared(String),
+    /// An Apple Music album or playlist.
+    Apple(apple::AppleLink),
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -68,7 +72,8 @@ fn host_of(url: &reqwest::Url) -> String {
         .to_ascii_lowercase()
 }
 
-/// Recognise a Spotify or YouTube playlist link (or `spotify:playlist:<id>` URI).
+/// Recognise a Spotify or YouTube playlist link (or `spotify:playlist:<id>` URI), or an Apple
+/// Music album or playlist.
 pub fn parse_source(input: &str) -> Option<Source> {
     let input = input.trim();
     if input.contains("openwave") {
@@ -79,6 +84,9 @@ pub fn parse_source(input: &str) -> Option<Source> {
     }
     let url = parse_url(input)?;
     let host = host_of(&url);
+    if host == "music.apple.com" {
+        return apple::parse(&url).map(Source::Apple);
+    }
     if host == "open.spotify.com" {
         // Paths look like /playlist/<id>, /intl-tr/playlist/<id> or /embed/playlist/<id>.
         let mut parts = url.path_segments()?;
@@ -130,6 +138,12 @@ pub fn parse_link(input: &str) -> Result<Source, ImportError> {
             .iter()
             .any(|s| ["track", "album", "artist", "episode", "show"].contains(s)),
         "youtu.be" => !first.is_empty(),
+        "music.apple.com" => {
+            url.query_pairs().any(|(k, _)| k == "i")
+                || segments
+                    .iter()
+                    .any(|s| ["song", "artist", "music-video"].contains(s))
+        }
         "youtube.com" | "music.youtube.com" | "m.youtube.com" => {
             url.query_pairs().any(|(k, _)| k == "v")
                 || ["watch", "shorts", "channel", "browse"].contains(&first)
