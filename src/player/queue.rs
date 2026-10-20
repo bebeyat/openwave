@@ -367,3 +367,15 @@ impl Queue {
         }
     }
 }
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("queue_tests.rs");
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod remove_tests {
+    include!("queue_remove_tests.rs");
+}

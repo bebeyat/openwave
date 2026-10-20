@@ -354,3 +354,21 @@ impl Media {
         resolved.insert(cache_key, (now + ttl, result.clone()));
     }
 }
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("media_tests.rs");
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod chunk_tests {
+    include!("media_chunk_tests.rs");
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod hardening_tests {
+    include!("media_hardening_tests.rs");
+}

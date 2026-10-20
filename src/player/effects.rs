@@ -88,12 +88,23 @@ fn snap(v: f64, lo: f64, hi: f64, step: f64) -> f64 {
 impl Fx {
     /// Remembered effects from the settings; speed and pitch start neutral.
     pub fn from_settings(s: &Settings) -> Self {
+        Self::default().with_saved(s)
+    }
+
+    /// The remembered part replaced by `s`; speed and pitch are kept (pitch resets when the linked
+    /// switch flips, as in [`Fx::with_linked`]).
+    pub fn with_saved(self, s: &Settings) -> Self {
         Self {
+            pitch: if s.fx_linked == self.linked {
+                self.pitch
+            } else {
+                0.0
+            },
             linked: s.fx_linked,
             reverb: s.fx_reverb,
             mix: s.fx_reverb_mix.min(FX_MIX_MAX),
             bass: s.fx_bass_db.min(FX_BASS_MAX_DB),
-            ..Self::default()
+            ..self
         }
     }
 
@@ -348,4 +359,10 @@ pub fn refresh_overlay(position: f64) {
     }
     LAST_OVERLAY.set(Some(now));
     media_keys::update_playback(status, position);
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("effects_tests.rs");
 }

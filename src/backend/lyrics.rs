@@ -345,3 +345,9 @@ pub fn parse(src: &str) -> Lyrics {
         provider: String::new(),
     }
 }
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("lyrics_tests.rs");
+}

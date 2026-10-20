@@ -126,6 +126,8 @@ pub fn commit(change: SettingsChange) -> Arc<Settings> {
     let now = store.get();
     apply_runtime(runtime_of(&now), false);
     apply_extras(&now);
+    // The effects card edits the saved effects; the playing track hears them at once.
+    crate::player::effects::update(|fx| fx.with_saved(&now));
     now
 }
 

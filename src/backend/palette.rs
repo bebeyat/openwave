@@ -330,3 +330,9 @@ pub fn from_image_bytes(bytes: &[u8]) -> Result<Palette, String> {
 }
 
 pub use super::palette_net::{allowed_image_url, palette_for, small_url};
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("palette_tests.rs");
+}

@@ -283,3 +283,15 @@ async fn fetch_page(
     };
     value.map_err(bad)
 }
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("catalog_tests.rs");
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod equiv_tests {
+    include!("catalog_equiv_tests.rs");
+}

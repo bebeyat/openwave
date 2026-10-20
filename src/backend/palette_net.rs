@@ -117,6 +117,11 @@ impl Cache {
         Self { path, file }
     }
 
+    #[cfg(test)]
+    pub fn len(&self) -> usize {
+        self.file.entries.len()
+    }
+
     pub fn get(&self, key: &str) -> Option<Palette> {
         self.file
             .entries

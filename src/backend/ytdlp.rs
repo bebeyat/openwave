@@ -291,3 +291,9 @@ fn hex(bytes: &[u8]) -> String {
 #[path = "ytdlp_install.rs"]
 mod install;
 pub use install::{adopt, install_latest};
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("ytdlp_tests.rs");
+}

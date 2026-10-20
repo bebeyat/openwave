@@ -324,3 +324,9 @@ mod status_tests {
         }
     }
 }
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("import_tests.rs");
+}
