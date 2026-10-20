@@ -123,7 +123,7 @@ impl Cache {
         Self { path, file }
     }
 
-    #[cfg(test)]
+    #[cfg(all(test, private_tests))]
     pub fn len(&self) -> usize {
         self.file.entries.len()
     }
