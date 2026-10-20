@@ -30,6 +30,15 @@ pub fn offset_label(offset_ms: i32) -> String {
     format!("{sign}{:.1}s", f64::from(offset_ms) / 1000.0)
 }
 
+/// Whether `text` holds right-to-left script (Hebrew, Arabic, Syriac, Thaana, N'Ko and their
+/// presentation forms), so its line is laid out with `dir="rtl"`.
+pub fn is_rtl(text: &str) -> bool {
+    text.chars().any(|c| {
+        matches!(c as u32,
+            0x0590..=0x08FF | 0xFB1D..=0xFDFF | 0xFE70..=0xFEFF)
+    })
+}
+
 /// Whether auto-scroll may run: not within the pause window after a manual scroll.
 pub fn should_autoscroll(now_ms: u64, last_manual_ms: Option<u64>) -> bool {
     last_manual_ms.is_none_or(|t| now_ms.saturating_sub(t) >= MANUAL_SCROLL_PAUSE_MS)

@@ -5,8 +5,8 @@ use std::sync::Arc;
 use dioxus::prelude::*;
 
 use super::lyric_logic::{
-    active_line, line_opacity, offset_label, shifted, should_autoscroll, word_spans, WordSpan,
-    OFFSET_STEP_MS,
+    active_line, is_rtl, line_opacity, offset_label, shifted, should_autoscroll, word_spans,
+    WordSpan, OFFSET_STEP_MS,
 };
 use super::lyrics_state::{self, lyrics_enabled, LyricsView, LYRICS};
 use crate::features::tracks::state::{library as library_state, update_library};
@@ -165,7 +165,11 @@ fn Plain(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Elemen
                 Icon { name: "info", size: 14 }
                 {t("lyrics.unsynced")}
             }
-            p { class: "whitespace-pre-wrap leading-8 {size} {tone}", "{lyrics.plain}" }
+            p {
+                class: "whitespace-pre-wrap leading-8 {size} {tone}",
+                dir: is_rtl(&lyrics.plain).then_some("rtl"),
+                "{lyrics.plain}"
+            }
         }
     }
 }
@@ -293,8 +297,10 @@ fn LyricLineRow(
             div { id: "{id}", class: "h-6", "aria-hidden": "true" }
         };
     }
+    let rtl = is_rtl(&text);
     let class = cx(&[
-        "ow-lyric ow-display block w-full rounded-sm py-2 text-left font-extrabold leading-[1.15] tracking-tight text-fg",
+        "ow-lyric ow-display block w-full rounded-sm py-2 font-extrabold leading-[1.15] tracking-tight text-fg",
+        if rtl { "text-right" } else { "text-left" },
         &size,
     ]);
     rsx! {
@@ -302,6 +308,7 @@ fn LyricLineRow(
             id: "{id}",
             r#type: "button",
             class: "{class}",
+            dir: rtl.then_some("rtl"),
             style: "--lo:{opacity}",
             "data-dark": on_dark.then_some("true"),
             "aria-current": active.then_some("true"),
