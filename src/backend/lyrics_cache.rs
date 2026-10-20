@@ -38,7 +38,14 @@ pub fn key(title: &str, artist: &str, album: Option<&str>, duration_secs: Option
 }
 
 pub fn cache_key(q: &super::lyrics::LyricsQuery<'_>) -> String {
-    key(q.title, q.artist, q.album, q.duration_secs)
+    // The video id is part of the key: YouTube's timed lyrics belong to that recording.
+    let title = format!(
+        "{}
+{}",
+        q.title,
+        q.video_id.unwrap_or("")
+    );
+    key(&title, q.artist, q.album, q.duration_secs)
 }
 
 fn path(dir: &Path, key: &str) -> PathBuf {

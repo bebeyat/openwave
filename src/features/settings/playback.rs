@@ -112,6 +112,7 @@ pub fn Lyrics(settings: Arc<Settings>, on_change: EventHandler<SettingsChange>) 
         Banner { class: "mt-4", kind: BannerKind::Info, title: t("settings.lyrics.what_title"),
             p { {t("settings.lyrics.explain")} }
             p { class: "mt-2", {t("settings.lyrics.sent")} }
+            p { class: "mt-1", {t("settings.lyrics.youtube")} }
             p { class: "mt-1", {t("settings.lyrics.not_sent")} }
         }
     }

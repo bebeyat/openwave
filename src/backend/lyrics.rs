@@ -17,6 +17,8 @@ pub struct LyricsQuery<'a> {
     pub artist: &'a str,
     pub album: Option<&'a str>,
     pub duration_secs: Option<f64>,
+    /// The YouTube video id when the song streams from YouTube (lyrics timed to that recording).
+    pub video_id: Option<&'a str>,
 }
 
 fn http() -> Result<&'static reqwest::Client, LyricsError> {

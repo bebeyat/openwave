@@ -431,7 +431,7 @@ pub async fn lyrics(enabled: bool, query: &LyricsQuery<'_>) -> ApiResult<Option<
     if let Some(l) = cached.as_ref().and_then(|e| e.lyrics.clone()) {
         return Ok(Some(l));
     }
-    let found = lyrics::fetch(true, query).await?;
+    let found = best_lyrics(query).await?;
     if let Some(l) = &found {
         let entry = lyrics_cache::Entry {
             lyrics: Some(l.clone()),
@@ -441,6 +441,23 @@ pub async fn lyrics(enabled: bool, query: &LyricsQuery<'_>) -> ApiResult<Option<
         let _ = run(async move { lyrics_cache::put(&dir, &key, &entry) }).await;
     }
     Ok(found)
+}
+
+/// YouTube Music's timed lyrics first (they match the streamed recording), then LRCLIB; YouTube's
+/// plain text only when LRCLIB has nothing. A YouTube failure just falls through to LRCLIB.
+async fn best_lyrics(query: &LyricsQuery<'_>) -> Result<Option<Lyrics>, LyricsError> {
+    let ytm = match query.video_id {
+        Some(id) => super::lyrics_ytm::fetch(id).await.ok().flatten(),
+        None => None,
+    };
+    if ytm.as_ref().is_some_and(Lyrics::is_synced) {
+        return Ok(ytm);
+    }
+    match lyrics::fetch(true, query).await {
+        Ok(Some(l)) if l.is_synced() || ytm.is_none() => Ok(Some(l)),
+        Ok(found) => Ok(ytm.or(found)),
+        Err(e) => ytm.map_or(Err(e), |l| Ok(Some(l))),
+    }
 }
 
 /// `lines` translated into `lang` (a UI language code), one entry per line. Translations are kept

@@ -47,6 +47,12 @@ fn set(track_id: &Id, view: LyricsView) {
     }
 }
 
+/// The id when the track streams from YouTube (not a local file or a SoundCloud song).
+fn youtube_id(track: &Track) -> Option<&str> {
+    let id = track.id.as_str();
+    (crate::backend::media::video_key(id) && !id.starts_with("sc-")).then_some(id)
+}
+
 /// Whether a lookup is worth making for this track (local files without artist are skipped so
 /// file names are never sent anywhere).
 fn lookup_allowed(track: &Track) -> bool {
@@ -108,6 +114,7 @@ async fn fetch_task(track: Track) {
         artist: &artist,
         album: album.as_deref(),
         duration_secs: duration,
+        video_id: youtube_id(&track),
     };
     let view = match api::lyrics(true, &query).await {
         Ok(Some(l)) if !l.is_empty() => LyricsView::Ready(Arc::new(l)),
@@ -165,6 +172,7 @@ pub fn request_translation(track: &Track, lines: Vec<String>) {
             artist: &artist,
             album: album.as_deref(),
             duration_secs: duration,
+            video_id: youtube_id(&track),
         };
         match api::translate_lyrics(&query, lines, lang).await {
             Ok(t) => {
