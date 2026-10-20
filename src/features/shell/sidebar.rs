@@ -15,6 +15,7 @@ use crate::ui::{Emblem, Icon, IconButton, IconButtonSize, TooltipAlign, TooltipS
 enum NavKind {
     Home,
     Library,
+    Stats,
     Settings,
 }
 
@@ -25,6 +26,7 @@ impl NavKind {
             NavKind::Library => Route::Library {
                 tab: "playlists".into(),
             },
+            NavKind::Stats => Route::Stats {},
             NavKind::Settings => Route::Settings {
                 section: "general".into(),
             },
@@ -36,6 +38,7 @@ impl NavKind {
             (self, current),
             (NavKind::Home, Route::Home {})
                 | (NavKind::Library, Route::Library { .. })
+                | (NavKind::Stats, Route::Stats {})
                 | (NavKind::Settings, Route::Settings { .. })
         )
     }
@@ -87,6 +90,7 @@ pub fn Sidebar() -> Element {
                 class: "flex flex-col gap-1 px-3 pt-3 max-[1099px]:px-2",
                 NavLink { kind: NavKind::Home, icon: "house", label: t("nav.home") }
                 NavLink { kind: NavKind::Library, icon: "library", label: t("nav.library") }
+                NavLink { kind: NavKind::Stats, icon: "chart-column", label: t("stats.title") }
             }
             if !crate::features::settings::boot::CUSTOM.read().sidebar_playlists {
                 div { class: "flex-1" }

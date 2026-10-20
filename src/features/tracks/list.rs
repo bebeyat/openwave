@@ -21,6 +21,7 @@ use dioxus::prelude::*;
 use super::common::IllustratedEmpty;
 use super::playlist_dialog::AddToPlaylistDialog;
 use super::row::{columns, TrackRow};
+use super::sort::{SortBy, SortControl};
 use super::state::library;
 use super::window::{move_target, window, ROW_H, VIRTUAL_THRESHOLD};
 use crate::i18n::{t, t_count};
@@ -142,7 +143,22 @@ pub fn TrackList(
     /// it (search results: the next result is not what the user wants to hear next).
     #[props(default)]
     similar_after: bool,
+    /// Offer a sort menu above the list (display only; dragging to reorder pauses while sorted).
+    #[props(default)]
+    sortable: bool,
 ) -> Element {
+    let mut sort = use_signal(SortBy::default);
+    let order = super::sort::order(&tracks, sort());
+    let sorted = sort() != SortBy::Default;
+    let tracks: Vec<Track> = order.iter().map(|&i| tracks[i].clone()).collect();
+    let on_reorder = on_reorder.filter(|_| !sorted);
+    let on_remove = on_remove.map(|cb| {
+        EventHandler::new(move |i: usize| {
+            if let Some(&stored) = order.get(i) {
+                cb.call(stored);
+            }
+        })
+    });
     let list_id = use_hook(|| next_id("tracklist"));
     let mut dialog = use_signal(|| None::<Vec<Track>>);
     let mut selecting = use_signal(|| false);
@@ -269,6 +285,11 @@ pub fn TrackList(
         .collect();
     let (queue_set, playlist_set, download_set) = (picked.clone(), picked.clone(), picked.clone());
     rsx! {
+        if sortable && len > 1 {
+            div { class: "mb-2 flex justify-end",
+                SortControl { value: sort(), on_change: move |s| sort.set(s) }
+            }
+        }
         if framed && len > 1 {
             SelectionBar {
                 selecting: selecting(),

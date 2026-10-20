@@ -163,24 +163,8 @@ pub fn EqSection(fx: Fx) -> Element {
     }
 }
 
-#[cfg(test)]
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn labels_and_readouts() {
-        assert_eq!(band_label(32), "32");
-        assert_eq!(band_label(16000), "16k");
-        assert_eq!(db_text(3), "+3 dB");
-        assert_eq!(db_text(-2), "-2 dB");
-        assert_eq!(db_text(0), "0 dB");
-    }
-
-    #[test]
-    fn saving_a_name_again_replaces_it() {
-        let a = with_preset(&[], " Mine ", [1; EQ_BANDS]);
-        let b = with_preset(&a, "Mine", [2; EQ_BANDS]);
-        assert_eq!(b.len(), 1);
-        assert_eq!((b[0].name.as_str(), b[0].bands), ("Mine", [2; EQ_BANDS]));
-    }
+    include!("effects_eq_tests.rs");
 }

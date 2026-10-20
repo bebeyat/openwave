@@ -88,3 +88,4 @@ pub fn Artist(id: String) -> Element {
 }
 
 pub use crate::features::settings::Settings;
+pub use crate::features::stats::Stats;

@@ -49,6 +49,7 @@ pub fn LikedTab() -> Element {
             }
         }
         TrackList {
+            sortable: true,
             tracks: liked,
             label: t("library.tab.liked"),
             empty: rsx! {
@@ -92,6 +93,7 @@ pub fn LocalTab() -> Element {
             }
         }
         TrackList {
+            sortable: true,
             tracks: files,
             show_album: false,
             label: t("library.tab.local"),

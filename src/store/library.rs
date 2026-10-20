@@ -23,6 +23,8 @@ pub struct HistoryEntry {
     pub played_at_ms: u64,
     /// How many times the track was played; 0 in files written before plays were counted.
     pub plays: u32,
+    /// How many times it was skipped within its first seconds.
+    pub skips: u32,
 }
 
 impl HistoryEntry {
@@ -196,15 +198,12 @@ impl Library {
 
     /// Put the track at the top of the history (replacing its older entry, keeping its count).
     pub fn record_play(&self, track: &Track, now_ms: u64) -> Library {
-        let earlier = self
-            .history
-            .iter()
-            .find(|h| h.track.id == track.id)
-            .map_or(0, HistoryEntry::play_count);
+        let earlier = self.history.iter().find(|h| h.track.id == track.id);
         let entry = HistoryEntry {
             track: track.clone(),
             played_at_ms: now_ms,
-            plays: earlier + 1,
+            plays: earlier.map_or(0, HistoryEntry::play_count) + 1,
+            skips: earlier.map_or(0, |h| h.skips),
         };
         let history = std::iter::once(entry)
             .chain(
@@ -214,6 +213,22 @@ impl Library {
                     .cloned(),
             )
             .take(HISTORY_CAP)
+            .collect();
+        Library {
+            history,
+            ..self.clone()
+        }
+    }
+
+    /// Count a skip for the track's history entry (no entry: nothing to count against).
+    pub fn record_skip(&self, track_id: &str) -> Library {
+        let history = self
+            .history
+            .iter()
+            .map(|h| HistoryEntry {
+                skips: h.skips + u32::from(h.track.id == track_id),
+                ..h.clone()
+            })
             .collect();
         Library {
             history,
@@ -339,4 +354,10 @@ pub fn now_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod skip_tests {
+    include!("library_skip_tests.rs");
 }

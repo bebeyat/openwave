@@ -81,6 +81,10 @@ pub fn Shell() -> Element {
     use_shortcut_bridge();
     let nav = navigator();
     use_shortcuts(move |action| {
+        if action == Action::Palette {
+            super::palette::toggle();
+            return;
+        }
         if action == Action::Escape {
             // Close the queue drawer / fullscreen player / shortcut popover first.
             if crate::features::player::state::close_top_overlay() {
@@ -116,6 +120,7 @@ pub fn Shell() -> Element {
             crate::features::share::LinkInbox {}
             crate::features::update::UpdateWatcher {}
             super::window::TrayHost {}
+            super::palette::CommandPalette {}
         }
     }
 }

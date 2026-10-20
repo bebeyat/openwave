@@ -358,6 +358,9 @@ pub fn Customize(
             }
         }
 
+        GroupTitle { text: t("custom.css") }
+        super::user_css::UserCssCard { saved: settings.user_css.clone(), on_change }
+
         div { class: "mt-6 flex justify-end",
             Button {
                 variant: ButtonVariant::Secondary,

@@ -13,6 +13,7 @@ pub mod search;
 pub mod settings;
 pub mod share;
 pub mod shell;
+pub mod stats;
 pub mod store_health;
 pub mod tracks;
 pub mod update;

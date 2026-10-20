@@ -143,6 +143,9 @@ pub const FX_DRIVE_MAX: u8 = 100;
 /// Longest crossfade, in seconds.
 pub const FX_FADE_MAX: u8 = 12;
 
+/// Longest user stylesheet kept, in bytes.
+pub const USER_CSS_MAX: usize = 64 * 1024;
+
 /// A user-saved equalizer curve.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct EqPreset {
@@ -244,6 +247,9 @@ pub struct Settings {
     /// Closing the window keeps OpenWave playing in the system tray.
     #[serde(deserialize_with = "lenient")]
     pub close_to_tray: bool,
+    /// The user's own stylesheet, applied after the app's.
+    #[serde(deserialize_with = "lenient")]
+    pub user_css: String,
     /// Look-and-layout choices (Ayarlar › Özelleştirme).
     #[serde(deserialize_with = "lenient")]
     pub custom: Customization,
@@ -276,6 +282,7 @@ impl Default for Settings {
             discord_enabled: false,
             auto_update: yes(),
             close_to_tray: false,
+            user_css: String::new(),
             custom: Customization::default(),
         }
     }
@@ -307,6 +314,7 @@ pub enum SettingsChange {
     DiscordEnabled(bool),
     AutoUpdate(bool),
     CloseToTray(bool),
+    UserCss(String),
     Custom(Customization),
 }
 
@@ -338,6 +346,7 @@ impl Settings {
             SettingsChange::DiscordEnabled(v) => next.discord_enabled = v,
             SettingsChange::AutoUpdate(v) => next.auto_update = v,
             SettingsChange::CloseToTray(v) => next.close_to_tray = v,
+            SettingsChange::UserCss(v) => next.user_css = v,
             SettingsChange::Custom(v) => next.custom = v,
         }
         next.sanitize()
@@ -416,6 +425,13 @@ impl Versioned for Settings {
         self.eq_presets = sanitize_presets(self.eq_presets);
         self.fx_drive = self.fx_drive.min(FX_DRIVE_MAX);
         self.fx_fade = self.fx_fade.min(FX_FADE_MAX);
+        if self.user_css.len() > USER_CSS_MAX {
+            let mut end = USER_CSS_MAX;
+            while !self.user_css.is_char_boundary(end) {
+                end -= 1;
+            }
+            self.user_css.truncate(end);
+        }
         self.custom = self.custom.sanitize();
         self
     }
@@ -644,4 +660,10 @@ mod tests {
         let c = Settings::default().apply(SettingsChange::Custom(custom));
         assert_eq!(c.custom.radius, crate::store::customize::RADIUS_MAX);
     }
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod fx_tests {
+    include!("settings_fx_tests.rs");
 }

@@ -44,6 +44,7 @@ pub fn DownloadsTab() -> Element {
             }
         }
         TrackList {
+            sortable: true,
             tracks,
             label: t("library.tab.downloads"),
             on_remove: move |i: usize| {

@@ -159,6 +159,7 @@ fn PlaylistView(playlist: crate::model::Playlist) -> Element {
                 },
             }
             TrackList {
+                sortable: true,
                 tracks: tracks.clone(),
                 label: name.clone(),
                 on_reorder: move |(from, to): (usize, usize)| {

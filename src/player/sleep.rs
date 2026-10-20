@@ -89,16 +89,8 @@ pub fn stop_at_track_end() -> bool {
     true
 }
 
-#[cfg(test)]
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
 mod tests {
-    use super::*;
-
-    #[test]
-    fn minutes_round_up() {
-        let now = Instant::now();
-        assert_eq!(minutes_left(now + Duration::from_secs(10), now), 1);
-        assert_eq!(minutes_left(now + Duration::from_secs(60), now), 1);
-        assert_eq!(minutes_left(now + Duration::from_secs(61), now), 2);
-        assert_eq!(minutes_left(now, now + Duration::from_secs(5)), 0);
-    }
+    include!("sleep_tests.rs");
 }

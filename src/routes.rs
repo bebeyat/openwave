@@ -5,7 +5,9 @@
 
 use dioxus::prelude::*;
 
-use crate::features::shell::pages::{Album, Artist, Home, Library, Playlist, Search, Settings};
+use crate::features::shell::pages::{
+    Album, Artist, Home, Library, Playlist, Search, Settings, Stats,
+};
 use crate::features::shell::Shell;
 
 #[derive(Routable, Clone, PartialEq, Debug)]
@@ -32,6 +34,8 @@ pub enum Route {
         /// `section`: general | playback | lyrics | storage | privacy | shortcuts | about
         #[route("/settings/:section")]
         Settings { section: String },
+        #[route("/stats")]
+        Stats {},
 }
 
 impl Route {
