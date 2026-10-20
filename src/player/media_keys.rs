@@ -1,5 +1,5 @@
-//! Windows media keys and the system media overlay (SMTC) through the `souvlaki` crate
-//! (MIT licensed). The feature is optional: if the OS refuses to create the controls the app
+//! Media keys and the system media controls (Windows SMTC, Linux MPRIS, macOS Now Playing) through
+//! the `souvlaki` crate (MIT licensed). The feature is optional: if the OS refuses to create the controls the app
 //! simply plays without them (the reason is printed once to stderr).
 //!
 //! The OS calls back on its own thread, so events are forwarded through a channel and applied
@@ -30,7 +30,6 @@ pub enum Key {
 /// Seconds skipped by the overlay's fast-forward / rewind buttons.
 const SKIP_SECS: f64 = 10.0;
 
-#[cfg(windows)]
 mod platform {
     use super::*;
     use souvlaki::{
@@ -65,7 +64,8 @@ mod platform {
         let config = PlatformConfig {
             dbus_name: "openwave",
             display_name: "OpenWave",
-            hwnd: Some(hwnd as *mut c_void),
+            // Windows needs the window handle; MPRIS and Now Playing do not.
+            hwnd: cfg!(windows).then_some(hwnd as *mut c_void),
         };
         let mut controls = MediaControls::new(config).map_err(|e| e.to_string())?;
         controls
@@ -121,17 +121,6 @@ mod platform {
             let _ = controls.set_playback(playback);
         });
     }
-}
-
-#[cfg(not(windows))]
-mod platform {
-    use super::*;
-
-    pub fn init(_hwnd: isize) -> Result<UnboundedReceiver<Key>, String> {
-        Err("media keys are only supported on Windows".into())
-    }
-    pub fn set_track(_track: Option<&Track>) {}
-    pub fn set_playback(_status: Status, _position_secs: f64) {}
 }
 
 thread_local! {

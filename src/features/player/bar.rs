@@ -174,6 +174,22 @@ fn ToggleChip(
 }
 
 #[component]
+fn MiniButton() -> Element {
+    let window = dioxus::desktop::use_window();
+    rsx! {
+        IconButton {
+            id: "ow-mini-btn",
+            icon: "picture-in-picture-2",
+            label: t("player.mini"),
+            shortcut: "P",
+            size: IconButtonSize::Sm,
+            tooltip_align: TooltipAlign::End,
+            onclick: move |_| crate::features::shell::window::toggle_mini(&window),
+        }
+    }
+}
+
+#[component]
 fn ShortcutsButton() -> Element {
     rsx! {
         IconButton {
@@ -239,6 +255,9 @@ fn RightControls() -> Element {
             }
             if c.bar_sleep {
                 SleepButton {}
+            }
+            if c.bar_mini {
+                MiniButton {}
             }
             if c.bar_help {
                 ShortcutsButton {}

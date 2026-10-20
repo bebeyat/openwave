@@ -6,7 +6,7 @@
 //! reports a name. It never calls `blur()`, so focused buttons keep focus.
 //!
 //! The shell publishes each action on `SHORTCUT`. Feature code subscribes with
-//! `use_shortcuts(|action| ...)`. Focus-search (`/`, Ctrl+K) and Esc-to-go-back are handled by the shell.
+//! `use_shortcuts(|action| ...)`. Focus-search (`/`), the command palette (Ctrl+K) and Esc-to-go-back are handled by the shell.
 
 use dioxus::prelude::*;
 
@@ -28,6 +28,9 @@ pub enum Action {
     Like,
     FocusSearch,
     Escape,
+    Visualizer,
+    Mini,
+    Palette,
 }
 
 impl Action {
@@ -47,6 +50,9 @@ impl Action {
             "like" => Action::Like,
             "focus_search" => Action::FocusSearch,
             "escape" => Action::Escape,
+            "visualizer" => Action::Visualizer,
+            "mini" => Action::Mini,
+            "palette" => Action::Palette,
             _ => return None,
         })
     }

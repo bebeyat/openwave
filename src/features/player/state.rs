@@ -112,6 +112,15 @@ pub fn handle_shortcut(action: Action) {
         Action::VolumeDown => ctl::volume_by(-VOLUME_STEP),
         Action::Mute => ctl::toggle_mute(),
         Action::Like => toggle_like_current(),
-        Action::Fullscreen | Action::FocusSearch | Action::Escape => {}
+        Action::Visualizer if *FULLSCREEN.peek() => {
+            let on = !*FULLSCREEN_VIZ.peek();
+            *FULLSCREEN_VIZ.write() = on;
+        }
+        Action::Fullscreen
+        | Action::FocusSearch
+        | Action::Escape
+        | Action::Visualizer
+        | Action::Mini
+        | Action::Palette => {}
     }
 }

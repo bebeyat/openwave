@@ -326,6 +326,7 @@ pub fn Customize(
             {toggle!(t("custom.bar_volume"), None::<String>, bar_volume)}
             {toggle!(t("player.fullscreen"), None::<String>, bar_fullscreen)}
             {toggle!(t("sleep.title"), None::<String>, bar_sleep)}
+            {toggle!(t("player.mini"), None::<String>, bar_mini)}
             {toggle!(t("player.shortcuts"), None::<String>, bar_help)}
         }
 

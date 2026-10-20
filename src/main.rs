@@ -16,7 +16,7 @@ mod util;
 use dioxus::desktop::tao::dpi::LogicalSize;
 use dioxus::desktop::{Config, WindowBuilder};
 
-const MIN_SIZE: (f64, f64) = (960.0, 640.0);
+pub(crate) const MIN_SIZE: (f64, f64) = (960.0, 640.0);
 const START_SIZE: (f64, f64) = (1200.0, 800.0);
 
 /// Debug builds only: `OPENWAVE_SIZE=960x640` for reproducible screenshots.

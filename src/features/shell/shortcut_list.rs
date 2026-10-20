@@ -16,7 +16,7 @@ const fn def(label: &'static str, keys: &'static str) -> ShortcutDef {
 }
 
 /// In display order (matches SPEC section 3, "Keyboard").
-pub const SHORTCUTS: [ShortcutDef; 11] = [
+pub const SHORTCUTS: [ShortcutDef; 14] = [
     def("shortcuts.play_pause", "shortcuts.keys.play_pause"),
     def("shortcuts.seek", "shortcuts.keys.seek"),
     def("shortcuts.prev_next", "shortcuts.keys.prev_next"),
@@ -25,7 +25,10 @@ pub const SHORTCUTS: [ShortcutDef; 11] = [
     def("shortcuts.queue", "shortcuts.keys.queue"),
     def("shortcuts.lyrics", "shortcuts.keys.lyrics"),
     def("shortcuts.fullscreen", "shortcuts.keys.fullscreen"),
+    def("shortcuts.visualizer", "shortcuts.keys.visualizer"),
+    def("shortcuts.mini", "shortcuts.keys.mini"),
     def("shortcuts.search", "shortcuts.keys.search"),
+    def("shortcuts.palette", "shortcuts.keys.palette"),
     def("shortcuts.like", "shortcuts.keys.like"),
     def("shortcuts.back", "shortcuts.keys.back"),
 ];

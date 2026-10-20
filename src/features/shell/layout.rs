@@ -115,6 +115,7 @@ pub fn Shell() -> Element {
             crate::features::share::ShareDialog {}
             crate::features::share::LinkInbox {}
             crate::features::update::UpdateWatcher {}
+            super::window::TrayHost {}
         }
     }
 }

@@ -241,6 +241,9 @@ pub struct Settings {
     /// Look for a new version on GitHub (and install it on the installed Windows build).
     #[serde(deserialize_with = "lenient_true")]
     pub auto_update: bool,
+    /// Closing the window keeps OpenWave playing in the system tray.
+    #[serde(deserialize_with = "lenient")]
+    pub close_to_tray: bool,
     /// Look-and-layout choices (Ayarlar › Özelleştirme).
     #[serde(deserialize_with = "lenient")]
     pub custom: Customization,
@@ -272,6 +275,7 @@ impl Default for Settings {
             fx_fade: 0,
             discord_enabled: false,
             auto_update: yes(),
+            close_to_tray: false,
             custom: Customization::default(),
         }
     }
@@ -302,6 +306,7 @@ pub enum SettingsChange {
     FxFade(u8),
     DiscordEnabled(bool),
     AutoUpdate(bool),
+    CloseToTray(bool),
     Custom(Customization),
 }
 
@@ -332,6 +337,7 @@ impl Settings {
             SettingsChange::FxFade(v) => next.fx_fade = v,
             SettingsChange::DiscordEnabled(v) => next.discord_enabled = v,
             SettingsChange::AutoUpdate(v) => next.auto_update = v,
+            SettingsChange::CloseToTray(v) => next.close_to_tray = v,
             SettingsChange::Custom(v) => next.custom = v,
         }
         next.sanitize()

@@ -11,6 +11,7 @@ mod fullscreen;
 mod lyric_logic;
 mod lyrics;
 mod lyrics_state;
+mod mini;
 mod queue_list;
 mod save_dialog;
 mod shortcuts_popover;
@@ -31,6 +32,7 @@ use crate::player::{controller, engine, media_keys, session};
 #[component]
 pub fn PlayerRoot() -> Element {
     let window = use_window();
+    let w_mini = window.clone();
     use_hook(session::restore);
     use_future(|| async {
         engine::run_events(controller::handle_event).await;
@@ -49,7 +51,12 @@ pub fn PlayerRoot() -> Element {
         };
         async move { media_keys::run(hwnd).await }
     });
-    use_shortcuts(state::handle_shortcut);
+    use_shortcuts(move |action| match action {
+        crate::features::shell::shortcuts::Action::Mini => {
+            crate::features::shell::window::toggle_mini(&w_mini)
+        }
+        other => state::handle_shortcut(other),
+    });
     use_future(|| async {
         let mut ev = document::eval(
             "var q=window.matchMedia('(min-width: 1280px)');dioxus.send(q.matches);q.addEventListener('change',function(e){dioxus.send(e.matches)});",
@@ -67,6 +74,7 @@ pub fn PlayerRoot() -> Element {
         drawer::Drawer {}
         effects_popover::FxPopover {}
         fullscreen::FullscreenPlayer {}
+        mini::MiniPlayer {}
     }
 }
 

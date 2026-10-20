@@ -46,6 +46,8 @@ pub fn runtime_of(s: &Settings) -> Runtime {
 
 /// The Discord status switch, as saved (read by `features::discord`).
 pub static DISCORD: GlobalSignal<bool> = Signal::global(|| false);
+/// "Close to tray" switch, as saved (read by the tray host).
+pub static CLOSE_TO_TRAY: GlobalSignal<bool> = Signal::global(|| false);
 /// The saved customization (read by the layout, Home, the player bar and `App`'s style sync).
 pub static CUSTOM: GlobalSignal<Customization> = Signal::global(Customization::default);
 
@@ -72,6 +74,9 @@ pub fn use_custom_style() {
 pub fn apply_extras(s: &Settings) {
     if *DISCORD.peek() != s.discord_enabled {
         *DISCORD.write() = s.discord_enabled;
+    }
+    if *CLOSE_TO_TRAY.peek() != s.close_to_tray {
+        *CLOSE_TO_TRAY.write() = s.close_to_tray;
     }
     if *CUSTOM.peek() != s.custom {
         *CUSTOM.write() = s.custom.clone();

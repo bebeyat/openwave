@@ -7,5 +7,6 @@ pub mod shortcuts;
 pub mod sidebar;
 pub mod slots;
 pub mod titlebar;
+pub mod window;
 
 pub use layout::Shell;
