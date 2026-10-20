@@ -64,7 +64,7 @@ fn Surface() -> Element {
         });
     };
     // The pointer may already be elsewhere when the mini player opens.
-    use_hook(move || leave_later());
+    use_hook(leave_later);
 
     let track = ctl::QUEUE.read().current().map(|e| e.track.clone());
     let track_id = track.as_ref().map(|t| t.id.clone());
