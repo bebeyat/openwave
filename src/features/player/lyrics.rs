@@ -175,7 +175,7 @@ fn Plain(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Elemen
 }
 
 /// Karaoke fill of the active line, word by word (see `assets/lyrics_fill.js`).
-const LYRICS_FILL_JS: &str = include_str!("../../../assets/lyrics_fill.js");
+pub(super) const LYRICS_FILL_JS: &str = include_str!("../../../assets/lyrics_fill.js");
 
 fn now_ms() -> u64 {
     library::now_ms()

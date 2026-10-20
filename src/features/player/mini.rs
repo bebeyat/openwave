@@ -11,7 +11,8 @@ use dioxus::desktop::use_window;
 use dioxus::prelude::*;
 
 use super::controls::{SeekRow, Transport};
-use super::lyric_logic::{active_line, shifted};
+use super::lyric_logic::{active_line, shifted, word_spans, WordSpan};
+use super::lyrics::LYRICS_FILL_JS;
 use super::lyrics_state::{self, LyricsView, LYRICS};
 use crate::features::shell::titlebar::DragRegion;
 use crate::features::shell::window::{request_close, toggle_mini, MINI};
@@ -25,16 +26,27 @@ const IDLE_AFTER: Duration = Duration::from_secs(3);
 /// Shared by both layers of each swap; motion-reduce turns the animation off.
 const FADE: &str = "transition-all duration-300 ease-out motion-reduce:transition-none";
 
-/// The line to show at `position` (seconds, offset already applied): `None` without synced
-/// lyrics, a note sign before the first line and on empty (instrumental) lines.
-pub fn current_line(lyrics: &Lyrics, position: f64) -> Option<String> {
+/// What the idle mini player shows at `position` (seconds, offset already applied).
+#[derive(Clone, Debug, PartialEq)]
+pub enum Shown {
+    /// The song has no synced lyrics: keep the controls.
+    Nothing,
+    /// Before the first line or on an empty (instrumental) line.
+    Note,
+    /// The active line: its index and its words with their fill times.
+    Line(usize, Vec<WordSpan>),
+}
+
+pub fn shown_at(lyrics: &Lyrics, position: f64) -> Shown {
     if !lyrics.is_synced() {
-        return None;
+        return Shown::Nothing;
     }
-    let text = active_line(&lyrics.synced, position)
-        .map(|i| lyrics.synced[i].text.trim().to_owned())
-        .unwrap_or_default();
-    Some(if text.is_empty() { "♪".into() } else { text })
+    match active_line(&lyrics.synced, position) {
+        Some(i) if !lyrics.synced[i].text.trim().is_empty() => {
+            Shown::Line(i, word_spans(&lyrics.synced, i))
+        }
+        _ => Shown::Note,
+    }
 }
 
 #[component]
@@ -65,6 +77,10 @@ fn Surface() -> Element {
     };
     // The pointer may already be elsewhere when the mini player opens.
     use_hook(leave_later);
+    // The karaoke fill and glow of the lyrics views (idempotent: it replaces an earlier copy).
+    use_hook(|| {
+        document::eval(LYRICS_FILL_JS);
+    });
 
     let track = ctl::QUEUE.read().current().map(|e| e.track.clone());
     let track_id = track.as_ref().map(|t| t.id.clone());
@@ -75,14 +91,14 @@ fn Surface() -> Element {
             lyrics_state::request(t, false);
         }
     }));
+    let offset_ms = track.as_ref().map_or(0, |t| library().lyric_offset(&t.id));
     let line = match (&LYRICS.read().view, &track) {
         (LyricsView::Ready(l), Some(t)) if LYRICS.read().track_id.as_ref() == Some(&t.id) => {
-            let offset = library().lyric_offset(&t.id);
-            current_line(l, shifted(*POSITION.read(), offset))
+            shown_at(l, shifted(*POSITION.read(), offset_ms))
         }
-        _ => None,
+        _ => Shown::Nothing,
     };
-    let quiet = idle() && line.is_some();
+    let quiet = idle() && line != Shown::Nothing;
 
     let title = track.as_ref().map(|t| t.title.clone()).unwrap_or_default();
     let artists = track
@@ -161,11 +177,25 @@ fn Surface() -> Element {
                     "aria-hidden": quiet.then_some("true"),
                     Transport { modes: false }
                 }
-                p {
-                    class: "absolute inset-0 flex items-center justify-center px-2 text-center text-sm font-semibold leading-tight {lyric}",
-                    "aria-live": "off",
-                    if let Some(text) = line {
-                        span { class: "line-clamp-2", "{text}" }
+                div {
+                    class: "absolute inset-0 flex items-center justify-center px-2 text-center {lyric}",
+                    "data-ow-offset": "{offset_ms}",
+                    match line {
+                        Shown::Line(i, words) => rsx! {
+                            // Keyed by line so each new line mounts and fades in.
+                            p {
+                                key: "{i}",
+                                class: "ow-lyric ow-display ow-fade-in line-clamp-2 text-[15px] font-extrabold leading-tight tracking-tight text-fg",
+                                style: "--lo:1",
+                                "data-dark": "true",
+                                "aria-current": "true",
+                                for w in words {
+                                    span { class: "ow-w", "data-s": "{w.start_ms}", "data-e": "{w.end_ms}", "{w.text}" }
+                                }
+                            }
+                        },
+                        Shown::Note => rsx! { p { class: "ow-fade-in text-lg text-muted", "♪" } },
+                        Shown::Nothing => rsx! {},
                     }
                 }
             }
