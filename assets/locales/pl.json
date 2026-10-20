@@ -378,6 +378,8 @@
   "lyrics.error.unavailable": "Usługa tekstów jest teraz niedostępna. Spróbuj ponownie później.",
   "lyrics.loading": "Szukanie tekstu…",
   "lyrics.none": "Nie znaleziono tekstu dla tego utworu.",
+  "lyrics.offset.earlier": "Tekst wcześniej (0,5 s)",
+  "lyrics.offset.later": "Tekst później (0,5 s)",
   "lyrics.optin.enable": "Włącz",
   "lyrics.optin.item_album": "Nazwa albumu (jeśli znana)",
   "lyrics.optin.item_artist": "Nazwa wykonawcy",

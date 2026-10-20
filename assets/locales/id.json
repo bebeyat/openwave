@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "Layanan lirik sedang tidak tersedia. Coba lagi nanti.",
   "lyrics.loading": "Mencari lirik…",
   "lyrics.none": "Lirik untuk lagu ini tidak ditemukan.",
+  "lyrics.offset.earlier": "Lirik lebih awal (0,5 dtk)",
+  "lyrics.offset.later": "Lirik lebih lambat (0,5 dtk)",
   "lyrics.optin.enable": "Aktifkan",
   "lyrics.optin.item_album": "Nama album (jika diketahui)",
   "lyrics.optin.item_artist": "Nama artis",

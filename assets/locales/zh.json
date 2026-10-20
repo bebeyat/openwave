@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "歌词服务暂时不可用，请稍后重试。",
   "lyrics.loading": "正在查找歌词…",
   "lyrics.none": "没有找到这首歌的歌词。",
+  "lyrics.offset.earlier": "歌词提前 (0.5 秒)",
+  "lyrics.offset.later": "歌词延后 (0.5 秒)",
   "lyrics.optin.enable": "开启",
   "lyrics.optin.item_album": "专辑名称（如果已知）",
   "lyrics.optin.item_artist": "艺人名称",

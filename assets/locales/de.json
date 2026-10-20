@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "Der Songtext-Dienst ist gerade nicht verfügbar. Bitte versuch es später noch einmal.",
   "lyrics.loading": "Songtext wird gesucht…",
   "lyrics.none": "Für diesen Song wurde kein Songtext gefunden.",
+  "lyrics.offset.earlier": "Text früher (0,5 s)",
+  "lyrics.offset.later": "Text später (0,5 s)",
   "lyrics.optin.enable": "Einschalten",
   "lyrics.optin.item_album": "Der Albumname (falls bekannt)",
   "lyrics.optin.item_artist": "Der Künstlername",

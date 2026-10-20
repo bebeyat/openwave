@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "지금은 가사 서비스를 이용할 수 없어요. 나중에 다시 시도해 주세요.",
   "lyrics.loading": "가사를 찾는 중…",
   "lyrics.none": "이 곡의 가사를 찾지 못했어요.",
+  "lyrics.offset.earlier": "가사 빠르게 (0.5초)",
+  "lyrics.offset.later": "가사 느리게 (0.5초)",
   "lyrics.optin.enable": "켜기",
   "lyrics.optin.item_album": "앨범 이름 (알려진 경우)",
   "lyrics.optin.item_artist": "아티스트 이름",

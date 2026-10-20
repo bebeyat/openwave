@@ -16,6 +16,20 @@ pub fn active_line(lines: &[LyricLine], position_secs: f64) -> Option<usize> {
     lines.partition_point(|l| l.start_ms <= ms).checked_sub(1)
 }
 
+/// One press of the lyrics shift buttons.
+pub const OFFSET_STEP_MS: i32 = 500;
+
+/// The playback position as the lyrics see it: a positive shift makes every line come later.
+pub fn shifted(position_secs: f64, offset_ms: i32) -> f64 {
+    position_secs - f64::from(offset_ms) / 1000.0
+}
+
+/// "+0.5s", "-1.0s", "0.0s".
+pub fn offset_label(offset_ms: i32) -> String {
+    let sign = if offset_ms > 0 { "+" } else { "" };
+    format!("{sign}{:.1}s", f64::from(offset_ms) / 1000.0)
+}
+
 /// Whether auto-scroll may run: not within the pause window after a manual scroll.
 pub fn should_autoscroll(now_ms: u64, last_manual_ms: Option<u64>) -> bool {
     last_manual_ms.is_none_or(|t| now_ms.saturating_sub(t) >= MANUAL_SCROLL_PAUSE_MS)
@@ -201,4 +215,10 @@ mod tests {
         assert_eq!(line_opacity(None, 0), 0.5);
         assert_eq!(line_opacity(None, 9), 0.2);
     }
+}
+
+// Local-only tests (see build.rs).
+#[cfg(all(test, private_tests))]
+mod parity_tests {
+    include!("lyric_logic_parity_tests.rs");
 }

@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "歌詞サービスは現在利用できません。しばらくしてからもう一度お試しください。",
   "lyrics.loading": "歌詞を探しています…",
   "lyrics.none": "この曲の歌詞は見つかりませんでした。",
+  "lyrics.offset.earlier": "歌詞を早める (0.5 秒)",
+  "lyrics.offset.later": "歌詞を遅らせる (0.5 秒)",
   "lyrics.optin.enable": "オンにする",
   "lyrics.optin.item_album": "アルバム名（わかる場合）",
   "lyrics.optin.item_artist": "アーティスト名",

@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "Le service de paroles n'est pas disponible pour le moment. Réessaie plus tard.",
   "lyrics.loading": "Recherche des paroles…",
   "lyrics.none": "Aucune parole trouvée pour ce titre.",
+  "lyrics.offset.earlier": "Paroles plus tôt (0,5 s)",
+  "lyrics.offset.later": "Paroles plus tard (0,5 s)",
   "lyrics.optin.enable": "Activer",
   "lyrics.optin.item_album": "Le nom de l'album (s'il est connu)",
   "lyrics.optin.item_artist": "Le nom de l'artiste",

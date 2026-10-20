@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "Il servizio dei testi non è disponibile al momento. Riprova più tardi.",
   "lyrics.loading": "Ricerca del testo…",
   "lyrics.none": "Nessun testo trovato per questo brano.",
+  "lyrics.offset.earlier": "Testo prima (0,5 s)",
+  "lyrics.offset.later": "Testo dopo (0,5 s)",
   "lyrics.optin.enable": "Attiva",
   "lyrics.optin.item_album": "Il nome dell'album (se noto)",
   "lyrics.optin.item_artist": "Il nome dell'artista",

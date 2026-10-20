@@ -18,7 +18,10 @@
 
   function paint() {
     var words = document.querySelectorAll('.ow-lyric[aria-current] .ow-w');
-    var t = (a.currentTime || 0) * 1000 + LEAD_MS;
+    /* The per-track lyrics shift (ms, positive: lines later) set on the lyrics box. */
+    var box = words.length ? words[0].closest('[data-ow-offset]') : null;
+    var off = box ? (+box.getAttribute('data-ow-offset') || 0) : 0;
+    var t = (a.currentTime || 0) * 1000 + LEAD_MS - off;
     var step = reduce(), pending = false;
     for (var i = 0; i < words.length; i++) {
       var w = words[i], s = +w.dataset.s, e = +w.dataset.e;
@@ -42,7 +45,7 @@
   events.forEach(function (n) { a.addEventListener(n, kick); });
   /* The active line moves by a Rust re-render: repaint as soon as it lands. */
   var mo = new MutationObserver(kick);
-  mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-current'] });
+  mo.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['aria-current', 'data-ow-offset'] });
 
   function dispose() {
     if (raf) cancelAnimationFrame(raf);

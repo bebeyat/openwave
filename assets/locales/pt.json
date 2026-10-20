@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "O serviço de letras não está disponível agora. Tente de novo mais tarde.",
   "lyrics.loading": "Procurando a letra…",
   "lyrics.none": "Nenhuma letra foi encontrada para esta música.",
+  "lyrics.offset.earlier": "Letra antes (0,5 s)",
+  "lyrics.offset.later": "Letra depois (0,5 s)",
   "lyrics.optin.enable": "Ativar",
   "lyrics.optin.item_album": "O nome do álbum (se conhecido)",
   "lyrics.optin.item_artist": "O nome do artista",

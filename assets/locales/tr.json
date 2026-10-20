@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "Söz servisine şu an ulaşılamıyor. Biraz sonra tekrar dene.",
   "lyrics.loading": "Sözler aranıyor…",
   "lyrics.none": "Bu şarkı için söz bulunamadı.",
+  "lyrics.offset.earlier": "Sözler daha erken (0,5 sn)",
+  "lyrics.offset.later": "Sözler daha geç (0,5 sn)",
   "lyrics.optin.enable": "Etkinleştir",
   "lyrics.optin.item_album": "Albümün adı (biliniyorsa)",
   "lyrics.optin.item_artist": "Sanatçının adı",

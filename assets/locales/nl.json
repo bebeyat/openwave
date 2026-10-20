@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "De songtekstdienst is nu niet beschikbaar. Probeer het later opnieuw.",
   "lyrics.loading": "Songtekst zoeken…",
   "lyrics.none": "Er is geen songtekst gevonden voor dit nummer.",
+  "lyrics.offset.earlier": "Tekst eerder (0,5 s)",
+  "lyrics.offset.later": "Tekst later (0,5 s)",
   "lyrics.optin.enable": "Aanzetten",
   "lyrics.optin.item_album": "De albumnaam (indien bekend)",
   "lyrics.optin.item_artist": "De naam van de artiest",

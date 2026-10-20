@@ -358,6 +358,8 @@
   "lyrics.error.unavailable": "The lyrics service is not available right now. Please try again later.",
   "lyrics.loading": "Looking for lyrics…",
   "lyrics.none": "No lyrics were found for this song.",
+  "lyrics.offset.earlier": "Lyrics earlier (0.5 s)",
+  "lyrics.offset.later": "Lyrics later (0.5 s)",
   "lyrics.optin.enable": "Turn on",
   "lyrics.optin.item_album": "The album name (if known)",
   "lyrics.optin.item_artist": "The artist name",

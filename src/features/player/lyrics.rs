@@ -4,13 +4,17 @@ use std::sync::Arc;
 
 use dioxus::prelude::*;
 
-use super::lyric_logic::{active_line, line_opacity, should_autoscroll, word_spans, WordSpan};
+use super::lyric_logic::{
+    active_line, line_opacity, offset_label, shifted, should_autoscroll, word_spans, WordSpan,
+    OFFSET_STEP_MS,
+};
 use super::lyrics_state::{self, lyrics_enabled, LyricsView, LYRICS};
+use crate::features::tracks::state::{library as library_state, update_library};
 use crate::i18n::t;
-use crate::model::{Lyrics, Track};
+use crate::model::{Id, Lyrics, Track};
 use crate::player::controller::{self as ctl, POSITION};
 use crate::store::library;
-use crate::ui::{cx, next_id, Button, ButtonVariant, Icon, Skeleton};
+use crate::ui::{cx, next_id, Button, ButtonVariant, Icon, IconButton, IconButtonSize, Skeleton};
 
 /// Lyrics for the playing song. `large` is the fullscreen look (giant type), `panel` the docked /
 /// drawer look (big bold type); `on_dark` forces light text.
@@ -57,7 +61,7 @@ pub fn LyricsPane(
         LyricsView::Ready(lyrics) => {
             if lyrics.is_synced() {
                 rsx! {
-                    Synced { key: "{track.id}", lyrics, large, panel, on_dark }
+                    Synced { key: "{track.id}", track_id: track.id.clone(), lyrics, large, panel, on_dark }
                 }
             } else {
                 rsx! {
@@ -182,8 +186,12 @@ var top=e.offsetTop-c.clientHeight/2+e.offsetHeight/2;c.scrollTo({{top:Math.max(
     )
 }
 
+fn shift_offset(id: &Id, delta: i32) {
+    update_library(|lib| lib.set_lyric_offset(id, lib.lyric_offset(id) + delta));
+}
+
 #[component]
-fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
+fn Synced(track_id: Id, lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
     let ids = use_hook(|| next_id("lyrics"));
     use_hook(|| {
         document::eval(LYRICS_FILL_JS);
@@ -191,7 +199,12 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
     let box_id = format!("{ids}-box");
     let mut last_manual = use_signal(|| None::<u64>);
     let lines = lyrics.clone();
-    let active = use_memo(move || active_line(&lines.synced, *POSITION.read()));
+    let offset_ms = library_state().lyric_offset(&track_id);
+    let memo_id = track_id.clone();
+    let active = use_memo(move || {
+        let offset = library_state().lyric_offset(&memo_id);
+        active_line(&lines.synced, shifted(*POSITION.read(), offset))
+    });
     let (scroll_box, line_prefix) = (box_id.clone(), ids.clone());
     use_effect(move || {
         let Some(i) = active() else { return };
@@ -207,10 +220,29 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
         "text-[calc(14px*var(--ow-lyric-scale))]"
     };
     let mut manual = move || last_manual.set(Some(now_ms()));
+    let (earlier_id, later_id) = (track_id.clone(), track_id.clone());
+    let note = if on_dark { "text-fg/70" } else { "text-muted" };
     rsx! {
+        div { class: "relative h-full",
+        div { class: "absolute right-4 top-2 z-10 flex items-center gap-1",
+            IconButton {
+                icon: "minus",
+                label: t("lyrics.offset.earlier"),
+                size: IconButtonSize::Sm,
+                onclick: move |_| shift_offset(&earlier_id, -OFFSET_STEP_MS),
+            }
+            span { class: "w-12 text-center text-xs tabular-nums {note}", {offset_label(offset_ms)} }
+            IconButton {
+                icon: "plus",
+                label: t("lyrics.offset.later"),
+                size: IconButtonSize::Sm,
+                onclick: move |_| shift_offset(&later_id, OFFSET_STEP_MS),
+            }
+        }
         div {
             id: "{box_id}",
             class: "ow-fade-edges relative h-full overflow-y-auto px-6",
+            "data-ow-offset": "{offset_ms}",
             tabindex: "0",
             role: "region",
             "aria-label": t("lyrics.title"),
@@ -240,6 +272,7 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
                 }
             }
             div { class: "h-[45%] flex-none", "aria-hidden": "true" }
+        }
         }
     }
 }

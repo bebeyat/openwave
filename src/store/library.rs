@@ -15,6 +15,8 @@ pub const QUEUE_PERSIST_CAP: usize = 500;
 pub const HISTORY_CAP: usize = 200;
 pub const SEARCH_CAP: usize = 12;
 pub const PLAYLIST_NAME_MAX: usize = 120;
+pub const LYRIC_OFFSET_CAP: usize = 300;
+pub const LYRIC_OFFSET_MAX_MS: i32 = 30_000;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -49,6 +51,8 @@ pub struct Library {
     )]
     pub last_queue: Option<QueueSnapshot>,
     pub local_files: Vec<Track>,
+    /// Per-track lyrics shift in ms (positive: lines later), most recently set first.
+    pub lyric_offsets: Vec<(Id, i32)>,
 }
 
 fn clean_name(name: &str) -> Text {
@@ -263,6 +267,29 @@ impl Library {
         }
     }
 
+    pub fn lyric_offset(&self, track_id: &str) -> i32 {
+        self.lyric_offsets
+            .iter()
+            .find(|(id, _)| *id == track_id)
+            .map_or(0, |(_, ms)| *ms)
+    }
+
+    /// Remember the lyrics shift of a track (0 forgets it); bounded to [`LYRIC_OFFSET_CAP`].
+    pub fn set_lyric_offset(&self, track_id: &str, ms: i32) -> Library {
+        let ms = ms.clamp(-LYRIC_OFFSET_MAX_MS, LYRIC_OFFSET_MAX_MS);
+        let rest = self.lyric_offsets.iter().filter(|(id, _)| *id != track_id);
+        let lyric_offsets = (ms != 0)
+            .then(|| (Id::from(track_id), ms))
+            .into_iter()
+            .chain(rest.cloned())
+            .take(LYRIC_OFFSET_CAP)
+            .collect();
+        Library {
+            lyric_offsets,
+            ..self.clone()
+        }
+    }
+
     pub fn set_last_queue(&self, snapshot: Option<QueueSnapshot>) -> Library {
         Library {
             last_queue: snapshot.map(cap_queue),
@@ -339,4 +366,10 @@ pub fn now_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+// Local-only tests (see build.rs).
+#[cfg(all(test, private_tests))]
+mod offset_tests {
+    include!("library_offset_tests.rs");
 }

@@ -378,6 +378,8 @@
   "lyrics.error.unavailable": "Сервіс текстів зараз недоступний. Спробуй пізніше.",
   "lyrics.loading": "Шукаємо текст…",
   "lyrics.none": "Для цього треку текст не знайдено.",
+  "lyrics.offset.earlier": "Текст раніше (0,5 с)",
+  "lyrics.offset.later": "Текст пізніше (0,5 с)",
   "lyrics.optin.enable": "Увімкнути",
   "lyrics.optin.item_album": "Назва альбому (якщо відома)",
   "lyrics.optin.item_artist": "Ім'я виконавця",
