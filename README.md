@@ -6,7 +6,7 @@
 
 <p><strong>A free, ad-free music player for Windows, macOS and Linux.</strong></p>
 
-<p>Stream music, bring your playlists from Spotify and YouTube, and make the sound your own.<br>
+<p>Stream music, bring your playlists from Spotify, Apple Music and YouTube, and make the sound your own.<br>
 No subscription. No account. No telemetry.</p>
 
 <p>
@@ -44,13 +44,14 @@ No subscription. No account. No telemetry.</p>
 
 ## Features
 
-- **Stream & discover.** Search songs, albums, artists and playlists from YouTube Music. Find recommendations, genre rows and personal mixes on Home.
-- **Bring your music.** Import public Spotify, YouTube and YouTube Music playlists, or add local files with tags and embedded covers.
-- **Listen offline.** Download songs, playlists or your likes, with progress and cancellation controls.
-- **Shape the sound.** Adjust speed, pitch, reverb and bass, or choose a preset such as *Slowed + reverb* or *Nightcore*.
-- **Make it yours.** Light and dark themes, accent colours from album covers, custom playlist covers and layout options.
-- **Manage your library.** Select multiple songs to queue, save, download or remove them.
-- **Lyrics & Discord.** Turn on synced lyrics from LRCLIB in the fullscreen player or share your listening status on Discord. Both are optional.
+- **Stream & discover.** Search YouTube Music and SoundCloud. Find recommendations that learn from what you play and skip, genre rows and personal mixes on Home.
+- **Bring your music.** Import Spotify (public links or your own account), Apple Music, YouTube and YouTube Music playlists, or add local files with tags and embedded covers.
+- **Listen offline.** Download songs, playlists or your likes, and export them as tagged `.m4a` files with covers.
+- **Shape the sound.** A 10-band equalizer with saveable curves, speed, pitch, reverb, bass, distortion, loudness levelling and crossfade.
+- **Lyrics.** Synced lyrics timed to the recording (YouTube Music, with LRCLIB as fallback), word-by-word karaoke fill, per-song timing offset, translation and right-to-left scripts.
+- **Your desk, your way.** Mini player that turns into a lyric line when you look away, system tray, media keys, sleep timer, visualizer and a Ctrl+K command palette.
+- **Make it yours.** Light and dark themes, accent colours from album covers, layout options and your own CSS.
+- **Manage your library.** Sort and multi-select songs, see your listening stats, and back up settings and library to one file.
 - **Keep control.** No sign-in, ads or analytics. Your library and settings stay on your disk. See [Privacy](docs/PRIVACY.md) for network requests.
 
 <details>
@@ -61,7 +62,7 @@ Nederlands, 日本語, 한국어, 中文 and Bahasa Indonesia.
 
 </details>
 
-## Import from Spotify & YouTube
+## Import from Spotify, Apple Music & YouTube
 
 Open **Library → + Add → Bring from elsewhere**, choose a source and paste a public playlist link.
 OpenWave matches the songs against the YouTube Music catalog and shows a preview. Press **Add to my library**
@@ -69,12 +70,13 @@ to save the playlist; nothing is saved before you confirm.
 
 | Source | What to use |
 |---|---|
-| Spotify | A public or shared playlist link from `open.spotify.com` — no Spotify account or API key needed. |
+| Spotify | A public or shared playlist link from `open.spotify.com` (up to 500 songs) — no account needed. To import your Liked Songs and private playlists, sign in with your own Spotify app in Settings > General. |
+| Apple Music | A public album or playlist link from `music.apple.com`. |
 | YouTube / YouTube Music | A public playlist link from `youtube.com` or `music.youtube.com`. |
 | Local files | Files or a folder on your computer, including MP3, M4A and FLAC with tags and embedded covers. |
 
-The result lists any songs that could not be matched. Spotify's embed page can limit very long playlists;
-the import dialog tells you when that happens.
+The result lists any songs that could not be matched. If Spotify cuts a very long playlist short, the import
+dialog tells you how many songs it could read.
 
 <details>
 <summary>Watch a playlist import</summary>
@@ -93,6 +95,8 @@ Open **Sound effects** from the player bar. Changes apply while streamed, downlo
 - **Pitch** — adjust in semitones, linked to speed or independently.
 - **Reverb** — choose *Room, Lounge, Plate, Hall* or *Cathedral*.
 - **Bass boost** — add extra low end.
+- **Equalizer** — ten bands from 32 Hz to 16 kHz, built-in curves and your own saved ones.
+- **Distortion**, **loudness levelling** and **crossfade** between songs.
 - **Presets** — *Slowed + reverb*, *Nightcore*, *Concert hall*, or *Normal* to reset.
 
 <details>
