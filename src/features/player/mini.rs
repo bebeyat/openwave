@@ -185,7 +185,7 @@ fn Surface() -> Element {
                             // Keyed by line so each new line mounts and fades in.
                             p {
                                 key: "{i}",
-                                class: "ow-lyric ow-display ow-fade-in line-clamp-2 text-[15px] font-extrabold leading-tight tracking-tight text-fg",
+                                class: "ow-lyric ow-display ow-fade-in line-clamp-2 text-[20px] font-extrabold leading-[1.15] tracking-tight text-fg",
                                 style: "--lo:1",
                                 "data-dark": "true",
                                 "aria-current": "true",

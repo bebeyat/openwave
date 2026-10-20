@@ -695,7 +695,7 @@
   transition: text-shadow 500ms var(--ow-ease);
 }
 .ow-lyric:not([aria-current]) .ow-w { --ow-kp: 1 !important; }
-.ow-lyric[aria-current] .ow-w { text-shadow: 0 0 calc(var(--ow-kp) * 18px) color-mix(in srgb, var(--ow-lyric-glow) calc(var(--ow-kp) * 100%), transparent); transition: none; }
+.ow-lyric[aria-current] .ow-w { text-shadow: 0 0 calc(var(--ow-kp) * 0.45em) color-mix(in srgb, var(--ow-lyric-glow) calc(var(--ow-kp) * 100%), transparent); transition: none; }
 :root[data-low-power] .ow-lyric[aria-current] .ow-w { text-shadow: none; }
 
 /* Fullscreen player backdrop: the same blurred cover as the app backdrop, one static layer. */
