@@ -473,6 +473,7 @@
   "search.tab.artists": "アーティスト",
   "search.tab.playlists": "プレイリスト",
   "search.tab.songs": "曲",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "検索",
   "settings.about.engine": "補助ファイル（yt-dlp）",
   "settings.about.engine.help": "一部の曲の再生に必要な、オプションの小さなツールです（オープンソースの yt-dlp）。公式の GitHub ページからダウンロードされ、公開されている SHA-256 チェックサムで検証されます。",

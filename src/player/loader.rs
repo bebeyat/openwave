@@ -39,7 +39,15 @@ async fn load_task(generation: u64, track: Track, start: f64, autoplay: bool, fr
     let quality = store::settings().get().quality();
     // The retry must not get the address that just failed from the backend's memory.
     let result = if fresh {
-        api::stream_fresh(&track.id, quality).await
+        match api::stream_fresh(&track.id, quality).await {
+            // Last resort before giving up on the song: its SoundCloud copy.
+            Err(e) if !track.is_local() && !track.id.starts_with("sc-") => {
+                api::stream_soundcloud_copy(&track, quality)
+                    .await
+                    .map_err(|_| e)
+            }
+            other => other,
+        }
     } else {
         api::stream(&track.id, quality).await
     };

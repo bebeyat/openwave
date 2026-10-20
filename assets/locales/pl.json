@@ -495,6 +495,7 @@
   "search.tab.artists": "Wykonawcy",
   "search.tab.playlists": "Playlisty",
   "search.tab.songs": "Utwory",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "Szukaj",
   "settings.about.engine": "Plik pomocniczy (yt-dlp)",
   "settings.about.engine.help": "Opcjonalne małe narzędzie, którego niektóre utwory potrzebują do odtwarzania: otwartoźródłowy yt-dlp. Jest pobierane z oficjalnej strony na GitHubie i sprawdzane z opublikowaną sumą kontrolną SHA-256.",

@@ -473,6 +473,7 @@
   "search.tab.artists": "Artisti",
   "search.tab.playlists": "Playlist",
   "search.tab.songs": "Brani",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "Cerca",
   "settings.about.engine": "File di supporto (yt-dlp)",
   "settings.about.engine.help": "Un piccolo strumento facoltativo di cui alcuni brani hanno bisogno per essere riprodotti: yt-dlp, open source. Viene scaricato dalla sua pagina ufficiale su GitHub e verificato con il checksum SHA-256 pubblicato.",

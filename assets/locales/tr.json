@@ -473,6 +473,7 @@
   "search.tab.artists": "Sanatçılar",
   "search.tab.playlists": "Çalma listeleri",
   "search.tab.songs": "Şarkılar",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "Ara",
   "settings.about.engine": "Yardımcı dosya (yt-dlp)",
   "settings.about.engine.help": "Bazı şarkıların çalması için gereken, isteğe bağlı küçük bir araç: açık kaynaklı yt-dlp. Resmi GitHub sayfasından indirilir ve yayımlanan SHA-256 özetiyle doğrulanır.",

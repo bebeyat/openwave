@@ -473,6 +473,7 @@
   "search.tab.artists": "艺人",
   "search.tab.playlists": "歌单",
   "search.tab.songs": "歌曲",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "搜索",
   "settings.about.engine": "辅助文件（yt-dlp）",
   "settings.about.engine.help": "部分歌曲播放所需的可选小工具：开源的 yt-dlp。它从官方 GitHub 页面下载，并通过其公布的 SHA-256 校验和进行验证。",

@@ -473,6 +473,7 @@
   "search.tab.artists": "아티스트",
   "search.tab.playlists": "플레이리스트",
   "search.tab.songs": "곡",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "검색",
   "settings.about.engine": "도우미 파일 (yt-dlp)",
   "settings.about.engine.help": "일부 곡을 재생하는 데 필요한 선택형 작은 도구로, 오픈 소스 yt-dlp예요. 공식 GitHub 페이지에서 다운로드하며 게시된 SHA-256 체크섬으로 검증해요.",

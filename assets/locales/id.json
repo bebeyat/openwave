@@ -473,6 +473,7 @@
   "search.tab.artists": "Artis",
   "search.tab.playlists": "Playlist",
   "search.tab.songs": "Lagu",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "Cari",
   "settings.about.engine": "File pembantu (yt-dlp)",
   "settings.about.engine.help": "Alat kecil opsional yang dibutuhkan beberapa lagu: yt-dlp yang open source. Didownload dari halaman GitHub resminya dan dicek dengan checksum SHA-256 yang dipublikasikan.",

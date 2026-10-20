@@ -27,6 +27,8 @@ mod export;
 mod local;
 #[path = "media_resolve.rs"]
 mod resolve;
+#[path = "media_soundcloud.rs"]
+mod soundcloud;
 
 pub(crate) use local::validate as validate_local;
 pub use local::LOCAL_EXTENSIONS;
@@ -89,11 +91,19 @@ pub struct Media {
     visitor: tokio::sync::Mutex<Option<(Instant, String)>>,
 }
 
+/// A catalog track id: an 11-character YouTube video id or a SoundCloud `sc-<digits>` id.
 pub fn video_key(key: &str) -> bool {
-    key.len() == 11
+    let youtube = key.len() == 11
         && key
             .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_');
+    youtube || soundcloud_id(key).is_some()
+}
+
+/// The numeric SoundCloud track id of an `sc-<digits>` track id.
+pub fn soundcloud_id(key: &str) -> Option<&str> {
+    key.strip_prefix("sc-")
+        .filter(|d| (1..=20).contains(&d.len()) && d.bytes().all(|b| b.is_ascii_digit()))
 }
 
 /// Only HTTPS media hosts of YouTube are ever fetched or followed.
@@ -273,6 +283,10 @@ impl Media {
         if let Some(hit) = self.memo(&cache_key).await {
             return Ok((hit, "memo"));
         }
+        if soundcloud_id(key).is_some() {
+            let (path, mime) = self.soundcloud_file(key).await?;
+            return Ok((self.grant(Input::File(path), mime, None), "soundcloud"));
+        }
         let (stream, via) = self.fetch_stream(key, quality).await?;
         let expires = stream.expires;
         let result = self.grant(Input::Web(stream.url), stream.mime, stream.seconds);
@@ -322,7 +336,8 @@ impl Media {
 
     /// Resolve in the background so the later click finds it cached. Failures are ignored.
     pub fn prefetch(self: &Arc<Self>, key: &str, quality: &str) {
-        if !video_key(key) {
+        // A SoundCloud lookup downloads the whole song: only when it is really played.
+        if !video_key(key) || soundcloud_id(key).is_some() {
             return;
         }
         let cache_key = format!("{quality}/{key}");

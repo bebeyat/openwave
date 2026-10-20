@@ -495,6 +495,7 @@
   "search.tab.artists": "Виконавці",
   "search.tab.playlists": "Плейлисти",
   "search.tab.songs": "Треки",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "Пошук",
   "settings.about.engine": "Допоміжний файл (yt-dlp)",
   "settings.about.engine.help": "Необов'язковий невеликий інструмент, потрібний для деяких треків: yt-dlp з відкритим кодом. Він завантажується з офіційної сторінки на GitHub і звіряється з опублікованою контрольною сумою SHA-256.",

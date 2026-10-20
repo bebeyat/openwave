@@ -9,7 +9,7 @@ use super::{
     lyrics::{self, LyricsQuery},
     lyrics_cache,
     media::Media,
-    share, translate, ytdlp,
+    share, soundcloud, translate, ytdlp,
 };
 use crate::model::*;
 use serde_json::Value;
@@ -103,6 +103,8 @@ pub enum SearchKind {
     Artist,
     Album,
     Playlist,
+    /// Songs on SoundCloud (through yt-dlp).
+    SoundCloud,
 }
 
 impl SearchKind {
@@ -124,6 +126,16 @@ pub async fn search(kind: SearchKind, term: &str) -> ApiResult<SearchResults> {
     let term = term.trim();
     if term.is_empty() {
         return Ok(SearchResults::default());
+    }
+    if kind == SearchKind::SoundCloud {
+        let v = run(soundcloud::search(term.to_owned())).await??;
+        return Ok(SearchResults {
+            tracks: convert::entries(&v, "items")
+                .iter()
+                .map(convert::track)
+                .collect(),
+            ..SearchResults::default()
+        });
     }
     let (t, ar, al, pl) = futures_util::join!(
         section(kind.wants(SearchKind::Track), "tracks", term),
@@ -357,6 +369,16 @@ pub async fn stream_fresh(track_id: &str, quality: Quality) -> ApiResult<Stream>
         mime: r.mime,
         seconds: r.seconds,
     })
+}
+
+/// When YouTube cannot play `track` at all: the same song from SoundCloud, if one with the same
+/// length (within 5 s) is found.
+pub async fn stream_soundcloud_copy(track: &Track, quality: Quality) -> ApiResult<Stream> {
+    let (artist, title) = (track.artists_label(), track.title.to_string());
+    let seconds = track.duration_ms as f64 / 1000.0;
+    let found = run(soundcloud::find_match(artist, title, seconds)).await?;
+    let id = found.ok_or(ApiError::Media(super::error::MediaError::Unavailable))?;
+    stream(&id, quality).await
 }
 
 /// Warm the stream cache for tracks likely to play next. Fire and forget.

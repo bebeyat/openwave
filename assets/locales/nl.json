@@ -473,6 +473,7 @@
   "search.tab.artists": "Artiesten",
   "search.tab.playlists": "Playlists",
   "search.tab.songs": "Nummers",
+  "search.tab.soundcloud": "SoundCloud",
   "search.title": "Zoeken",
   "settings.about.engine": "Hulpbestand (yt-dlp)",
   "settings.about.engine.help": "Een optionele kleine tool die sommige nummers nodig hebben om af te spelen: het opensource yt-dlp. Het wordt gedownload van de officiële GitHub-pagina en gecontroleerd met de gepubliceerde SHA-256-checksum.",

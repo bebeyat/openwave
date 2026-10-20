@@ -24,7 +24,7 @@ pub const FONTS_CSS: &str = include_str!("../assets/fonts.css");
 /// no remote code) and `'wasm-unsafe-eval'` (compile WebAssembly only, `eval` stays blocked).
 pub const CSP: &str = concat!(
     "default-src 'self'; ",
-    "img-src 'self' data: http://127.0.0.1:* https://*.ytimg.com https://*.ggpht.com https://*.googleusercontent.com; ",
+    "img-src 'self' data: http://127.0.0.1:* https://*.ytimg.com https://*.ggpht.com https://*.googleusercontent.com https://*.sndcdn.com; ",
     "media-src http://127.0.0.1:*; ",
     "connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:*; ",
     "style-src 'self' 'unsafe-inline'; ",
