@@ -13,3 +13,4 @@ pub mod policy;
 mod queue_edit;
 mod radio;
 pub mod session;
+pub mod sleep;

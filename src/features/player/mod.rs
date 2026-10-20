@@ -4,6 +4,7 @@
 mod bar;
 mod controls;
 mod drawer;
+mod effects_eq;
 mod effects_parts;
 pub mod effects_popover;
 mod fullscreen;
@@ -13,6 +14,7 @@ mod lyrics_state;
 mod queue_list;
 mod save_dialog;
 mod shortcuts_popover;
+mod sleep_popover;
 pub mod state;
 
 pub use drawer::DockedPanel;

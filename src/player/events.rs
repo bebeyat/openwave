@@ -69,6 +69,7 @@ fn on_state(state: AudioState) {
             set_status(Status::Paused);
             session::persist_now();
         }
+        AudioState::Ended if super::sleep::stop_at_track_end() => pause(),
         AudioState::Ended => advance(true),
         _ => {}
     }

@@ -20,9 +20,12 @@ pub static LAST_TAB: GlobalSignal<DrawerTab> = Signal::global(|| DrawerTab::Queu
 pub static FULLSCREEN: GlobalSignal<bool> = Signal::global(|| false);
 /// Lyrics pane inside the fullscreen player.
 pub static FULLSCREEN_LYRICS: GlobalSignal<bool> = Signal::global(|| true);
+/// Frequency bars in the fullscreen player.
+pub static FULLSCREEN_VIZ: GlobalSignal<bool> = Signal::global(|| false);
 /// Window is at least 1280px wide: the queue/lyrics panel docks into the shell's right column.
 pub static WIDE: GlobalSignal<bool> = Signal::global(|| false);
 pub static SHORTCUTS_OPEN: GlobalSignal<bool> = Signal::global(|| false);
+pub static SLEEP_OPEN: GlobalSignal<bool> = Signal::global(|| false);
 
 pub const SEEK_STEP_SECS: f64 = 5.0;
 pub const VOLUME_STEP: f64 = 0.05;

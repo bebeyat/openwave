@@ -88,6 +88,16 @@
     countOutputs().then(function (n) { outputs = n; });
   }
 
+  /* Sleep timer: lower the volume to silence over `secs`, pause, then put the volume back. */
+  function fadePause(secs) {
+    var from = a.volume, steps = 20, i = 0;
+    var id = setInterval(function () {
+      i++;
+      a.volume = from * (1 - i / steps);
+      if (i >= steps) { clearInterval(id); a.pause(); a.volume = from; }
+    }, Math.max(10, secs * 1000 / steps));
+  }
+
   var saved = parseFloat(read('ow.volume'));
   a.volume = isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.8;
   a.muted = read('ow.muted') === 'true';
@@ -111,6 +121,7 @@
         case 'mute': a.muted = !!m.on; store('ow.muted', a.muted); break;
         case 'hello': volume(); break;
         case 'fx': if (window.owFx) window.owFx.apply(m); break;
+        case 'fade_pause': fadePause(m.secs); break;
       }
     },
     dispose: function () {

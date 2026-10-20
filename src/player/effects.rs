@@ -1,11 +1,12 @@
-//! Sound effects: speed, pitch, reverb and bass boost.
+//! Sound effects: speed, pitch, reverb, bass boost, equalizer, distortion, loudness levelling and
+//! crossfade.
 //!
 //! Pure model (`Fx`, quick presets, semitone math) plus a thin bridge to `assets/fx.js`, which does
 //! the DSP in the single hidden `<audio>` element's Web Audio graph. Durations and positions stay in
 //! *track time* at any speed: the element's `currentTime`/`duration` are media time, so the seek bar,
 //! lyrics and the saved position need no conversion.
 //!
-//! Persistence: reverb preset, mix, bass and the "linked" switch live in `settings.json`. Speed and
+//! Persistence: everything but speed and pitch lives in `settings.json`. Speed and
 //! pitch are deliberately not saved: every launch starts at normal speed and pitch.
 
 use std::cell::Cell;
@@ -16,7 +17,9 @@ use serde_json::{json, Value};
 
 use super::controller::{self, Status};
 use super::{engine, media_keys};
-use crate::store::settings::{FX_BASS_MAX_DB, FX_MIX_MAX};
+use crate::store::settings::{
+    clamp_eq, EQ_BANDS, EQ_MAX_DB, FX_BASS_MAX_DB, FX_DRIVE_MAX, FX_FADE_MAX, FX_MIX_MAX,
+};
 use crate::store::{self, ReverbPreset, Settings, SettingsChange};
 
 /// The scripts of the effects, appended to the audio bridge in one eval (order matters).
@@ -24,6 +27,8 @@ pub const SCRIPTS: &str = concat!(
     include_str!("../../assets/fx_ir.js"),
     "\n",
     include_str!("../../assets/fx_stretch.js"),
+    "\n",
+    include_str!("../../assets/fx_curves.js"),
     "\n",
     include_str!("../../assets/fx.js")
 );
@@ -64,7 +69,18 @@ pub struct Fx {
     pub mix: u8,
     /// Bass boost in dB.
     pub bass: u8,
+    /// Equalizer gains in dB (see [`EQ_FREQS`]).
+    pub eq: [i8; EQ_BANDS],
+    /// Distortion in percent.
+    pub drive: u8,
+    /// Loudness levelling.
+    pub level: bool,
+    /// Crossfade length in seconds.
+    pub fade: u8,
 }
+
+/// Centre frequencies of the equalizer bands (the first is a low shelf, the last a high shelf).
+pub const EQ_FREQS: [u32; EQ_BANDS] = [32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
 impl Default for Fx {
     fn default() -> Self {
@@ -75,6 +91,10 @@ impl Default for Fx {
             reverb: ReverbPreset::Off,
             mix: store::settings::DEFAULT_FX_MIX,
             bass: 0,
+            eq: [0; EQ_BANDS],
+            drive: 0,
+            level: false,
+            fade: 0,
         }
     }
 }
@@ -104,6 +124,10 @@ impl Fx {
             reverb: s.fx_reverb,
             mix: s.fx_reverb_mix.min(FX_MIX_MAX),
             bass: s.fx_bass_db.min(FX_BASS_MAX_DB),
+            eq: clamp_eq(s.fx_eq),
+            drive: s.fx_drive.min(FX_DRIVE_MAX),
+            level: s.fx_level,
+            fade: s.fx_fade.min(FX_FADE_MAX),
             ..self
         }
     }
@@ -161,6 +185,49 @@ impl Fx {
         }
     }
 
+    pub fn with_eq(self, eq: [i8; EQ_BANDS]) -> Self {
+        Self {
+            eq: clamp_eq(eq),
+            ..self
+        }
+    }
+
+    /// One band changed; out-of-range bands are ignored.
+    pub fn with_band(self, band: usize, db: f64) -> Self {
+        if band >= EQ_BANDS || db.is_nan() {
+            return self;
+        }
+        let mut eq = self.eq;
+        eq[band] = db
+            .round()
+            .clamp(-f64::from(EQ_MAX_DB), f64::from(EQ_MAX_DB)) as i8;
+        Self { eq, ..self }
+    }
+
+    pub fn with_drive(self, drive: f64) -> Self {
+        if drive.is_nan() {
+            return self;
+        }
+        Self {
+            drive: drive.clamp(0.0, f64::from(FX_DRIVE_MAX)).round() as u8,
+            ..self
+        }
+    }
+
+    pub fn with_level(self, level: bool) -> Self {
+        Self { level, ..self }
+    }
+
+    pub fn with_fade(self, secs: f64) -> Self {
+        if secs.is_nan() {
+            return self;
+        }
+        Self {
+            fade: secs.clamp(0.0, f64::from(FX_FADE_MAX)).round() as u8,
+            ..self
+        }
+    }
+
     /// Pitch the listener hears relative to the original, in semitones.
     pub fn effective_pitch(&self) -> f64 {
         if self.linked {
@@ -185,12 +252,19 @@ impl Fx {
         self.reverb != ReverbPreset::Off && self.mix > 0
     }
 
-    /// Nothing changes the sound: playback stays exactly as without effects.
-    pub fn is_neutral(&self) -> bool {
+    /// No effect colours the sound (what the effects button's dot and Reset are about).
+    pub fn sounds_plain(&self) -> bool {
         self.speed == 1.0
             && self.effective_pitch().abs() < 1e-9
             && !self.reverb_active()
             && self.bass == 0
+            && self.eq == [0; EQ_BANDS]
+            && self.drive == 0
+    }
+
+    /// Nothing changes the sound: playback stays exactly as without effects.
+    pub fn is_neutral(&self) -> bool {
+        self.sounds_plain() && !self.level && self.fade == 0
     }
 
     /// Message for `assets/fx.js`.
@@ -204,6 +278,10 @@ impl Fx {
             "reverb": self.reverb.id(),
             "mix": f64::from(self.mix) / 100.0,
             "bass": f64::from(self.bass),
+            "eq": self.eq,
+            "drive": f64::from(self.drive) / 100.0,
+            "level": self.level,
+            "fade": self.fade,
         })
     }
 }
@@ -235,7 +313,44 @@ const fn quick(
             reverb,
             mix,
             bass,
+            eq: [0; EQ_BANDS],
+            drive: 0,
+            level: false,
+            fade: 0,
         },
+    }
+}
+
+impl Fx {
+    /// The remembered part of `other` (everything but speed and pitch).
+    fn with_remembered(self, other: &Fx) -> Self {
+        Self {
+            speed: self.speed,
+            pitch: self.pitch,
+            ..*other
+        }
+    }
+
+    /// A quick preset's sound on top of the equalizer, distortion, levelling and crossfade.
+    pub fn with_quick(self, q: Fx) -> Self {
+        Self {
+            speed: q.speed,
+            pitch: q.pitch,
+            linked: q.linked,
+            reverb: q.reverb,
+            mix: q.mix,
+            bass: q.bass,
+            ..self
+        }
+    }
+
+    /// Back to the original sound; levelling and crossfade are listening preferences and stay.
+    pub fn reset(self) -> Self {
+        Self {
+            level: self.level,
+            fade: self.fade,
+            ..Self::default()
+        }
     }
 }
 
@@ -319,13 +434,8 @@ pub fn push_current() {
 
 fn remember(fx: &Fx) {
     let cur = store::settings().get();
-    if (
-        cur.fx_reverb,
-        cur.fx_reverb_mix,
-        cur.fx_bass_db,
-        cur.fx_linked,
-    ) == (fx.reverb, fx.mix, fx.bass, fx.linked)
-    {
+    let saved = Fx::default().with_saved(&cur);
+    if saved == saved.with_remembered(fx) {
         return;
     }
     let fx = *fx;
@@ -334,6 +444,10 @@ fn remember(fx: &Fx) {
             .apply(SettingsChange::FxReverbMix(fx.mix))
             .apply(SettingsChange::FxBassDb(fx.bass))
             .apply(SettingsChange::FxLinked(fx.linked))
+            .apply(SettingsChange::FxEq(fx.eq))
+            .apply(SettingsChange::FxDrive(fx.drive))
+            .apply(SettingsChange::FxLevel(fx.level))
+            .apply(SettingsChange::FxFade(fx.fade))
     });
     if let Err(e) = saved {
         eprintln!("settings: could not save the sound effects: {e}");

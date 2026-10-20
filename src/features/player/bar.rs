@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use super::controls::{SeekRow, Transport, VolumeControl};
 use super::effects_popover::FxButton;
 use super::shortcuts_popover::ShortcutsPopover;
+use super::sleep_popover::{SleepButton, SleepPopover};
 use super::state::{
     is_current_liked, toggle_drawer, toggle_fullscreen, toggle_like_current, DrawerTab, DRAWER,
     LYRICS_BUTTON_ID, QUEUE_BUTTON_ID, SHORTCUTS_OPEN,
@@ -45,6 +46,7 @@ pub fn PlayerBar() -> Element {
                 },
             }
             ShortcutsPopover {}
+            SleepPopover {}
         }
     }
 }
@@ -234,6 +236,9 @@ fn RightControls() -> Element {
                     onclick: move |_| toggle_fullscreen(),
                 }
             }
+            }
+            if c.bar_sleep {
+                SleepButton {}
             }
             if c.bar_help {
                 ShortcutsButton {}

@@ -134,6 +134,21 @@ pub const FX_MIX_MAX: u8 = 100;
 pub const DEFAULT_FX_MIX: u8 = 30;
 /// Bass boost range in dB (low shelf).
 pub const FX_BASS_MAX_DB: u8 = 12;
+/// Equalizer: ten bands, each within +-this many dB.
+pub const EQ_BANDS: usize = 10;
+pub const EQ_MAX_DB: i8 = 12;
+pub const EQ_PRESETS_MAX: usize = 20;
+pub const EQ_NAME_MAX: usize = 24;
+pub const FX_DRIVE_MAX: u8 = 100;
+/// Longest crossfade, in seconds.
+pub const FX_FADE_MAX: u8 = 12;
+
+/// A user-saved equalizer curve.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EqPreset {
+    pub name: String,
+    pub bands: [i8; EQ_BANDS],
+}
 
 /// Replace an unreadable value by the field's default instead of failing the whole file.
 fn lenient<'de, D, T>(d: D) -> Result<T, D::Error>
@@ -206,6 +221,20 @@ pub struct Settings {
     /// "Speed and pitch linked" switch.
     #[serde(deserialize_with = "lenient")]
     pub fx_linked: bool,
+    /// Equalizer gains in dB, 32 Hz to 16 kHz.
+    #[serde(deserialize_with = "lenient")]
+    pub fx_eq: [i8; EQ_BANDS],
+    #[serde(deserialize_with = "lenient")]
+    pub eq_presets: Vec<EqPreset>,
+    /// Distortion amount in percent.
+    #[serde(deserialize_with = "lenient")]
+    pub fx_drive: u8,
+    /// Keep every song near the same loudness.
+    #[serde(deserialize_with = "lenient")]
+    pub fx_level: bool,
+    /// Fade out the end and fade in the start of songs, in seconds (0 = off).
+    #[serde(deserialize_with = "lenient")]
+    pub fx_fade: u8,
     /// Show the current song as "Listening to" in Discord (opt-in; talks only to local Discord).
     #[serde(deserialize_with = "lenient")]
     pub discord_enabled: bool,
@@ -236,6 +265,11 @@ impl Default for Settings {
             fx_reverb_mix: DEFAULT_FX_MIX,
             fx_bass_db: 0,
             fx_linked: false,
+            fx_eq: [0; EQ_BANDS],
+            eq_presets: Vec::new(),
+            fx_drive: 0,
+            fx_level: false,
+            fx_fade: 0,
             discord_enabled: false,
             auto_update: yes(),
             custom: Customization::default(),
@@ -261,6 +295,11 @@ pub enum SettingsChange {
     FxReverbMix(u8),
     FxBassDb(u8),
     FxLinked(bool),
+    FxEq([i8; EQ_BANDS]),
+    EqPresets(Vec<EqPreset>),
+    FxDrive(u8),
+    FxLevel(bool),
+    FxFade(u8),
     DiscordEnabled(bool),
     AutoUpdate(bool),
     Custom(Customization),
@@ -286,6 +325,11 @@ impl Settings {
             SettingsChange::FxReverbMix(v) => next.fx_reverb_mix = v,
             SettingsChange::FxBassDb(v) => next.fx_bass_db = v,
             SettingsChange::FxLinked(v) => next.fx_linked = v,
+            SettingsChange::FxEq(v) => next.fx_eq = v,
+            SettingsChange::EqPresets(v) => next.eq_presets = v,
+            SettingsChange::FxDrive(v) => next.fx_drive = v,
+            SettingsChange::FxLevel(v) => next.fx_level = v,
+            SettingsChange::FxFade(v) => next.fx_fade = v,
             SettingsChange::DiscordEnabled(v) => next.discord_enabled = v,
             SettingsChange::AutoUpdate(v) => next.auto_update = v,
             SettingsChange::Custom(v) => next.custom = v,
@@ -306,6 +350,28 @@ impl Settings {
             AudioQuality::High => crate::backend::api::Quality::High,
         }
     }
+}
+
+pub fn clamp_eq(bands: [i8; EQ_BANDS]) -> [i8; EQ_BANDS] {
+    bands.map(|b| b.clamp(-EQ_MAX_DB, EQ_MAX_DB))
+}
+
+/// Trimmed, non-empty, unique names (the last one saved wins), at most [`EQ_PRESETS_MAX`].
+fn sanitize_presets(presets: Vec<EqPreset>) -> Vec<EqPreset> {
+    let mut out: Vec<EqPreset> = Vec::new();
+    for p in presets.into_iter().rev() {
+        let name: String = p.name.trim().chars().take(EQ_NAME_MAX).collect();
+        if name.is_empty() || out.iter().any(|q| q.name == name) {
+            continue;
+        }
+        out.push(EqPreset {
+            name,
+            bands: clamp_eq(p.bands),
+        });
+    }
+    out.reverse();
+    let extra = out.len().saturating_sub(EQ_PRESETS_MAX);
+    out.split_off(extra)
 }
 
 impl Versioned for Settings {
@@ -340,6 +406,10 @@ impl Versioned for Settings {
         self.cache_limit_mb = self.cache_limit_mb.clamp(lo, hi);
         self.fx_reverb_mix = self.fx_reverb_mix.min(FX_MIX_MAX);
         self.fx_bass_db = self.fx_bass_db.min(FX_BASS_MAX_DB);
+        self.fx_eq = clamp_eq(self.fx_eq);
+        self.eq_presets = sanitize_presets(self.eq_presets);
+        self.fx_drive = self.fx_drive.min(FX_DRIVE_MAX);
+        self.fx_fade = self.fx_fade.min(FX_FADE_MAX);
         self.custom = self.custom.sanitize();
         self
     }

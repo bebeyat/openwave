@@ -5,6 +5,7 @@
 
 use dioxus::prelude::*;
 
+use super::effects_eq::EqSection;
 use super::effects_parts::{FxRows, PresetChips};
 use super::state::FULLSCREEN;
 use crate::i18n::t;
@@ -31,7 +32,7 @@ pub fn FxButton(
     #[props(default = IconButtonSize::Sm)] size: IconButtonSize,
 ) -> Element {
     let open = *FX_OPEN.read();
-    let active = !FX.read().is_neutral();
+    let active = !FX.read().sounds_plain();
     let label = if active {
         format!("{} ({})", t("fx.title"), t("fx.on"))
     } else {
@@ -101,8 +102,8 @@ fn Panel() -> Element {
                     icon: "refresh-cw",
                     label: t("fx.reset"),
                     size: IconButtonSize::Sm,
-                    disabled: fx.is_neutral(),
-                    onclick: move |_| effects::update(|_| Fx::default()),
+                    disabled: fx.sounds_plain(),
+                    onclick: move |_| effects::update(Fx::reset),
                 }
                 IconButton {
                     icon: "x",
@@ -114,6 +115,7 @@ fn Panel() -> Element {
             }
             PresetChips { fx }
             FxRows { fx }
+            EqSection { fx }
         }
     }
 }

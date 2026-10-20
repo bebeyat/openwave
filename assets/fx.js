@@ -15,6 +15,10 @@
  *    pitch - 12*log2(speed) semitones, which cancels the pitch change of the resampling and adds the
  *    requested shift. If the worklet cannot load, the element falls back to preservesPitch = true.
  *  - Reverb: ConvolverNode with a generated impulse response + equal-power dry/wet. Bass: low shelf.
+ *  - Equalizer: ten biquads (fx_curves.js has the layout). Distortion: WaveShaper + makeup gain.
+ *  - Levelling: a meter before the `level` gain steers it toward one loudness (fx_curves.level).
+ *  - Crossfade: the master gain ramps down over the last `fade` seconds and back up on the next song.
+ *  - Visualizer: owFx.viz(true) builds the graph (sound unchanged) and draws into canvas#ow-viz.
  */
 (function () {
   var host = window.owAudio;
@@ -22,7 +26,12 @@
   if (window.owFx && window.owFx.dispose) window.owFx.dispose();
   var a = host.el;
 
-  var want = { speed: 1, pitch: 0, linked: false, reverb: 'off', mix: 0.3, bass: 0 };
+  var C = window.owFxCurves;
+  var FLAT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+  var want = { speed: 1, pitch: 0, linked: false, reverb: 'off', mix: 0.3, bass: 0, eq: FLAT, drive: 0, level: false, fade: 0 };
+  var vizOn = false, vizRunning = false;
+  var levelTimer = 0, levelDb = null;
+  var fading = false, pendingIn = false;
   var g = null;             /* the graph, once built */
   var building = null;      /* Promise while it is being built */
   var failed = false;       /* graph or worklet failed: stay on the native path */
@@ -31,7 +40,11 @@
   var BASS_HZ = 120;
 
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
-  function neutral(s) { return s.speed === 1 && s.pitch === 0 && (s.reverb === 'off' || s.mix <= 0) && s.bass <= 0; }
+  function flat(eq) { return eq.every(function (v) { return v === 0; }); }
+  function neutral(s) {
+    return s.speed === 1 && s.pitch === 0 && (s.reverb === 'off' || s.mix <= 0) && s.bass <= 0 &&
+      flat(s.eq) && s.drive <= 0 && !s.level && s.fade <= 0;
+  }
   function fail(why) {
     failed = true;
     try { console.warn('owFx: ' + why); } catch (e) { /* ignore */ }
@@ -56,9 +69,15 @@
         ctx: ctx, src: src,
         bass: ctx.createBiquadFilter(), pre: ctx.createGain(),
         dry: ctx.createGain(), conv: ctx.createConvolver(), wet: ctx.createGain(),
-        master: ctx.createGain(), analyser: ctx.createAnalyser(), stretch: null
+        master: ctx.createGain(), analyser: ctx.createAnalyser(), stretch: null,
+        eq: C.EQ_FREQS.map(function () { return ctx.createBiquadFilter(); }),
+        drive: ctx.createWaveShaper(), makeup: ctx.createGain(),
+        level: ctx.createGain(), meter: ctx.createAnalyser()
       };
       n.bass.type = 'lowshelf'; n.bass.frequency.value = BASS_HZ; n.bass.gain.value = 0;
+      n.eq.forEach(function (f, i) { f.type = C.eqType(i); f.frequency.value = C.EQ_FREQS[i]; f.Q.value = 1.4; f.gain.value = 0; });
+      n.drive.oversample = '4x';
+      n.meter.fftSize = 2048;
       n.analyser.fftSize = 2048;
       n.conv.normalize = true;
       g = n;
@@ -91,23 +110,40 @@
 
   function wire(n, s, stretchOn) {
     var t = n.ctx.currentTime, reverbOn = s.reverb !== 'off' && s.mix > 0;
-    var shape = (neutral(s) && !stretchOn ? 'straight' : 'fx') + (stretchOn ? '+st' : '') + (reverbOn ? '+rv' : '');
+    var driveOn = s.drive > 0;
+    var colour = !(s.speed === 1 && s.pitch === 0 && !reverbOn && s.bass <= 0 && flat(s.eq) && !driveOn && !s.level);
+    var shape = (colour || stretchOn ? 'fx' : 'straight') + (stretchOn ? '+st' : '') + (reverbOn ? '+rv' : '') + (driveOn ? '+dr' : '');
     if (shape !== n.shape) {                   /* rewire only when the topology changes (no clicks while dragging) */
       n.shape = shape;
-      [n.src, n.bass, n.pre, n.dry, n.conv, n.wet, n.master].forEach(function (x) { try { x.disconnect(); } catch (e) { /* not connected */ } });
+      [n.src, n.bass, n.pre, n.dry, n.conv, n.wet, n.master, n.drive, n.makeup, n.level].concat(n.eq)
+        .forEach(function (x) { try { x.disconnect(); } catch (e) { /* not connected */ } });
       if (n.stretch) { try { n.stretch.disconnect(); } catch (e) { /* not connected */ } }
       if (shape === 'straight') {              /* nothing to do: straight through */
         n.src.connect(n.master);
       } else {
-        n.src.connect(n.bass);
-        if (stretchOn && n.stretch) { n.bass.connect(n.stretch); n.stretch.connect(n.pre); } else { n.bass.connect(n.pre); }
-        n.pre.connect(n.dry); n.dry.connect(n.master);
-        if (reverbOn) { n.pre.connect(n.conv); n.conv.connect(n.wet); n.wet.connect(n.master); }
+        var chain = [n.src, n.bass].concat(n.eq);
+        if (driveOn) chain.push(n.drive, n.makeup);
+        if (stretchOn && n.stretch) chain.push(n.stretch);
+        chain.push(n.pre);
+        for (var i = 1; i < chain.length; i++) chain[i - 1].connect(chain[i]);
+        n.pre.connect(n.meter);
+        n.pre.connect(n.dry); n.dry.connect(n.level);
+        if (reverbOn) { n.pre.connect(n.conv); n.conv.connect(n.wet); n.wet.connect(n.level); }
+        n.level.connect(n.master);
       }
       n.master.connect(n.ctx.destination);
       n.master.connect(n.analyser);
       n.dry.gain.value = n.wet.gain.value = 0; n.bass.gain.value = 0;   /* parameters of unplugged nodes are frozen; restart clean */
+      n.eq.forEach(function (f) { f.gain.value = 0; });
     }
+    n.eq.forEach(function (f, i) { f.gain.setTargetAtTime(clamp(s.eq[i] || 0, -12, 12), t, 0.02); });
+    if (driveOn && n.driveAmt !== s.drive) {
+      n.driveAmt = s.drive;
+      n.drive.curve = C.curve(s.drive, 2048);
+      n.makeup.gain.value = C.makeup(s.drive);
+    }
+    levelLoop(n, s.level);
+    if (s.fade <= 0 && fading) unfade(n);
     var m = reverbOn ? clamp(s.mix, 0, 1) : 0;     /* equal-power crossfade */
     n.dry.gain.setTargetAtTime(Math.cos(m * Math.PI / 2), t, 0.02);
     n.wet.gain.setTargetAtTime(Math.sin(m * Math.PI / 2), t, 0.02);
@@ -124,11 +160,17 @@
     var s = {
       speed: clamp(+m.speed || 1, 0.5, 2), pitch: clamp(+m.pitch || 0, -12, 12), linked: !!m.linked,
       shift: clamp(+m.shift || 0, -24, 24),
-      reverb: String(m.reverb || 'off'), mix: clamp(+m.mix || 0, 0, 1), bass: clamp(+m.bass || 0, 0, 12)
+      reverb: String(m.reverb || 'off'), mix: clamp(+m.mix || 0, 0, 1), bass: clamp(+m.bass || 0, 0, 12),
+      eq: FLAT.map(function (_, i) { return clamp(+(m.eq && m.eq[i]) || 0, -12, 12); }),
+      drive: clamp(+m.drive || 0, 0, 1), level: !!m.level, fade: clamp(+m.fade || 0, 0, 12)
     };
+    run(s);
+  }
+
+  function run(s) {
     want = s;
     var mine = ++token;
-    if ((neutral(s) && !g) || failed) {                /* default path: the element alone */
+    if ((neutral(s) && !g && !vizOn) || failed) {                /* default path: the element alone */
       if (failed && !neutral(s)) setMedia(rateFor(s), true);   /* browser time-stretch fallback, pitch ignored */
       else setMedia(1, true);
       return;
@@ -155,6 +197,99 @@
   function onPlay() { if (g && g.ctx.state !== 'running') g.ctx.resume().catch(function () {}); }
   a.addEventListener('play', onPlay);
 
+  /* Levelling: ~10 times a second while on and playing. */
+  function levelLoop(n, on) {
+    if (on && !levelTimer) {
+      levelTimer = setInterval(function () {
+        if (a.paused) return;
+        var buf = new Float32Array(n.meter.fftSize);
+        n.meter.getFloatTimeDomainData(buf);
+        var r = C.level(levelDb, C.rmsDb(buf));
+        levelDb = r.db;
+        n.level.gain.setTargetAtTime(r.gain, n.ctx.currentTime, 0.4);
+      }, 100);
+    } else if (!on && levelTimer) {
+      clearInterval(levelTimer); levelTimer = 0; levelDb = null;
+      n.level.gain.setTargetAtTime(1, n.ctx.currentTime, 0.1);
+    }
+  }
+
+  /* Crossfade: seconds of the song left at the current speed. */
+  function remaining() {
+    var d = a.duration;
+    return isFinite(d) && d > 0 ? (d - a.currentTime) / (a.playbackRate || 1) : Infinity;
+  }
+  function unfade(n) {
+    fading = false;
+    var t = n.ctx.currentTime;
+    n.master.gain.cancelScheduledValues(t);
+    n.master.gain.setTargetAtTime(1, t, 0.05);
+  }
+  function onTime() {
+    if (!g || want.fade <= 0 || a.paused) return;
+    if (!isFinite(a.duration) || a.duration < want.fade * 3) return;   /* too short to fade */
+    var left = remaining();
+    if (left <= want.fade && !fading) {
+      fading = true;
+      var t = g.ctx.currentTime;
+      g.master.gain.cancelScheduledValues(t);
+      g.master.gain.setValueAtTime(g.master.gain.value, t);
+      g.master.gain.linearRampToValueAtTime(0, t + Math.max(0.05, left));
+    } else if (left > want.fade + 0.5 && fading) {
+      unfade(g);                                  /* seeked back out of the fade */
+    }
+  }
+  function onLoadStart() { pendingIn = true; }
+  /* First "playing" of a new source: fade in (or make sure a finished fade-out does not stay silent). */
+  function onPlaying() {
+    if (!pendingIn || !g) return;
+    pendingIn = false;
+    var t = g.ctx.currentTime;
+    fading = false;
+    g.master.gain.cancelScheduledValues(t);
+    if (want.fade > 0) {
+      g.master.gain.setValueAtTime(0, t);
+      g.master.gain.linearRampToValueAtTime(1, t + Math.min(want.fade, 4));
+    } else {
+      g.master.gain.setValueAtTime(1, t);
+    }
+  }
+  a.addEventListener('timeupdate', onTime);
+  a.addEventListener('seeked', onTime);
+  a.addEventListener('loadstart', onLoadStart);
+  a.addEventListener('playing', onPlaying);
+
+  /* Visualizer: frequency bars in canvas#ow-viz, coloured with the canvas' CSS colour. */
+  var BARS = 48;
+  function frame() {
+    var c = document.getElementById('ow-viz');
+    if (!c || !vizOn || !g) { vizRunning = false; return; }
+    var dpr = window.devicePixelRatio || 1, w = Math.round(c.clientWidth * dpr), h = Math.round(c.clientHeight * dpr);
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    var bins = new Uint8Array(g.analyser.frequencyBinCount);
+    g.analyser.getByteFrequencyData(bins);
+    var x2 = c.getContext('2d');
+    x2.clearRect(0, 0, w, h);
+    x2.fillStyle = getComputedStyle(c).color;
+    var gap = 2 * dpr, bw = (w - gap * (BARS - 1)) / BARS, top = bins.length * 0.7;
+    for (var i = 0; i < BARS; i++) {
+      var lo = Math.floor(2 * Math.pow(top / 2, i / BARS)), hi = Math.max(lo + 1, Math.floor(2 * Math.pow(top / 2, (i + 1) / BARS)));
+      var peak = 0;
+      for (var j = lo; j < hi && j < bins.length; j++) peak = Math.max(peak, bins[j]);
+      var bh = Math.max(dpr, peak / 255 * h);
+      x2.fillRect(i * (bw + gap), h - bh, bw, bh);
+    }
+    requestAnimationFrame(frame);
+  }
+  function viz(on) {
+    vizOn = !!on;
+    if (!vizOn || failed) return;
+    if (!g) run(want);
+    build().then(function () {
+      if (vizOn && !vizRunning) { vizRunning = true; requestAnimationFrame(frame); }
+    }).catch(function () { /* build() already reported */ });
+  }
+
   /* Read-only diagnostics for tests: RMS of what reaches the speakers, context state, active settings. */
   function probe() {
     var o = { built: !!g, failed: failed, want: want, rate: a.playbackRate, preservesPitch: a.preservesPitch, crossOrigin: a.crossOrigin };
@@ -172,10 +307,18 @@
   }
 
   window.owFx = {
-    apply: apply, probe: probe,
+    apply: apply, probe: probe, viz: viz,
     /* Seconds of delay the pitch shifter adds while it is in the path (diagnostics). */
     latency: function () { return g && g.stretch ? g.stretch.latency() : Promise.resolve(0); },
-    dispose: function () { a.removeEventListener('play', onPlay); }
+    dispose: function () {
+      a.removeEventListener('play', onPlay);
+      a.removeEventListener('timeupdate', onTime);
+      a.removeEventListener('seeked', onTime);
+      a.removeEventListener('loadstart', onLoadStart);
+      a.removeEventListener('playing', onPlaying);
+      if (levelTimer) clearInterval(levelTimer);
+      vizOn = false;
+    }
   };
   host.fx = window.owFx;
 })();

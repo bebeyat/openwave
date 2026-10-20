@@ -56,7 +56,7 @@ pub fn reverb_amount(fx: &Fx) -> f64 {
 
 /// One line: name, slider, readout.
 #[component]
-fn FxRow(
+pub(super) fn FxRow(
     #[props(into)] label: String,
     #[props(into)] readout: String,
     value: f64,
@@ -70,7 +70,7 @@ fn FxRow(
     let text = format!("{label} {readout}");
     rsx! {
         div { class: "flex items-center gap-3",
-            span { class: "w-14 flex-none text-sm text-muted", "{label}" }
+            span { class: "w-20 flex-none truncate text-sm text-muted", "{label}" }
             Slider {
                 value,
                 min,
@@ -99,7 +99,7 @@ pub fn PresetChips(fx: Fx) -> Element {
                     variant: if current == Some(q.id) { ButtonVariant::Primary } else { ButtonVariant::Secondary },
                     size: ButtonSize::Sm,
                     pressed: Some(current == Some(q.id)),
-                    onclick: move |_| effects::update(|_| q.fx),
+                    onclick: move |_| effects::update(|f| f.with_quick(q.fx)),
                     {t(q.key)}
                 }
             }
@@ -152,6 +152,35 @@ pub fn FxRows(fx: Fx) -> Element {
                 step: 1.0,
                 big_step: 3.0,
                 on_input: move |v| effects::update(|f| f.with_bass(v)),
+            }
+            FxRow {
+                label: t("fx.drive"),
+                readout: format!("{}%", fx.drive),
+                value: f64::from(fx.drive),
+                min: 0.0,
+                max: 100.0,
+                step: 5.0,
+                big_step: 20.0,
+                on_input: move |v| effects::update(|f| f.with_drive(v)),
+            }
+            FxRow {
+                label: t("fx.fade"),
+                readout: if fx.fade == 0 { t("fx.off") } else { format!("{} s", fx.fade) },
+                value: f64::from(fx.fade),
+                min: 0.0,
+                max: 12.0,
+                step: 1.0,
+                big_step: 4.0,
+                on_input: move |v| effects::update(|f| f.with_fade(v)),
+            }
+            div { class: "mt-1 flex items-center justify-between gap-3",
+                span { id: "ow-fx-level-t", class: "text-sm text-muted", {t("fx.level")} }
+                Switch {
+                    id: "ow-fx-level",
+                    checked: fx.level,
+                    labelled_by: "ow-fx-level-t",
+                    on_change: move |on| effects::update(|f| f.with_level(on)),
+                }
             }
             div { class: "mt-1 flex items-center justify-between gap-3", title: t("fx.linked.hint"),
                 span { id: "ow-fx-linked-t", class: "text-sm text-muted", {t("fx.linked")} }

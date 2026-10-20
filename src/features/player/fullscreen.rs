@@ -12,7 +12,7 @@ use super::effects_popover::FxButton;
 use super::lyrics::LyricsPane;
 use super::state::{
     is_current_liked, toggle_drawer, toggle_like_current, DrawerTab, DRAWER, FULLSCREEN,
-    FULLSCREEN_LYRICS,
+    FULLSCREEN_LYRICS, FULLSCREEN_VIZ,
 };
 use crate::features::shell::titlebar::{DragRegion, WindowControls};
 use crate::i18n::t;
@@ -101,6 +101,9 @@ fn Surface(track: crate::model::Track) -> Element {
                             }
                         }
                     }
+                    if *FULLSCREEN_VIZ.read() {
+                        Visualizer {}
+                    }
                     SeekRow {}
                     div { class: "grid grid-cols-[1fr_auto_1fr] items-center gap-4",
                         div { class: "flex items-center", VolumeControl { slider_class: "w-24" } }
@@ -133,6 +136,16 @@ fn TopRow(lyrics_on: bool, queue_open: bool) -> Element {
                     tooltip_align: TooltipAlign::End,
                 }
                 PaneToggle {
+                    icon: "audio-lines",
+                    label: t("player.visualizer"),
+                    shortcut: "V",
+                    pressed: *FULLSCREEN_VIZ.read(),
+                    onclick: move |_| {
+                        let on = !*FULLSCREEN_VIZ.peek();
+                        *FULLSCREEN_VIZ.write() = on;
+                    },
+                }
+                PaneToggle {
                     icon: "mic-vocal",
                     label: t("player.lyrics"),
                     shortcut: "L",
@@ -151,6 +164,20 @@ fn TopRow(lyrics_on: bool, queue_open: bool) -> Element {
                 }
             }
         }
+    }
+}
+
+/// Frequency bars drawn by `assets/fx.js` into the canvas while it is mounted.
+#[component]
+fn Visualizer() -> Element {
+    use_effect(|| {
+        document::eval("window.owFx && window.owFx.viz(true)");
+    });
+    use_drop(|| {
+        document::eval("window.owFx && window.owFx.viz(false)");
+    });
+    rsx! {
+        canvas { id: "ow-viz", "aria-hidden": "true", class: "h-14 w-full flex-none text-accent-text opacity-80" }
     }
 }
 

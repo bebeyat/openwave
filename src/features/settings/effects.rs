@@ -8,7 +8,7 @@ use dioxus::prelude::*;
 
 use super::rows::{Card, Row, ToggleRow};
 use crate::i18n::t;
-use crate::store::settings::{FX_BASS_MAX_DB, FX_MIX_MAX};
+use crate::store::settings::{FX_BASS_MAX_DB, FX_FADE_MAX, FX_MIX_MAX};
 use crate::store::{ReverbPreset, Settings, SettingsChange};
 use crate::ui::{SegmentedControl, Slider, TabItem};
 
@@ -99,6 +99,24 @@ pub fn EffectsCard(settings: Arc<Settings>, on_change: EventHandler<SettingsChan
                         on_commit: move |v: f64| on_change.call(SettingsChange::FxBassDb(v.round() as u8)),
                     }
                 }
+            }
+            Row { label: t("fx.fade"), stack: true,
+                div { class: "w-full",
+                    SliderRow {
+                        label: t("fx.fade"),
+                        readout: if settings.fx_fade == 0 { t("fx.off") } else { format!("{} s", settings.fx_fade) },
+                        value: f64::from(settings.fx_fade),
+                        max: f64::from(FX_FADE_MAX),
+                        step: 1.0,
+                        big_step: 4.0,
+                        on_commit: move |v: f64| on_change.call(SettingsChange::FxFade(v.round() as u8)),
+                    }
+                }
+            }
+            ToggleRow {
+                label: t("fx.level"),
+                checked: settings.fx_level,
+                on_change: move |v| on_change.call(SettingsChange::FxLevel(v)),
             }
             ToggleRow {
                 label: t("fx.linked"),

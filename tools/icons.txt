@@ -85,3 +85,9 @@ circle-help
 loader-circle
 image
 share-2
+audio-lines
+picture-in-picture-2
+chart-column
+command
+arrow-up-down
+code
