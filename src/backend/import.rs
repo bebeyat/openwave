@@ -240,11 +240,12 @@ pub(crate) async fn read_capped(
     Ok(String::from_utf8_lossy(&body).into_owned())
 }
 
-/// Lowercase alphanumerics only, with "(feat. …)", "[…]" and "- remastered"-style suffixes removed.
+/// Folded (see `util::fold`) alphanumerics only, with "(feat. …)", "[…]" and "- remastered"-style
+/// suffixes removed.
 pub fn normalize(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     let mut depth = 0usize;
-    for c in s.to_lowercase().chars() {
+    for c in crate::util::fold(s).chars() {
         match c {
             '(' | '[' => depth += 1,
             ')' | ']' => depth = depth.saturating_sub(1),
