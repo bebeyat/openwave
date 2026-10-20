@@ -7,6 +7,10 @@ use serde_json::Value;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+#[path = "import_spotify_pages.rs"]
+mod spotify_pages;
+
+const SPOTIFY_EMBED_BASE: &str = "https://open.spotify.com";
 /// Spotify's embed page lists at most this many tracks.
 pub const SPOTIFY_EMBED_LIMIT: usize = 100;
 /// The embed page is read through this many bytes at most (it is normally a few hundred KB).
@@ -34,6 +38,8 @@ pub struct SpotifyTrack {
 pub struct SpotifyPlaylist {
     pub name: String,
     pub tracks: Vec<SpotifyTrack>,
+    /// Every track of the list was read (false: cut at the embed limit or [`MAX_TRACKS`]).
+    pub complete: bool,
 }
 
 fn spotify_id(s: &str) -> Option<String> {
@@ -173,7 +179,12 @@ pub fn parse_spotify_embed(html: &str) -> Result<SpotifyPlaylist, ImportError> {
             .or(entity["title"].as_str())
             .unwrap_or(""),
     );
-    Ok(SpotifyPlaylist { name, tracks })
+    let complete = tracks.len() < SPOTIFY_EMBED_LIMIT;
+    Ok(SpotifyPlaylist {
+        name,
+        tracks,
+        complete,
+    })
 }
 
 fn http() -> Result<&'static reqwest::Client, ImportError> {
@@ -202,11 +213,21 @@ fn spotify_status_error(status: reqwest::StatusCode) -> Option<ImportError> {
     }
 }
 
-/// Download and parse a Spotify playlist (fixed host, validated 22-character id).
+/// Download and parse a Spotify playlist (fixed host, validated 22-character id). Lists longer
+/// than the embed page are read on through Spotify's web player API with the embed page's
+/// anonymous token; if that fails the first 100 tracks are kept.
 pub async fn fetch_spotify(id: &str) -> Result<SpotifyPlaylist, ImportError> {
+    fetch_spotify_from(SPOTIFY_EMBED_BASE, spotify_pages::PATHFINDER, id).await
+}
+
+pub(crate) async fn fetch_spotify_from(
+    embed_base: &str,
+    pathfinder: &str,
+    id: &str,
+) -> Result<SpotifyPlaylist, ImportError> {
     let id = spotify_id(id).ok_or(ImportError::BadLink)?;
     let response = http()?
-        .get(format!("https://open.spotify.com/embed/playlist/{id}"))
+        .get(format!("{embed_base}/embed/playlist/{id}"))
         .send()
         .await
         .map_err(|_| ImportError::Offline)?;
@@ -218,7 +239,13 @@ pub async fn fetch_spotify(id: &str) -> Result<SpotifyPlaylist, ImportError> {
     if list.tracks.is_empty() {
         return Err(ImportError::PrivateOrEmpty);
     }
-    Ok(list)
+    if list.complete {
+        return Ok(list);
+    }
+    let Some(token) = spotify_pages::embed_token(&html) else {
+        return Ok(list);
+    };
+    Ok(spotify_pages::read_on(http()?, pathfinder, &token, &id, list).await)
 }
 
 /// Read the body as text, giving up with [`ImportError::Unreadable`] past `cap` bytes.
