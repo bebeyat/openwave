@@ -13,7 +13,26 @@ use super::engine;
 const FADE: Duration = Duration::from_secs(4);
 /// The remaining-minutes readout refreshes at least this often.
 const TICK: Duration = Duration::from_secs(15);
-pub const MINUTE_CHOICES: [u64; 5] = [15, 30, 45, 60, 90];
+pub const MINUTES_MIN: u64 = 1;
+pub const MINUTES_MAX: u64 = 720;
+pub const MINUTES_STEP: u64 = 5;
+pub const MINUTES_DEFAULT: u64 = 30;
+
+/// `minutes` moved one step up or down, landing on whole steps (7 -> 10 up, 7 -> 5 down).
+pub fn step_minutes(minutes: u64, up: bool) -> u64 {
+    let next = if up {
+        (minutes / MINUTES_STEP + 1) * MINUTES_STEP
+    } else {
+        minutes.saturating_sub(1) / MINUTES_STEP * MINUTES_STEP
+    };
+    next.clamp(MINUTES_MIN, MINUTES_MAX)
+}
+
+/// Typed minutes, clamped to the allowed range; `None` when it is not a number.
+pub fn parse_minutes(text: &str) -> Option<u64> {
+    let n: u64 = text.trim().parse().ok()?;
+    Some(n.clamp(MINUTES_MIN, MINUTES_MAX))
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Sleep {
