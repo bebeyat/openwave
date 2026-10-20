@@ -3,10 +3,11 @@
 use super::{
     catalog::Catalog,
     convert,
-    error::{ApiError, ApiResult, CatalogError, ImportError, ShareError},
+    error::{ApiError, ApiResult, CatalogError, ImportError, LyricsError, ShareError},
     import::{self, Source},
     import_flow::{self, ImportResult, PreparedImport},
     lyrics::{self, LyricsQuery},
+    lyrics_cache,
     media::Media,
     share, ytdlp,
 };
@@ -396,8 +397,28 @@ pub fn open_cache_folder() {
 }
 
 /// LRCLIB lookup. Makes no request and returns `Disabled` unless `enabled` (the user's opt-in).
+/// Lyrics found once are kept on disk and answered from there.
 pub async fn lyrics(enabled: bool, query: &LyricsQuery<'_>) -> ApiResult<Option<Lyrics>> {
-    Ok(lyrics::fetch(enabled, query).await?)
+    if !enabled {
+        return Err(LyricsError::Disabled.into());
+    }
+    let dir = backend_ref()?.root.join(lyrics_cache::DIR);
+    let key = lyrics_cache::cache_key(query);
+    let (d, k) = (dir.clone(), key.clone());
+    let cached = run(async move { lyrics_cache::get(&d, &k) }).await?;
+    if let Some(l) = cached.as_ref().and_then(|e| e.lyrics.clone()) {
+        return Ok(Some(l));
+    }
+    let found = lyrics::fetch(true, query).await?;
+    if let Some(l) = &found {
+        let entry = lyrics_cache::Entry {
+            lyrics: Some(l.clone()),
+            ..cached.unwrap_or_default()
+        };
+        // A full disk only costs the next lookup a request.
+        let _ = run(async move { lyrics_cache::put(&dir, &key, &entry) }).await;
+    }
+    Ok(found)
 }
 
 // ---- Import -------------------------------------------------------------------------------

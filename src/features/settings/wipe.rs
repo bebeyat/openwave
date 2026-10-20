@@ -95,6 +95,11 @@ pub fn wipe_own_data(dir: &Path) -> Result<WipeReport, Refusal> {
     delete_matching(&dir.join("covers"), is_cover_file, &mut report);
     delete_matching(&dir.join("bin"), is_helper_file, &mut report);
     delete_matching(
+        &dir.join(crate::backend::lyrics_cache::DIR),
+        crate::backend::lyrics_cache::is_cache_file,
+        &mut report,
+    );
+    delete_matching(
         &dir.join(crate::backend::update::DIR),
         |n| n.starts_with("OpenWave-") && (n.ends_with("-setup.exe") || n.ends_with("-setup.part")),
         &mut report,
@@ -105,6 +110,7 @@ pub fn wipe_own_data(dir: &Path) -> Result<WipeReport, Refusal> {
         "downloads",
         "covers",
         "bin",
+        crate::backend::lyrics_cache::DIR,
         crate::backend::update::DIR,
     ] {
         let _ = std::fs::remove_dir(dir.join(sub));

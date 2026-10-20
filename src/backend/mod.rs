@@ -11,6 +11,7 @@ pub mod import_flow;
 mod innertube;
 pub mod local_tags;
 pub mod lyrics;
+pub mod lyrics_cache;
 pub mod media;
 pub mod palette;
 mod palette_net;
