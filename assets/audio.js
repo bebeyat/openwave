@@ -88,6 +88,26 @@
     countOutputs().then(function (n) { outputs = n; });
   }
 
+  /* Sleep timer: lower the volume to silence over `secs`, pause, then put the volume back.
+   * A newer fade or 'fade_cancel' stops a running one and restores its starting volume. */
+  var fade = null;
+  function fadeCancel() {
+    if (!fade) return;
+    clearInterval(fade.id);
+    a.volume = fade.from;
+    fade = null;
+  }
+  function fadePause(secs) {
+    fadeCancel();
+    var f = { from: a.volume, step: 0, id: 0 }, steps = 20;
+    f.id = setInterval(function () {
+      f.step++;
+      a.volume = f.from * (1 - f.step / steps);
+      if (f.step >= steps) { fadeCancel(); a.pause(); }
+    }, Math.max(10, secs * 1000 / steps));
+    fade = f;
+  }
+
   var saved = parseFloat(read('ow.volume'));
   a.volume = isFinite(saved) ? Math.min(1, Math.max(0, saved)) : 0.8;
   a.muted = read('ow.muted') === 'true';
@@ -111,9 +131,12 @@
         case 'mute': a.muted = !!m.on; store('ow.muted', a.muted); break;
         case 'hello': volume(); break;
         case 'fx': if (window.owFx) window.owFx.apply(m); break;
+        case 'fade_pause': fadePause(m.secs); break;
+        case 'fade_cancel': fadeCancel(); break;
       }
     },
     dispose: function () {
+      fadeCancel();
       Object.keys(on).forEach(function (k) { a.removeEventListener(k, on[k]); });
       if (navigator.mediaDevices && navigator.mediaDevices.removeEventListener) {
         navigator.mediaDevices.removeEventListener('devicechange', onDevices);

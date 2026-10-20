@@ -102,6 +102,8 @@ pub struct Customization {
     pub bar_volume: bool,
     pub bar_fullscreen: bool,
     pub bar_help: bool,
+    pub bar_sleep: bool,
+    pub bar_mini: bool,
     // Fullscreen player and lyrics
     pub fullscreen_art: SizeChoice,
     /// Lyrics text size, in percent.
@@ -142,6 +144,8 @@ impl Default for Customization {
             bar_volume: true,
             bar_fullscreen: true,
             bar_help: true,
+            bar_sleep: true,
+            bar_mini: true,
             fullscreen_art: SizeChoice::Large,
             lyrics_size: 100,
             lyrics_align: LyricsAlign::Left,

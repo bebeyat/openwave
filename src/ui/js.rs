@@ -115,7 +115,7 @@ pub const SHORTCUT_JS: &str = r#"
     if (e.altKey || e.metaKey) return;
     var overlay = !!document.querySelector('[data-ow-overlay]');
     var send = function (name, prevent) { if (prevent) e.preventDefault(); dioxus.send(name); };
-    if (ctrl && (k === 'k' || k === 'K')) { e.preventDefault(); window.ow.focusSearch(); dioxus.send('focus_search'); return; }
+    if (ctrl && (k === 'k' || k === 'K')) return send('palette', true);
     if (overlay) return;
     if (typing(t)) return;
     if (k === 'Escape') return send('escape', false);
@@ -135,6 +135,8 @@ pub const SHORTCUT_JS: &str = r#"
     if (low === 'q') return send('queue', false);
     if (low === 'l') return send('lyrics', false);
     if (low === 'f') return send('fullscreen', false);
+    if (low === 'v') return send('visualizer', false);
+    if (low === 'p') return send('mini', false);
   };
   document.addEventListener('keydown', onKey);
   window.__owKeys = function () { document.removeEventListener('keydown', onKey); };

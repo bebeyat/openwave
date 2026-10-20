@@ -12,6 +12,7 @@ pub mod list;
 pub mod menu;
 pub mod playlist_dialog;
 pub mod row;
+pub mod sort;
 pub mod state;
 pub mod window;
 

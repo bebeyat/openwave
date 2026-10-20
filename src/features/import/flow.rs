@@ -14,6 +14,7 @@ use super::save;
 use super::state::{check_link, find_link, transition, Event, Kind, LinkCheck, Step};
 use crate::backend::api;
 use crate::backend::error::{Coded, ImportError};
+use crate::backend::import::Source;
 use crate::backend::import_flow::{ImportResult, MissingTrack, PreparedImport};
 use crate::model::Track;
 
@@ -196,6 +197,11 @@ impl Ctx {
         let LinkCheck::Valid(source) = check_link(&self.input.peek()) else {
             return;
         };
+        self.submit_source(source);
+    }
+
+    /// Read `source` (a pasted link or a pick from the signed-in Spotify account).
+    pub fn submit_source(self, source: Source) {
         let (mut kind, mut link_error, mut prepared, mut name) =
             (self.kind, self.link_error, self.prepared, self.name);
         kind.set(Kind::of(&source));

@@ -2,6 +2,7 @@
 //! right. Every change is saved at once and applied live (`boot::commit`).
 
 mod about;
+mod backup;
 pub mod boot;
 mod customize;
 mod effects;
@@ -12,6 +13,7 @@ mod privacy;
 mod rows;
 mod shortcuts;
 mod storage;
+mod user_css;
 mod wipe;
 
 use dioxus::prelude::*;

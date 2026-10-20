@@ -46,6 +46,10 @@ pub fn runtime_of(s: &Settings) -> Runtime {
 
 /// The Discord status switch, as saved (read by `features::discord`).
 pub static DISCORD: GlobalSignal<bool> = Signal::global(|| false);
+/// The user's own stylesheet, as saved.
+pub static USER_CSS: GlobalSignal<String> = Signal::global(String::new);
+/// "Close to tray" switch, as saved (read by the tray host).
+pub static CLOSE_TO_TRAY: GlobalSignal<bool> = Signal::global(|| false);
 /// The saved customization (read by the layout, Home, the player bar and `App`'s style sync).
 pub static CUSTOM: GlobalSignal<Customization> = Signal::global(Customization::default);
 
@@ -57,14 +61,25 @@ pub fn custom_script(c: &Customization) -> String {
     let flags: Vec<(&str, bool)> = custom_flags(c).to_vec();
     let flags = serde_json::to_string(&flags).unwrap_or_else(|_| "[]".into());
     format!(
-        "(function(css,flags){{var s=document.getElementById('ow-custom');if(!s){{s=document.createElement('style');s.id='ow-custom';document.head.appendChild(s);}}s.textContent=css;var r=document.documentElement;flags.forEach(function(f){{if(f[1])r.setAttribute(f[0],'');else r.removeAttribute(f[0]);}});if(window.__owTheme&&window.__owTheme.refresh)window.__owTheme.refresh();}})({css},{flags});"
+        "(function(css,flags){{var s=document.getElementById('ow-custom');if(!s){{s=document.createElement('style');s.id='ow-custom';document.head.appendChild(s);}}s.textContent=css;var r=document.documentElement;flags.forEach(function(f){{if(f[1])r.setAttribute(f[0],'');else r.removeAttribute(f[0]);}});if(window.__owTheme&&window.__owTheme.refresh)window.__owTheme.refresh();var u=document.getElementById('ow-user-css');if(u)document.head.appendChild(u);}})({css},{flags});"
     )
 }
 
-/// Call once near the root: keeps the customization stylesheet in sync with [`CUSTOM`].
+/// JS that puts the user's stylesheet last in `<head>` (so it wins over the app's rules).
+pub fn user_css_script(css: &str) -> String {
+    let css = serde_json::to_string(css).unwrap_or_else(|_| "\"\"".into());
+    format!(
+        "(function(css){{var s=document.getElementById('ow-user-css');if(!s){{s=document.createElement('style');s.id='ow-user-css';}}s.textContent=css;document.head.appendChild(s);}})({css});"
+    )
+}
+
+/// Call once near the root: keeps the customization and user stylesheets in sync.
 pub fn use_custom_style() {
     use_effect(move || {
         document::eval(&custom_script(&CUSTOM.read()));
+    });
+    use_effect(move || {
+        document::eval(&user_css_script(&USER_CSS.read()));
     });
 }
 
@@ -72,6 +87,12 @@ pub fn use_custom_style() {
 pub fn apply_extras(s: &Settings) {
     if *DISCORD.peek() != s.discord_enabled {
         *DISCORD.write() = s.discord_enabled;
+    }
+    if *USER_CSS.peek() != s.user_css {
+        *USER_CSS.write() = s.user_css.clone();
+    }
+    if *CLOSE_TO_TRAY.peek() != s.close_to_tray {
+        *CLOSE_TO_TRAY.write() = s.close_to_tray;
     }
     if *CUSTOM.peek() != s.custom {
         *CUSTOM.write() = s.custom.clone();
@@ -126,6 +147,8 @@ pub fn commit(change: SettingsChange) -> Arc<Settings> {
     let now = store.get();
     apply_runtime(runtime_of(&now), false);
     apply_extras(&now);
+    // The effects card edits the saved effects; the playing track hears them at once.
+    crate::player::effects::update(|fx| fx.with_saved(&now));
     now
 }
 

@@ -15,6 +15,8 @@ pub const QUEUE_PERSIST_CAP: usize = 500;
 pub const HISTORY_CAP: usize = 200;
 pub const SEARCH_CAP: usize = 12;
 pub const PLAYLIST_NAME_MAX: usize = 120;
+pub const LYRIC_OFFSET_CAP: usize = 300;
+pub const LYRIC_OFFSET_MAX_MS: i32 = 30_000;
 
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
@@ -23,6 +25,8 @@ pub struct HistoryEntry {
     pub played_at_ms: u64,
     /// How many times the track was played; 0 in files written before plays were counted.
     pub plays: u32,
+    /// How many times it was skipped within its first seconds.
+    pub skips: u32,
 }
 
 impl HistoryEntry {
@@ -49,6 +53,8 @@ pub struct Library {
     )]
     pub last_queue: Option<QueueSnapshot>,
     pub local_files: Vec<Track>,
+    /// Per-track lyrics shift in ms (positive: lines later), most recently set first.
+    pub lyric_offsets: Vec<(Id, i32)>,
 }
 
 fn clean_name(name: &str) -> Text {
@@ -196,15 +202,12 @@ impl Library {
 
     /// Put the track at the top of the history (replacing its older entry, keeping its count).
     pub fn record_play(&self, track: &Track, now_ms: u64) -> Library {
-        let earlier = self
-            .history
-            .iter()
-            .find(|h| h.track.id == track.id)
-            .map_or(0, HistoryEntry::play_count);
+        let earlier = self.history.iter().find(|h| h.track.id == track.id);
         let entry = HistoryEntry {
             track: track.clone(),
             played_at_ms: now_ms,
-            plays: earlier + 1,
+            plays: earlier.map_or(0, HistoryEntry::play_count) + 1,
+            skips: earlier.map_or(0, |h| h.skips),
         };
         let history = std::iter::once(entry)
             .chain(
@@ -214,6 +217,22 @@ impl Library {
                     .cloned(),
             )
             .take(HISTORY_CAP)
+            .collect();
+        Library {
+            history,
+            ..self.clone()
+        }
+    }
+
+    /// Count a skip for the track's history entry (no entry: nothing to count against).
+    pub fn record_skip(&self, track_id: &str) -> Library {
+        let history = self
+            .history
+            .iter()
+            .map(|h| HistoryEntry {
+                skips: h.skips + u32::from(h.track.id == track_id),
+                ..h.clone()
+            })
             .collect();
         Library {
             history,
@@ -259,6 +278,29 @@ impl Library {
     pub fn clear_searches(&self) -> Library {
         Library {
             recent_searches: vec![],
+            ..self.clone()
+        }
+    }
+
+    pub fn lyric_offset(&self, track_id: &str) -> i32 {
+        self.lyric_offsets
+            .iter()
+            .find(|(id, _)| *id == track_id)
+            .map_or(0, |(_, ms)| *ms)
+    }
+
+    /// Remember the lyrics shift of a track (0 forgets it); bounded to [`LYRIC_OFFSET_CAP`].
+    pub fn set_lyric_offset(&self, track_id: &str, ms: i32) -> Library {
+        let ms = ms.clamp(-LYRIC_OFFSET_MAX_MS, LYRIC_OFFSET_MAX_MS);
+        let rest = self.lyric_offsets.iter().filter(|(id, _)| *id != track_id);
+        let lyric_offsets = (ms != 0)
+            .then(|| (Id::from(track_id), ms))
+            .into_iter()
+            .chain(rest.cloned())
+            .take(LYRIC_OFFSET_CAP)
+            .collect();
+        Library {
+            lyric_offsets,
             ..self.clone()
         }
     }
@@ -339,4 +381,16 @@ pub fn now_ms() -> u64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map_or(0, |d| u64::try_from(d.as_millis()).unwrap_or(u64::MAX))
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod skip_tests {
+    include!("library_skip_tests.rs");
+}
+
+// Local-only tests (see build.rs).
+#[cfg(all(test, private_tests))]
+mod offset_tests {
+    include!("library_offset_tests.rs");
 }

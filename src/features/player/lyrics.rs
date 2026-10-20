@@ -4,8 +4,12 @@ use std::sync::Arc;
 
 use dioxus::prelude::*;
 
-use super::lyric_logic::{active_line, line_opacity, should_autoscroll, word_spans, WordSpan};
-use super::lyrics_state::{self, lyrics_enabled, LyricsView, LYRICS};
+use super::lyric_logic::{
+    active_line, is_rtl, line_opacity, shifted, should_autoscroll, word_spans, WordSpan,
+};
+use super::lyrics_state::{self, lyrics_enabled, translation_for, LyricsView, LYRICS};
+use super::lyrics_tools::LyricsTools;
+use crate::features::tracks::state::library as library_state;
 use crate::i18n::t;
 use crate::model::{Lyrics, Track};
 use crate::player::controller::{self as ctl, POSITION};
@@ -57,7 +61,7 @@ pub fn LyricsPane(
         LyricsView::Ready(lyrics) => {
             if lyrics.is_synced() {
                 rsx! {
-                    Synced { key: "{track.id}", lyrics, large, panel, on_dark }
+                    Synced { key: "{track.id}", track, lyrics, large, panel, on_dark }
                 }
             } else {
                 rsx! {
@@ -161,13 +165,17 @@ fn Plain(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Elemen
                 Icon { name: "info", size: 14 }
                 {t("lyrics.unsynced")}
             }
-            p { class: "whitespace-pre-wrap leading-8 {size} {tone}", "{lyrics.plain}" }
+            p {
+                class: "whitespace-pre-wrap leading-8 {size} {tone}",
+                dir: is_rtl(&lyrics.plain).then_some("rtl"),
+                "{lyrics.plain}"
+            }
         }
     }
 }
 
 /// Karaoke fill of the active line, word by word (see `assets/lyrics_fill.js`).
-const LYRICS_FILL_JS: &str = include_str!("../../../assets/lyrics_fill.js");
+pub(super) const LYRICS_FILL_JS: &str = include_str!("../../../assets/lyrics_fill.js");
 
 fn now_ms() -> u64 {
     library::now_ms()
@@ -183,7 +191,7 @@ var top=e.offsetTop-c.clientHeight/2+e.offsetHeight/2;c.scrollTo({{top:Math.max(
 }
 
 #[component]
-fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
+fn Synced(track: Track, lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Element {
     let ids = use_hook(|| next_id("lyrics"));
     use_hook(|| {
         document::eval(LYRICS_FILL_JS);
@@ -191,7 +199,12 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
     let box_id = format!("{ids}-box");
     let mut last_manual = use_signal(|| None::<u64>);
     let lines = lyrics.clone();
-    let active = use_memo(move || active_line(&lines.synced, *POSITION.read()));
+    let offset_ms = library_state().lyric_offset(&track.id);
+    let memo_id = track.id.clone();
+    let active = use_memo(move || {
+        let offset = library_state().lyric_offset(&memo_id);
+        active_line(&lines.synced, shifted(*POSITION.read(), offset))
+    });
     let (scroll_box, line_prefix) = (box_id.clone(), ids.clone());
     use_effect(move || {
         let Some(i) = active() else { return };
@@ -206,40 +219,53 @@ fn Synced(lyrics: Arc<Lyrics>, large: bool, panel: bool, on_dark: bool) -> Eleme
     } else {
         "text-[calc(14px*var(--ow-lyric-scale))]"
     };
+    let translated = translation_for(&track.id, lyrics.synced.len());
+    let translation_of = |i: usize| {
+        translated
+            .as_ref()
+            .and_then(|t| t.get(i))
+            .filter(|s| !s.is_empty())
+            .cloned()
+    };
     let mut manual = move || last_manual.set(Some(now_ms()));
     rsx! {
-        div {
-            id: "{box_id}",
-            class: "ow-fade-edges relative h-full overflow-y-auto px-6",
-            tabindex: "0",
-            role: "region",
-            "aria-label": t("lyrics.title"),
-            onwheel: move |_| manual(),
-            ontouchmove: move |_| manual(),
-            onkeydown: move |e| {
-                if matches!(
-                    e.key(),
-                    Key::ArrowUp | Key::ArrowDown | Key::PageUp | Key::PageDown | Key::Home | Key::End
-                ) {
-                    manual();
+        div { class: "relative h-full",
+            LyricsTools { track, lyrics: lyrics.clone(), on_dark }
+            div {
+                id: "{box_id}",
+                class: "ow-fade-edges relative h-full overflow-y-auto px-6",
+                "data-ow-offset": "{offset_ms}",
+                tabindex: "0",
+                role: "region",
+                "aria-label": t("lyrics.title"),
+                onwheel: move |_| manual(),
+                ontouchmove: move |_| manual(),
+                onkeydown: move |e| {
+                    if matches!(
+                        e.key(),
+                        Key::ArrowUp | Key::ArrowDown | Key::PageUp | Key::PageDown | Key::Home | Key::End
+                    ) {
+                        manual();
+                    }
+                },
+                // Spacers let the first and last line reach the middle of the box.
+                div { class: "h-[45%] flex-none", "aria-hidden": "true" }
+                for (i , line) in lyrics.synced.iter().enumerate() {
+                    LyricLineRow {
+                        key: "{i}",
+                        id: format!("{ids}-{i}"),
+                        text: line.text.clone(),
+                        words: word_spans(&lyrics.synced, i),
+                        translation: translation_of(i),
+                        start_ms: line.start_ms,
+                        active: active() == Some(i),
+                        size: size.to_string(),
+                        opacity: line_opacity(active(), i),
+                        on_dark,
+                    }
                 }
-            },
-            // Spacers let the first and last line reach the middle of the box.
-            div { class: "h-[45%] flex-none", "aria-hidden": "true" }
-            for (i , line) in lyrics.synced.iter().enumerate() {
-                LyricLineRow {
-                    key: "{i}",
-                    id: format!("{ids}-{i}"),
-                    text: line.text.clone(),
-                    words: word_spans(&lyrics.synced, i),
-                    start_ms: line.start_ms,
-                    active: active() == Some(i),
-                    size: size.to_string(),
-                    opacity: line_opacity(active(), i),
-                    on_dark,
-                }
+                div { class: "h-[45%] flex-none", "aria-hidden": "true" }
             }
-            div { class: "h-[45%] flex-none", "aria-hidden": "true" }
         }
     }
 }
@@ -249,6 +275,7 @@ fn LyricLineRow(
     id: String,
     text: String,
     words: Vec<WordSpan>,
+    translation: Option<String>,
     start_ms: u64,
     active: bool,
     size: String,
@@ -260,15 +287,19 @@ fn LyricLineRow(
             div { id: "{id}", class: "h-6", "aria-hidden": "true" }
         };
     }
+    let rtl = is_rtl(&text);
     let class = cx(&[
-        "ow-lyric ow-display block w-full rounded-sm py-2 text-left font-extrabold leading-[1.15] tracking-tight text-fg",
+        "ow-lyric ow-display block w-full rounded-sm py-2 font-extrabold leading-[1.15] tracking-tight text-fg",
+        if rtl { "text-right" } else { "text-left" },
         &size,
     ]);
+    let tr_rtl = translation.as_deref().is_some_and(is_rtl);
     rsx! {
         button {
             id: "{id}",
             r#type: "button",
             class: "{class}",
+            dir: rtl.then_some("rtl"),
             style: "--lo:{opacity}",
             "data-dark": on_dark.then_some("true"),
             "aria-current": active.then_some("true"),
@@ -279,6 +310,13 @@ fn LyricLineRow(
                     "data-s": "{w.start_ms}",
                     "data-e": "{w.end_ms}",
                     "{w.text}"
+                }
+            }
+            if let Some(tr) = translation {
+                span {
+                    class: "mt-1 block text-sm font-semibold leading-tight opacity-80",
+                    dir: if tr_rtl { "rtl" } else { "auto" },
+                    "{tr}"
                 }
             }
         }

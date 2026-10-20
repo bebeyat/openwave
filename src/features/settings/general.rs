@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use dioxus::prelude::*;
 
-use super::integrations::DiscordCard;
+use super::integrations::{DiscordCard, SpotifyCard};
 use super::rows::{Card, Row, SectionTitle, ToggleRow};
 use crate::i18n::{t, Lang};
 use crate::store::{LanguagePref, Settings, SettingsChange, ThemePref, ACCENT_IDS};
@@ -194,8 +194,14 @@ pub fn General(settings: Arc<Settings>, on_change: EventHandler<SettingsChange>)
                 checked: settings.auto_update,
                 on_change: move |v| on_change.call(SettingsChange::AutoUpdate(v)),
             }
+            ToggleRow {
+                label: t("settings.general.close_to_tray"),
+                checked: settings.close_to_tray,
+                on_change: move |v| on_change.call(SettingsChange::CloseToTray(v)),
+            }
         }
         DiscordCard { settings: settings.clone(), on_change }
+        SpotifyCard { settings: settings.clone(), on_change }
     }
 }
 

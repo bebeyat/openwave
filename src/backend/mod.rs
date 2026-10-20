@@ -11,11 +11,17 @@ pub mod import_flow;
 mod innertube;
 pub mod local_tags;
 pub mod lyrics;
+pub mod lyrics_cache;
+pub mod lyrics_ytm;
 pub mod media;
 pub mod palette;
 mod palette_net;
 mod proxy;
 pub mod share;
+pub mod soundcloud;
+pub mod spotify_account;
+pub mod spotify_auth;
+pub mod translate;
 pub mod update;
 pub mod ytdlp;
 

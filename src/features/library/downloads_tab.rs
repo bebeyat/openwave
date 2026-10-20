@@ -26,6 +26,7 @@ pub fn DownloadsTab() -> Element {
     let pending = PENDING.read().len() + usize::from(ACTIVE.read().is_some());
     let total = size_text(downloads::total_bytes());
     let (a, b, list) = (tracks.clone(), tracks.clone(), tracks.clone());
+    let ids: Vec<String> = tracks.iter().map(|t| t.id.to_string()).collect();
     rsx! {
         if pending > 0 {
             div { class: "mb-4 flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm", role: "status",
@@ -38,12 +39,14 @@ pub fn DownloadsTab() -> Element {
             div { class: "mb-5 flex flex-wrap items-center gap-3",
                 GradientPlayButton { size: PlaySize::Md, label: t("common.play"), onclick: move |_| play_all(&a) }
                 Button { variant: ButtonVariant::Secondary, icon: "shuffle", onclick: move |_| shuffle_all(&b), {t("common.shuffle")} }
+                Button { variant: ButtonVariant::Secondary, icon: "folder-open", onclick: move |_| downloads::export(ids.clone()), {t("downloads.export_all")} }
                 span { class: "ml-2 text-sm font-medium text-muted",
                     {t_args("downloads.summary", &[("songs", &t_count("common.songs", tracks.len())), ("size", &total)])}
                 }
             }
         }
         TrackList {
+            sortable: true,
             tracks,
             label: t("library.tab.downloads"),
             on_remove: move |i: usize| {

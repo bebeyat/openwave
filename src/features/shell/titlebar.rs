@@ -47,8 +47,7 @@ pub fn WindowControls() -> Element {
             ..
         } = event
         {
-            crate::player::session::save_before_exit();
-            crate::features::update::install_on_exit();
+            super::window::on_close_requested();
         }
     });
     // Bumped on resize so `is_maximized()` is re-read (maximize via keyboard, snap, double-click).
@@ -105,11 +104,7 @@ pub fn WindowControls() -> Element {
                 class: "ow-no-drag flex h-9 w-9 items-center justify-center rounded-full text-muted transition-colors duration-(--ow-dur-hover) hover:bg-danger-solid hover:text-on-danger",
                 "aria-label": t("window.close"),
                 title: t("window.close"),
-                onclick: move |_| {
-                    crate::player::session::save_before_exit();
-                    crate::features::update::install_on_exit();
-                    w_close.close();
-                },
+                onclick: move |_| super::window::request_close(&w_close),
                 Icon { name: "x", size: 16 }
             }
         }

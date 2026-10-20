@@ -14,7 +14,7 @@ pub const OPEN_LINK: &str = "open-link.txt";
 
 /// Base names of the documents OpenWave keeps in its data directory (each may also exist with a
 /// `.tmp`, `.bak`, `.corrupt-*` or `.quarantine-*` suffix).
-pub const OWN_FILES: [&str; 9] = [
+pub const OWN_FILES: [&str; 10] = [
     "settings.json",
     "library.json",
     "last-queue.json",
@@ -24,6 +24,7 @@ pub const OWN_FILES: [&str; 9] = [
     "home_discover.json",
     "local-files.json",
     OPEN_LINK,
+    crate::backend::spotify_auth::FILE,
 ];
 
 /// Why a directory may not be wiped.

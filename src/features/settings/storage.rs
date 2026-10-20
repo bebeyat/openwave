@@ -59,6 +59,7 @@ pub fn Storage() -> Element {
                 }
             }
         }
+        super::backup::BackupCard {}
         Dialog {
             open: confirm(),
             on_close: move |_| confirm.set(false),

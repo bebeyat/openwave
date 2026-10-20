@@ -42,16 +42,12 @@ fn is_version_backup(s: &str) -> bool {
         .is_some_and(|n| !n.is_empty() && n.bytes().all(|b| b.is_ascii_digit()))
 }
 
-/// `<11-char video id>.audio | .json | .part`
+/// `<track id>.audio | .json | .part` (11-char video ids and `sc-<digits>` SoundCloud ids)
 pub fn is_cache_file(name: &str) -> bool {
     let Some((stem, ext)) = name.rsplit_once('.') else {
         return false;
     };
-    stem.len() == 11
-        && stem
-            .bytes()
-            .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
-        && matches!(ext, "audio" | "json" | "part")
+    crate::backend::media::video_key(stem) && matches!(ext, "audio" | "json" | "part")
 }
 
 /// `<16 hex>.jpg`: a cover thumbnail of a local file.
@@ -95,6 +91,11 @@ pub fn wipe_own_data(dir: &Path) -> Result<WipeReport, Refusal> {
     delete_matching(&dir.join("covers"), is_cover_file, &mut report);
     delete_matching(&dir.join("bin"), is_helper_file, &mut report);
     delete_matching(
+        &dir.join(crate::backend::lyrics_cache::DIR),
+        crate::backend::lyrics_cache::is_cache_file,
+        &mut report,
+    );
+    delete_matching(
         &dir.join(crate::backend::update::DIR),
         |n| n.starts_with("OpenWave-") && (n.ends_with("-setup.exe") || n.ends_with("-setup.part")),
         &mut report,
@@ -105,6 +106,7 @@ pub fn wipe_own_data(dir: &Path) -> Result<WipeReport, Refusal> {
         "downloads",
         "covers",
         "bin",
+        crate::backend::lyrics_cache::DIR,
         crate::backend::update::DIR,
     ] {
         let _ = std::fs::remove_dir(dir.join(sub));

@@ -7,6 +7,12 @@ use serde_json::Value;
 use std::sync::OnceLock;
 use std::time::Duration;
 
+#[path = "import_apple.rs"]
+pub mod apple;
+#[path = "import_spotify_pages.rs"]
+mod spotify_pages;
+
+const SPOTIFY_EMBED_BASE: &str = "https://open.spotify.com";
 /// Spotify's embed page lists at most this many tracks.
 pub const SPOTIFY_EMBED_LIMIT: usize = 100;
 /// The embed page is read through this many bytes at most (it is normally a few hundred KB).
@@ -21,6 +27,13 @@ pub enum Source {
     Youtube(String),
     /// An OpenWave share link (`share::BASE_URL`); holds the share id.
     Shared(String),
+    /// An Apple Music album or playlist.
+    Apple(apple::AppleLink),
+    /// Liked Songs or a playlist of the signed-in Spotify account; `name` names the new list.
+    SpotifyAccount {
+        pick: super::spotify_account::Pick,
+        name: String,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -34,9 +47,11 @@ pub struct SpotifyTrack {
 pub struct SpotifyPlaylist {
     pub name: String,
     pub tracks: Vec<SpotifyTrack>,
+    /// Every track of the list was read (false: cut at the embed limit or [`MAX_TRACKS`]).
+    pub complete: bool,
 }
 
-fn spotify_id(s: &str) -> Option<String> {
+pub(crate) fn spotify_id(s: &str) -> Option<String> {
     (s.len() == 22 && s.bytes().all(|b| b.is_ascii_alphanumeric())).then(|| s.to_owned())
 }
 
@@ -62,7 +77,8 @@ fn host_of(url: &reqwest::Url) -> String {
         .to_ascii_lowercase()
 }
 
-/// Recognise a Spotify or YouTube playlist link (or `spotify:playlist:<id>` URI).
+/// Recognise a Spotify or YouTube playlist link (or `spotify:playlist:<id>` URI), or an Apple
+/// Music album or playlist.
 pub fn parse_source(input: &str) -> Option<Source> {
     let input = input.trim();
     if input.contains("openwave") {
@@ -73,6 +89,9 @@ pub fn parse_source(input: &str) -> Option<Source> {
     }
     let url = parse_url(input)?;
     let host = host_of(&url);
+    if host == "music.apple.com" {
+        return apple::parse(&url).map(Source::Apple);
+    }
     if host == "open.spotify.com" {
         // Paths look like /playlist/<id>, /intl-tr/playlist/<id> or /embed/playlist/<id>.
         let mut parts = url.path_segments()?;
@@ -124,6 +143,12 @@ pub fn parse_link(input: &str) -> Result<Source, ImportError> {
             .iter()
             .any(|s| ["track", "album", "artist", "episode", "show"].contains(s)),
         "youtu.be" => !first.is_empty(),
+        "music.apple.com" => {
+            url.query_pairs().any(|(k, _)| k == "i")
+                || segments
+                    .iter()
+                    .any(|s| ["song", "artist", "music-video"].contains(s))
+        }
         "youtube.com" | "music.youtube.com" | "m.youtube.com" => {
             url.query_pairs().any(|(k, _)| k == "v")
                 || ["watch", "shorts", "channel", "browse"].contains(&first)
@@ -138,7 +163,7 @@ pub fn parse_link(input: &str) -> Result<Source, ImportError> {
 }
 
 /// Trimmed and cut to [`MAX_TEXT_CHARS`] characters.
-fn capped(s: &str) -> String {
+pub(crate) fn capped(s: &str) -> String {
     s.trim().chars().take(MAX_TEXT_CHARS).collect()
 }
 
@@ -173,7 +198,12 @@ pub fn parse_spotify_embed(html: &str) -> Result<SpotifyPlaylist, ImportError> {
             .or(entity["title"].as_str())
             .unwrap_or(""),
     );
-    Ok(SpotifyPlaylist { name, tracks })
+    let complete = tracks.len() < SPOTIFY_EMBED_LIMIT;
+    Ok(SpotifyPlaylist {
+        name,
+        tracks,
+        complete,
+    })
 }
 
 fn http() -> Result<&'static reqwest::Client, ImportError> {
@@ -202,11 +232,21 @@ fn spotify_status_error(status: reqwest::StatusCode) -> Option<ImportError> {
     }
 }
 
-/// Download and parse a Spotify playlist (fixed host, validated 22-character id).
+/// Download and parse a Spotify playlist (fixed host, validated 22-character id). Lists longer
+/// than the embed page are read on through Spotify's web player API with the embed page's
+/// anonymous token; if that fails the first 100 tracks are kept.
 pub async fn fetch_spotify(id: &str) -> Result<SpotifyPlaylist, ImportError> {
+    fetch_spotify_from(SPOTIFY_EMBED_BASE, spotify_pages::PATHFINDER, id).await
+}
+
+pub(crate) async fn fetch_spotify_from(
+    embed_base: &str,
+    pathfinder: &str,
+    id: &str,
+) -> Result<SpotifyPlaylist, ImportError> {
     let id = spotify_id(id).ok_or(ImportError::BadLink)?;
     let response = http()?
-        .get(format!("https://open.spotify.com/embed/playlist/{id}"))
+        .get(format!("{embed_base}/embed/playlist/{id}"))
         .send()
         .await
         .map_err(|_| ImportError::Offline)?;
@@ -218,7 +258,13 @@ pub async fn fetch_spotify(id: &str) -> Result<SpotifyPlaylist, ImportError> {
     if list.tracks.is_empty() {
         return Err(ImportError::PrivateOrEmpty);
     }
-    Ok(list)
+    if list.complete {
+        return Ok(list);
+    }
+    let Some(token) = spotify_pages::embed_token(&html) else {
+        return Ok(list);
+    };
+    Ok(spotify_pages::read_on(http()?, pathfinder, &token, &id, list).await)
 }
 
 /// Read the body as text, giving up with [`ImportError::Unreadable`] past `cap` bytes.
@@ -240,11 +286,12 @@ pub(crate) async fn read_capped(
     Ok(String::from_utf8_lossy(&body).into_owned())
 }
 
-/// Lowercase alphanumerics only, with "(feat. …)", "[…]" and "- remastered"-style suffixes removed.
+/// Folded (see `util::fold`) alphanumerics only, with "(feat. …)", "[…]" and "- remastered"-style
+/// suffixes removed.
 pub fn normalize(s: &str) -> String {
     let mut out = String::with_capacity(s.len());
     let mut depth = 0usize;
-    for c in s.to_lowercase().chars() {
+    for c in crate::util::fold(s).chars() {
         match c {
             '(' | '[' => depth += 1,
             ')' | ']' => depth = depth.saturating_sub(1),
@@ -323,4 +370,10 @@ mod status_tests {
             );
         }
     }
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("import_tests.rs");
 }

@@ -325,6 +325,8 @@ pub fn Customize(
             {toggle!(t("fx.title"), None::<String>, bar_effects)}
             {toggle!(t("custom.bar_volume"), None::<String>, bar_volume)}
             {toggle!(t("player.fullscreen"), None::<String>, bar_fullscreen)}
+            {toggle!(t("sleep.title"), None::<String>, bar_sleep)}
+            {toggle!(t("player.mini"), None::<String>, bar_mini)}
             {toggle!(t("player.shortcuts"), None::<String>, bar_help)}
         }
 
@@ -355,6 +357,9 @@ pub fn Customize(
                 }
             }
         }
+
+        GroupTitle { text: t("custom.css") }
+        super::user_css::UserCssCard { saved: settings.user_css.clone(), on_change }
 
         div { class: "mt-6 flex justify-end",
             Button {

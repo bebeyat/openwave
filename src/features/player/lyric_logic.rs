@@ -16,6 +16,29 @@ pub fn active_line(lines: &[LyricLine], position_secs: f64) -> Option<usize> {
     lines.partition_point(|l| l.start_ms <= ms).checked_sub(1)
 }
 
+/// One press of the lyrics shift buttons.
+pub const OFFSET_STEP_MS: i32 = 500;
+
+/// The playback position as the lyrics see it: a positive shift makes every line come later.
+pub fn shifted(position_secs: f64, offset_ms: i32) -> f64 {
+    position_secs - f64::from(offset_ms) / 1000.0
+}
+
+/// "+0.5s", "-1.0s", "0.0s".
+pub fn offset_label(offset_ms: i32) -> String {
+    let sign = if offset_ms > 0 { "+" } else { "" };
+    format!("{sign}{:.1}s", f64::from(offset_ms) / 1000.0)
+}
+
+/// Whether `text` holds right-to-left script (Hebrew, Arabic, Syriac, Thaana, N'Ko and their
+/// presentation forms), so its line is laid out with `dir="rtl"`.
+pub fn is_rtl(text: &str) -> bool {
+    text.chars().any(|c| {
+        matches!(c as u32,
+            0x0590..=0x08FF | 0xFB1D..=0xFDFF | 0xFE70..=0xFEFF)
+    })
+}
+
 /// Whether auto-scroll may run: not within the pause window after a manual scroll.
 pub fn should_autoscroll(now_ms: u64, last_manual_ms: Option<u64>) -> bool {
     last_manual_ms.is_none_or(|t| now_ms.saturating_sub(t) >= MANUAL_SCROLL_PAUSE_MS)
@@ -36,6 +59,8 @@ pub fn line_opacity(active: Option<usize>, i: usize) -> f32 {
 /// Estimated singing pace for lines without word stamps, and the bounds of one line's fill.
 const MS_PER_CHAR: u64 = 110;
 const MIN_FILL_MS: u64 = 1_200;
+/// A gap to the next line longer than this is a break, not singing: the pace guess fills instead.
+const MAX_LINE_MS: u64 = 10_000;
 
 /// One word of a lyric line with the time span its karaoke fill runs over. `text` keeps the
 /// trailing space so the spans join back into the line.
@@ -47,8 +72,9 @@ pub struct WordSpan {
 }
 
 /// Word fill timings for line `i`: the enhanced-LRC word stamps when the line has them, otherwise
-/// the words spread over the line by length. An estimated line ends at the next line or after a
-/// singing-pace guess, whichever comes first, so an instrumental gap does not stretch the fill.
+/// the words spread over the line by length. An estimated line fills until the next line starts
+/// (the singer is still on it until then); only after a gap longer than [`MAX_LINE_MS`], or on the
+/// last line, a singing-pace guess sets the end, so an instrumental break does not stretch it.
 pub fn word_spans(lines: &[LyricLine], i: usize) -> Vec<WordSpan> {
     let Some(line) = lines.get(i) else {
         return vec![];
@@ -68,8 +94,12 @@ pub fn word_spans(lines: &[LyricLine], i: usize) -> Vec<WordSpan> {
     let weight = |w: &str| w.trim().chars().count().max(1) as u64;
     let total: u64 = words.iter().map(|w| weight(w)).sum();
     let guess = (total * MS_PER_CHAR).max(MIN_FILL_MS);
-    let next = lines.get(i + 1).map_or(u64::MAX, |l| l.start_ms);
-    let end = (line.start_ms + guess).min(next).max(line.start_ms + 1);
+    let end = match lines.get(i + 1).map(|l| l.start_ms) {
+        Some(next) if next.saturating_sub(line.start_ms) <= MAX_LINE_MS => next,
+        Some(next) => (line.start_ms + guess).min(next),
+        None => line.start_ms + guess,
+    }
+    .max(line.start_ms + 1);
     let span = end - line.start_ms;
     let mut done = 0;
     words
@@ -110,6 +140,12 @@ mod tests {
         // 6 letters over 1.2 s (the next line comes before the pace guess runs out).
         assert_eq!((w[0].start_ms, w[0].end_ms), (1_000, 1_400));
         assert_eq!((w[1].start_ms, w[1].end_ms), (1_400, 2_200));
+    }
+
+    #[test]
+    fn a_normal_gap_fills_until_the_next_line() {
+        let l = [line(1_000, "ab"), line(7_000, "next")];
+        assert_eq!(word_spans(&l, 0).last().unwrap().end_ms, 7_000);
     }
 
     #[test]
@@ -201,4 +237,10 @@ mod tests {
         assert_eq!(line_opacity(None, 0), 0.5);
         assert_eq!(line_opacity(None, 9), 0.2);
     }
+}
+
+// Local-only tests (see build.rs).
+#[cfg(all(test, private_tests))]
+mod parity_tests {
+    include!("lyric_logic_parity_tests.rs");
 }

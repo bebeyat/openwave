@@ -331,3 +331,9 @@ pub fn t_count(key: &str, n: usize) -> String {
     subscribe();
     translate_count(language(), key, n)
 }
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("tests.rs");
+}

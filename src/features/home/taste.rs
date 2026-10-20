@@ -1,7 +1,8 @@
 //! Pure taste model behind "Senin için önerilenler" and the genre rows. No I/O.
 //!
-//! * Every played track weighs `(1 + ln plays) * 0.5^(age / 14 days)`; a liked track adds a flat
-//!   [`LIKE_WEIGHT`]. The first credited artist gets the full weight, featured artists half.
+//! * Every played track weighs `(1 + ln plays) * 0.5^(age / 14 days)`, halved for each early skip
+//!   (up to four); a liked track adds a flat [`LIKE_WEIGHT`]. Artists the user skips at least
+//!   [`SKIP_LIMIT`] times, and more often than they listen, are left out of recommendations. The first credited artist gets the full weight, featured artists half.
 //! * Artists are matched by lower-cased name and, when known, by catalog id, so imported
 //!   (id-less) tracks still count.
 //! * A genre's score is the weight of the user's artists found in its sample playlists; an
@@ -31,6 +32,9 @@ pub const GENRE_ROW_MAX: usize = 20;
 pub const PER_ARTIST_MAX: usize = 2;
 const GENRE_BONUS: f64 = 0.25;
 const FAMILIAR_BONUS: f64 = 0.6;
+const SKIP_FACTOR: f64 = 0.5;
+const SKIP_PENALTY_MAX: u32 = 4;
+pub const SKIP_LIMIT: u32 = 3;
 
 /// A genre with sample tracks taken from its catalog playlists.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -76,7 +80,30 @@ fn lead_artist(t: &Track) -> Option<String> {
 /// Weight of one history entry at `now_ms`.
 pub fn play_weight(entry: &HistoryEntry, now_ms: u64) -> f64 {
     let age_days = now_ms.saturating_sub(entry.played_at_ms) as f64 / DAY_MS;
-    (1.0 + f64::from(entry.play_count()).ln()) * 0.5_f64.powf(age_days / HALF_LIFE_DAYS)
+    let skipped = SKIP_FACTOR.powi(entry.skips.min(SKIP_PENALTY_MAX) as i32);
+    (1.0 + f64::from(entry.play_count()).ln()) * 0.5_f64.powf(age_days / HALF_LIFE_DAYS) * skipped
+}
+
+/// Lead-artist keys the user keeps skipping: at least [`SKIP_LIMIT`] skips, and more skips than plays.
+pub fn skipped_artists(history: &[HistoryEntry]) -> HashSet<String> {
+    let mut tally: HashMap<String, (u32, u32)> = HashMap::new();
+    for h in history {
+        if let Some(key) = lead_artist(&h.track) {
+            let slot = tally.entry(key).or_default();
+            slot.0 += h.skips;
+            slot.1 += h.play_count();
+        }
+    }
+    tally
+        .into_iter()
+        .filter(|(_, (skips, plays))| *skips >= SKIP_LIMIT && skips >= plays)
+        .map(|(key, _)| key)
+        .collect()
+}
+
+/// The track's lead artist is one of `avoid`.
+pub fn by_avoided_artist(track: &Track, avoid: &HashSet<String>) -> bool {
+    lead_artist(track).is_some_and(|a| avoid.contains(&a))
 }
 
 /// Weight per track id: plays (decayed) plus likes. Local files are left out (no catalog match).
@@ -341,4 +368,10 @@ pub fn genre_picks(
         .collect();
     picks.sort_by(|a, b| b.0.total_cmp(&a.0));
     diverse(picks.into_iter().map(|(_, t)| t.clone()), max)
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod skip_tests {
+    include!("taste_skip_tests.rs");
 }

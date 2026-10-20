@@ -4,6 +4,7 @@
 //! `store::library().update(|lib| lib.toggle_like(&track))` to change and persist.
 // The UI consumes this API incrementally; unused items are expected until it does.
 
+pub mod backup;
 pub mod customize;
 pub mod datadir;
 mod handle;

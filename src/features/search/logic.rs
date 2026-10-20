@@ -35,10 +35,17 @@ pub enum Tab {
     Artists,
     Albums,
     Playlists,
+    SoundCloud,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 4] = [Tab::Songs, Tab::Artists, Tab::Albums, Tab::Playlists];
+    pub const ALL: [Tab; 5] = [
+        Tab::Songs,
+        Tab::Artists,
+        Tab::Albums,
+        Tab::Playlists,
+        Tab::SoundCloud,
+    ];
 
     pub fn value(self) -> &'static str {
         match self {
@@ -46,6 +53,7 @@ impl Tab {
             Tab::Artists => "artists",
             Tab::Albums => "albums",
             Tab::Playlists => "playlists",
+            Tab::SoundCloud => "soundcloud",
         }
     }
 
@@ -62,6 +70,7 @@ impl Tab {
             Tab::Artists => "search.tab.artists",
             Tab::Albums => "search.tab.albums",
             Tab::Playlists => "search.tab.playlists",
+            Tab::SoundCloud => "search.tab.soundcloud",
         }
     }
 
@@ -71,13 +80,14 @@ impl Tab {
             Tab::Artists => SearchKind::Artist,
             Tab::Albums => SearchKind::Album,
             Tab::Playlists => SearchKind::Playlist,
+            Tab::SoundCloud => SearchKind::SoundCloud,
         }
     }
 
     /// How many items `results` holds for this tab.
     pub fn count(self, results: &SearchResults) -> usize {
         match self {
-            Tab::Songs => results.tracks.len(),
+            Tab::Songs | Tab::SoundCloud => results.tracks.len(),
             Tab::Artists => results.artists.len(),
             Tab::Albums => results.albums.len(),
             Tab::Playlists => results.playlists.len(),

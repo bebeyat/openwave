@@ -129,6 +129,36 @@ pub(crate) fn command(program: &Path) -> Command {
     cmd
 }
 
+/// Run yt-dlp (no config, cache or plugins) with `args`; its standard output parsed as JSON.
+pub(crate) async fn run_json(
+    args: &[&str],
+    limit: Duration,
+) -> Result<serde_json::Value, super::error::MediaError> {
+    use super::error::MediaError;
+    let located = locate().ok_or(MediaError::YtDlpMissing)?;
+    let mut cmd = command(&located.path);
+    // Older copies on PATH (distro packages) reject this option and would always fail.
+    if located.origin == Origin::DataDir {
+        cmd.arg("--no-plugin-dirs");
+    }
+    cmd.args([
+        "--ignore-config",
+        "--no-cache-dir",
+        "--no-warnings",
+        "--socket-timeout",
+        "10",
+    ])
+    .args(args);
+    let out = tokio::time::timeout(limit, cmd.output())
+        .await
+        .map_err(|_| MediaError::Timeout)?
+        .map_err(|_| MediaError::YtDlpMissing)?;
+    if !out.status.success() || out.stdout.len() > 5_000_000 {
+        return Err(MediaError::Unavailable);
+    }
+    serde_json::from_slice(&out.stdout).map_err(|_| MediaError::BadResponse)
+}
+
 async fn run_version(path: &Path, limit: Duration) -> Result<String, YtDlpError> {
     let mut cmd = command(path);
     cmd.arg("--version");
@@ -291,3 +321,9 @@ fn hex(bytes: &[u8]) -> String {
 #[path = "ytdlp_install.rs"]
 mod install;
 pub use install::{adopt, install_latest};
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("ytdlp_tests.rs");
+}

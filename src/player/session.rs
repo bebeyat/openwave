@@ -56,6 +56,19 @@ pub fn position_tick() {
     }
 }
 
+/// A Next press this early in a song counts as a skip for the recommendations.
+pub const SKIP_WITHIN_SECS: f64 = 12.0;
+
+/// Called when the user presses Next at `position` seconds.
+pub fn record_skip_if_early(position: f64) {
+    if position >= SKIP_WITHIN_SECS || !with_core(|c| c.recorded) {
+        return;
+    }
+    if let Some(track) = controller::current_track() {
+        update_library(|lib| lib.record_skip(&track.id));
+    }
+}
+
 /// Put the song into the play history the first time it actually starts.
 pub fn record_play_once() {
     if with_core(|c| std::mem::replace(&mut c.recorded, true)) {

@@ -12,6 +12,7 @@ const YOUTUBE_PATH: &str = "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3
 pub enum Brand {
     Spotify,
     Youtube,
+    Apple,
     Local,
 }
 
@@ -42,6 +43,22 @@ pub fn BrandLogo(brand: Brand, #[props(default = 44)] size: u32) -> Element {
                 // The play triangle is a hole in the mark; white behind it, as in the real logo.
                 rect { x: "8", y: "7.5", width: "9", height: "9", fill: "#ffffff" }
                 path { d: YOUTUBE_PATH, fill: "#ff0033" }
+            }
+        },
+        Brand::Apple => rsx! {
+            svg {
+                width: "{size}",
+                height: "{size}",
+                view_box: "0 0 24 24",
+                class: "flex-none",
+                "aria-hidden": "true",
+                "focusable": "false",
+                // A plain note on Apple Music's red tile.
+                rect { x: "1", y: "1", width: "22", height: "22", rx: "5.5", fill: "#fa2d48" }
+                path {
+                    d: "M16.5 5.2v9.3a2.3 2.3 0 1 1-1.3-2.07V8.4l-5.4 1.08v6.52a2.3 2.3 0 1 1-1.3-2.07V7.4z",
+                    fill: "#ffffff",
+                }
             }
         },
         Brand::Local => rsx! {

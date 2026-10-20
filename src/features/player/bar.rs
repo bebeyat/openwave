@@ -5,6 +5,7 @@ use dioxus::prelude::*;
 use super::controls::{SeekRow, Transport, VolumeControl};
 use super::effects_popover::FxButton;
 use super::shortcuts_popover::ShortcutsPopover;
+use super::sleep_popover::{SleepButton, SleepPopover};
 use super::state::{
     is_current_liked, toggle_drawer, toggle_fullscreen, toggle_like_current, DrawerTab, DRAWER,
     LYRICS_BUTTON_ID, QUEUE_BUTTON_ID, SHORTCUTS_OPEN,
@@ -45,6 +46,7 @@ pub fn PlayerBar() -> Element {
                 },
             }
             ShortcutsPopover {}
+            SleepPopover {}
         }
     }
 }
@@ -172,6 +174,22 @@ fn ToggleChip(
 }
 
 #[component]
+fn MiniButton() -> Element {
+    let window = dioxus::desktop::use_window();
+    rsx! {
+        IconButton {
+            id: "ow-mini-btn",
+            icon: "picture-in-picture-2",
+            label: t("player.mini"),
+            shortcut: "P",
+            size: IconButtonSize::Sm,
+            tooltip_align: TooltipAlign::End,
+            onclick: move |_| crate::features::shell::window::toggle_mini(&window),
+        }
+    }
+}
+
+#[component]
 fn ShortcutsButton() -> Element {
     rsx! {
         IconButton {
@@ -234,6 +252,12 @@ fn RightControls() -> Element {
                     onclick: move |_| toggle_fullscreen(),
                 }
             }
+            }
+            if c.bar_sleep {
+                SleepButton {}
+            }
+            if c.bar_mini {
+                MiniButton {}
             }
             if c.bar_help {
                 ShortcutsButton {}

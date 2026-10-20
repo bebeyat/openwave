@@ -13,8 +13,9 @@ use dioxus::prelude::*;
 use super::row::{RowHeading, RowSkeleton};
 use super::sections::TrackCards;
 use super::taste::{
-    genre_artist_keys, genre_picks, heard_ids, recommend, tastes_with_neighbours, top_genres,
-    weighted_seeds, GenreScore, GENRE_ROW_MAX, RECS_MAX, SEED_COUNT, TOP_GENRES,
+    by_avoided_artist, genre_artist_keys, genre_picks, heard_ids, recommend, skipped_artists,
+    tastes_with_neighbours, top_genres, weighted_seeds, GenreScore, GENRE_ROW_MAX, RECS_MAX,
+    SEED_COUNT, TOP_GENRES,
 };
 use super::taste_cache::{self as cache, GenreIndex, RecsCache, GENRES_FILE, RECS_FILE};
 use crate::backend::api;
@@ -100,6 +101,14 @@ async fn build_recs(now: u64) -> Option<RecsCache> {
     let neighbours: Vec<Track> = radios.iter().flat_map(|(_, r)| r.iter().cloned()).collect();
     let tastes = tastes_with_neighbours(&lib.history, &lib.liked, &neighbours, now);
     let picked = top_genres(&index.genres, &tastes, TOP_GENRES);
+    let avoid = skipped_artists(&lib.history);
+    let radios: Vec<(f64, Vec<Track>)> = radios
+        .iter()
+        .map(|(w, radio)| {
+            let kept = radio.iter().filter(|t| !by_avoided_artist(t, &avoid));
+            (*w, kept.cloned().collect())
+        })
+        .collect();
     let tracks = recommend(
         &radios,
         &heard_ids(&lib.history, &lib.liked),

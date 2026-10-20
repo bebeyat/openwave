@@ -255,6 +255,7 @@ pub fn advance(auto: bool) {
 }
 
 pub fn next() {
+    session::record_skip_if_early(*POSITION.peek());
     advance(false);
 }
 

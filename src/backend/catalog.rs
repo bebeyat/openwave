@@ -20,6 +20,8 @@ use ytmapi_rs::{auth::noauth::NoAuthToken, YtMusic};
 
 #[path = "catalog_discover.rs"]
 pub mod discover;
+#[path = "catalog_fallback.rs"]
+mod fallback;
 #[path = "catalog_moods.rs"]
 mod moods;
 #[path = "catalog_parse.rs"]
@@ -31,7 +33,7 @@ const CACHE_TTL: Duration = Duration::from_secs(300);
 const CACHE_ENTRIES: usize = 40;
 const MAX_TERM_CHARS: usize = 180;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Entry {
     pub key: String,
@@ -94,18 +96,46 @@ impl Catalog {
         if let Some(v) = self.cached(&cache_key) {
             return Ok(v);
         }
-        let api = self
-            .api
-            .get_or_try_init(|| async { YtMusic::new_unauthenticated().await.map_err(net) })
-            .await?;
+        if section == "tracks" {
+            let value = self.search_tracks(term).await?;
+            self.remember(cache_key, &value);
+            return Ok(value);
+        }
+        let api = self.api().await?;
         let value = match section {
-            "tracks" | "artists" | "albums" | "lists" => search_section(api, section, term).await?,
+            "artists" | "albums" | "lists" => search_section(api, section, term).await?,
             "genres" => moods::genre_items(&api.get_mood_categories().await.map_err(net)?),
             "genre" => genre_section(api, key).await?,
             _ => browse_section(api, section, key).await?,
         };
         self.remember(cache_key, &value);
         Ok(value)
+    }
+
+    async fn api(&self) -> Result<&YtMusic<NoAuthToken>, CatalogError> {
+        self.api
+            .get_or_try_init(|| async { YtMusic::new_unauthenticated().await.map_err(net) })
+            .await
+    }
+
+    /// Songs from YouTube Music, or from yt-dlp when it fails (or is being skipped after
+    /// repeated failures).
+    async fn search_tracks(&self, term: &str) -> Result<Value, CatalogError> {
+        if fallback::skipping() {
+            return match fallback::ytdlp_tracks(term).await {
+                Ok(v) => Ok(v),
+                Err(_) => search_section(self.api().await?, "tracks", term).await,
+            };
+        }
+        let ytm = match self.api().await {
+            Ok(api) => search_section(api, "tracks", term).await,
+            Err(e) => Err(e),
+        };
+        fallback::record(ytm.is_ok());
+        match ytm {
+            Ok(v) => Ok(v),
+            Err(e) => fallback::ytdlp_tracks(term).await.map_err(|_| e),
+        }
     }
 
     fn cached(&self, cache_key: &str) -> Option<Value> {
@@ -282,4 +312,16 @@ async fn fetch_page(
         _ => return Err(CatalogError::UnknownSection),
     };
     value.map_err(bad)
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod tests {
+    include!("catalog_tests.rs");
+}
+
+// Local-only tests (see build.rs); `include!` keeps rustfmt from looking for the file.
+#[cfg(all(test, private_tests))]
+mod equiv_tests {
+    include!("catalog_equiv_tests.rs");
 }

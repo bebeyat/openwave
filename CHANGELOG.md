@@ -6,6 +6,36 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-20
+
+### Added
+
+- Sound: 10-band equalizer with built-in and saved curves, distortion, loudness levelling, crossfade and a
+  visualizer in the fullscreen player.
+- Sleep timer: any length from a stepper or typed minutes, or "end of song", with a live countdown.
+- Mini player (P): a small always-on-top window; when the pointer leaves it shows the current lyric line.
+- System tray with "keep playing in the tray when closed"; media keys and system media controls on macOS and
+  Linux too.
+- Ctrl+K command palette, listening stats page and sorting in library lists.
+- Backup and restore of settings and library in one file; your own CSS in Customize.
+- Lyrics: YouTube Music's own timed lyrics first (LRCLIB as fallback), a per-song timing offset, translation,
+  right-to-left lines and a disk cache.
+- Import: Apple Music albums and playlists, Spotify playlists past 100 songs, and Liked Songs and playlists from
+  your own Spotify account (PKCE with your own Client ID).
+- SoundCloud search and playback, also used as a fallback when a YouTube song cannot be played.
+- Downloads export to a folder as tagged `.m4a` files with covers.
+- Search falls back to yt-dlp when YouTube Music does not answer.
+
+### Changed
+
+- Recommendations learn from songs you skip in their first seconds.
+- Karaoke fill of a lyric line lasts until the next line starts.
+- Changes in Settings > Sound effects apply to the playing song at once.
+
+### Fixed
+
+- The window's close button saves the queue and installs a downloaded update before quitting.
+
 ## [0.1.4] - 2026-10-20
 
 ### Fixed
@@ -85,7 +115,8 @@ First public version.
   no analytics.
 - Windows installer and portable zip, macOS app zip and Linux tarball, with SHA-256 checksums.
 
-[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.1.4...HEAD
+[Unreleased]: https://github.com/bebeyat/openwave/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/bebeyat/openwave/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/bebeyat/openwave/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/bebeyat/openwave/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bebeyat/openwave/compare/v0.1.1...v0.1.2

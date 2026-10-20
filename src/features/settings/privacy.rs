@@ -10,7 +10,7 @@ use crate::i18n::{t, t_args};
 use crate::ui::{Banner, BannerKind, Button, ButtonVariant, Dialog, DialogSize, Icon, TextInput};
 
 /// (destination shown as-is, i18n key of "when and what is sent"). Keep in sync with PRIVACY.md.
-pub const NETWORK: [(&str, &str); 11] = [
+pub const NETWORK: [(&str, &str); 16] = [
     ("music.youtube.com", "settings.privacy.row.catalog"),
     (
         "www.youtube.com (visitor id)",
@@ -19,11 +19,25 @@ pub const NETWORK: [(&str, &str); 11] = [
     ("www.youtube.com", "settings.privacy.row.player"),
     ("*.googlevideo.com", "settings.privacy.row.audio"),
     (
-        "i.ytimg.com · *.ggpht.com · *.googleusercontent.com",
+        "i.ytimg.com · *.ggpht.com · *.googleusercontent.com · *.sndcdn.com",
         "settings.privacy.row.images",
     ),
+    ("music.youtube.com", "settings.privacy.row.lyrics_ytm"),
     ("lrclib.net", "settings.privacy.row.lyrics"),
-    ("open.spotify.com", "settings.privacy.row.spotify"),
+    (
+        "open.spotify.com · api-partner.spotify.com",
+        "settings.privacy.row.spotify",
+    ),
+    (
+        "accounts.spotify.com · api.spotify.com",
+        "settings.privacy.row.spotify_account",
+    ),
+    (
+        "itunes.apple.com · music.apple.com",
+        "settings.privacy.row.apple",
+    ),
+    ("translate.googleapis.com", "settings.privacy.row.translate"),
+    ("yt-dlp → soundcloud.com", "settings.privacy.row.soundcloud"),
     (
         "relay.damus.io · nos.lol · relay.primal.net · nostr.mom · relay.nostr.net",
         "settings.privacy.row.share",
