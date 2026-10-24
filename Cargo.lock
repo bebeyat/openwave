@@ -3758,7 +3758,7 @@ dependencies = [
  "discord-rich-presence",
  "flate2",
  "futures-util",
- "getrandom 0.2.17",
+ "getrandom 0.4.3",
  "image",
  "k256",
  "lofty",

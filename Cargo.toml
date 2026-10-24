@@ -43,7 +43,7 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 webpki-roots = "1"
 flate2 = "1"
 base64 = "0.22"
-getrandom = "0.2"
+getrandom = "0.4"
 
 # Media keys + system media controls (SMTC, MPRIS, Now Playing). MIT licensed.
 souvlaki = "0.8"
