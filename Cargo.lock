@@ -3752,7 +3752,7 @@ version = "0.2.0"
 dependencies = [
  "arboard",
  "axum",
- "base64 0.22.1",
+ "base64 0.23.1",
  "dioxus",
  "directories",
  "discord-rich-presence",
