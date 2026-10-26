@@ -36,14 +36,14 @@ lofty = "0.25"
 discord-rich-presence = "1.1"
 # Share links: playlists are stored as signed Nostr events on public relays (see docs/PRIVACY.md).
 # BIP-340 Schnorr signing. Apache-2.0 OR MIT.
-k256 = { version = "0.13", default-features = false, features = ["schnorr", "std"] }
+k256 = { version = "0.14", default-features = false, features = ["schnorr", "std"] }
 # WebSocket to the relays. MIT.
-tokio-tungstenite = { version = "0.28", default-features = false, features = ["connect", "__rustls-tls"] }
+tokio-tungstenite = { version = "0.30", default-features = false, features = ["connect", "__rustls-tls"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 webpki-roots = "1"
 flate2 = "1"
-base64 = "0.22"
-getrandom = "0.2"
+base64 = "0.23"
+getrandom = "0.4"
 
 # Media keys + system media controls (SMTC, MPRIS, Now Playing). MIT licensed.
 souvlaki = "0.8"
