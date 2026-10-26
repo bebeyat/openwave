@@ -70,7 +70,7 @@ fn now_ms() -> u64 {
 
 fn random_text(bytes: usize) -> Result<String, AuthError> {
     let mut b = vec![0u8; bytes];
-    getrandom::getrandom(&mut b).map_err(|_| AuthError::BadResponse)?;
+    getrandom::fill(&mut b).map_err(|_| AuthError::BadResponse)?;
     Ok(base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(b))
 }
 

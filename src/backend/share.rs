@@ -196,7 +196,7 @@ fn hex(bytes: &[u8]) -> String {
 
 fn random32() -> Result<[u8; 32], ShareError> {
     let mut b = [0u8; 32];
-    getrandom::getrandom(&mut b).map_err(|_| ShareError::Offline)?;
+    getrandom::fill(&mut b).map_err(|_| ShareError::Offline)?;
     Ok(b)
 }
 
@@ -204,7 +204,7 @@ fn random32() -> Result<[u8; 32], ShareError> {
 pub fn signed_event(content: &str, created_at: u64) -> Result<Value, ShareError> {
     let key = loop {
         // Fails only for the ~2^-128 chance of an out-of-range scalar.
-        if let Ok(k) = k256::schnorr::SigningKey::from_bytes(&random32()?) {
+        if let Ok(k) = k256::schnorr::SigningKey::from_slice(&random32()?) {
             break k;
         }
     };
