@@ -46,7 +46,7 @@ base64 = "0.23"
 getrandom = "0.4"
 
 # Media keys + system media controls (SMTC, MPRIS, Now Playing). MIT licensed.
-souvlaki = "0.8"
+souvlaki = "0.9"
 
 [profile.dev]
 debug = 0
