@@ -140,6 +140,7 @@
   "downloads.pending.one": "1곡 다운로드 중…",
   "downloads.pending.other": "{count}곡 다운로드 중…",
   "downloads.queue.downloading": "다운로드 중",
+  "downloads.queue.failed": "실패",
   "downloads.queue.remove": "제거",
   "downloads.queue.retry": "다시 시도",
   "downloads.queue.retry_all": "실패한 항목 다시 시도",

@@ -140,6 +140,7 @@
   "downloads.pending.one": "Download di 1 brano in corso…",
   "downloads.pending.other": "Download di {count} brani in corso…",
   "downloads.queue.downloading": "Download in corso",
+  "downloads.queue.failed": "Non riusciti",
   "downloads.queue.remove": "Rimuovi",
   "downloads.queue.retry": "Riprova",
   "downloads.queue.retry_all": "Riprova i non riusciti",

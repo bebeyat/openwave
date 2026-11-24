@@ -140,6 +140,7 @@
   "downloads.pending.one": "1 曲をダウンロード中…",
   "downloads.pending.other": "{count} 曲をダウンロード中…",
   "downloads.queue.downloading": "ダウンロード中",
+  "downloads.queue.failed": "失敗",
   "downloads.queue.remove": "削除",
   "downloads.queue.retry": "再試行",
   "downloads.queue.retry_all": "失敗分を再試行",

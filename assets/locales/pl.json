@@ -146,6 +146,7 @@
   "downloads.pending.one": "Pobieranie 1 utworu…",
   "downloads.pending.other": "Pobieranie {count} utworu…",
   "downloads.queue.downloading": "Pobieranie",
+  "downloads.queue.failed": "Nieudane",
   "downloads.queue.remove": "Usuń",
   "downloads.queue.retry": "Ponów",
   "downloads.queue.retry_all": "Ponów nieudane",

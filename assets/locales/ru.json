@@ -146,6 +146,7 @@
   "downloads.pending.one": "Скачивается {count} трек…",
   "downloads.pending.other": "Скачивается {count} трека…",
   "downloads.queue.downloading": "Загружается",
+  "downloads.queue.failed": "Не удалось",
   "downloads.queue.remove": "Убрать",
   "downloads.queue.retry": "Повторить",
   "downloads.queue.retry_all": "Повторить неудачные",

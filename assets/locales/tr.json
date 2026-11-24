@@ -140,6 +140,7 @@
   "downloads.pending.one": "1 şarkı indiriliyor…",
   "downloads.pending.other": "{count} şarkı indiriliyor…",
   "downloads.queue.downloading": "İndiriliyor",
+  "downloads.queue.failed": "Başarısız",
   "downloads.queue.remove": "Kaldır",
   "downloads.queue.retry": "Tekrar dene",
   "downloads.queue.retry_all": "Başarısızları tekrar dene",

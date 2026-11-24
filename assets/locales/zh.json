@@ -140,6 +140,7 @@
   "downloads.pending.one": "正在下载 1 首歌曲…",
   "downloads.pending.other": "正在下载 {count} 首歌曲…",
   "downloads.queue.downloading": "正在下载",
+  "downloads.queue.failed": "失败",
   "downloads.queue.remove": "移除",
   "downloads.queue.retry": "重试",
   "downloads.queue.retry_all": "重试失败项",

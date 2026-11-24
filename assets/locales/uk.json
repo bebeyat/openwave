@@ -146,6 +146,7 @@
   "downloads.pending.one": "Завантажується {count} трек…",
   "downloads.pending.other": "Завантажується {count} трека…",
   "downloads.queue.downloading": "Завантажується",
+  "downloads.queue.failed": "Не вдалося",
   "downloads.queue.remove": "Прибрати",
   "downloads.queue.retry": "Повторити",
   "downloads.queue.retry_all": "Повторити невдалі",

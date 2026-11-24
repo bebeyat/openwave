@@ -140,6 +140,7 @@
   "downloads.pending.one": "1 nummer downloaden…",
   "downloads.pending.other": "{count} nummers downloaden…",
   "downloads.queue.downloading": "Bezig met downloaden",
+  "downloads.queue.failed": "Mislukt",
   "downloads.queue.remove": "Verwijderen",
   "downloads.queue.retry": "Opnieuw proberen",
   "downloads.queue.retry_all": "Mislukte opnieuw proberen",

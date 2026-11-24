@@ -140,6 +140,7 @@
   "downloads.pending.one": "Downloading 1 song…",
   "downloads.pending.other": "Downloading {count} songs…",
   "downloads.queue.downloading": "Downloading",
+  "downloads.queue.failed": "Failed",
   "downloads.queue.remove": "Remove",
   "downloads.queue.retry": "Retry",
   "downloads.queue.retry_all": "Retry failed",

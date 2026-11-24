@@ -140,6 +140,7 @@
   "downloads.pending.one": "Téléchargement de 1 titre…",
   "downloads.pending.other": "Téléchargement de {count} titres…",
   "downloads.queue.downloading": "Téléchargement",
+  "downloads.queue.failed": "Échecs",
   "downloads.queue.remove": "Retirer",
   "downloads.queue.retry": "Réessayer",
   "downloads.queue.retry_all": "Réessayer les échecs",

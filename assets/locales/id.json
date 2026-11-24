@@ -140,6 +140,7 @@
   "downloads.pending.one": "Mendownload 1 lagu…",
   "downloads.pending.other": "Mendownload {count} lagu…",
   "downloads.queue.downloading": "Mengunduh",
+  "downloads.queue.failed": "Gagal",
   "downloads.queue.remove": "Hapus",
   "downloads.queue.retry": "Coba lagi",
   "downloads.queue.retry_all": "Coba lagi yang gagal",

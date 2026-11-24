@@ -10,13 +10,18 @@ use super::{
 use crate::i18n::{t, t_args, t_count};
 use crate::model::Track;
 use crate::routes::Route;
-use crate::ui::{Button, ButtonVariant, Icon, IconButton, IconButtonSize};
+use crate::ui::{Button, ButtonVariant, Cover, Icon, IconButton, IconButtonSize};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Row {
     Downloading,
     Waiting,
     Failed,
+}
+
+/// Share of the run finished, for the bars (0 to 100).
+fn run_percent(done: usize, left: usize) -> usize {
+    (done * 100).checked_div(done + left).unwrap_or(0)
 }
 
 #[component]
@@ -28,33 +33,66 @@ pub fn QueuePanel() -> Element {
     if busy == 0 && failed.is_empty() {
         return rsx! {};
     }
+    let done = *RUN_DONE.read();
+    let percent = run_percent(done, busy);
+    let (waiting_n, failed_n) = (pending.len(), failed.len());
     rsx! {
-        section { class: "mb-5 rounded-lg border border-line", "aria-label": t("downloads.queue.title"),
-            div { class: "flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 text-sm",
-                if busy > 0 {
-                    span { class: "ow-spin inline-block h-4 w-4 rounded-full border-2 border-line border-t-accent", "aria-hidden": "true" }
+        section { class: "mb-8 overflow-hidden rounded-lg border border-line bg-surface", "aria-label": t("downloads.queue.title"),
+            div { class: "flex flex-wrap items-center gap-3 px-4 pb-3 pt-4",
+                div { class: "min-w-0 flex-1",
+                    p { class: "font-semibold text-fg", role: "status",
+                        if busy > 0 { {t_count("downloads.pending", busy)} } else { {t("downloads.queue.title")} }
+                    }
+                    if busy > 0 {
+                        p { class: "text-xs tabular-nums text-muted", "{done}/{done + busy} · {percent}%" }
+                    }
                 }
-                span { class: "flex-1 font-semibold text-fg", role: "status",
-                    if busy > 0 { {t_count("downloads.pending", busy)} } else { {t("downloads.queue.title")} }
-                }
-                if !failed.is_empty() {
+                if failed_n > 0 {
                     Button { variant: ButtonVariant::Ghost, icon: "refresh-cw", onclick: move |_| retry_failed(), {t("downloads.queue.retry_all")} }
                 }
                 if busy > 0 {
-                    Button { variant: ButtonVariant::Ghost, onclick: move |_| cancel_all(), {t("downloads.cancel_all")} }
+                    Button { variant: ButtonVariant::Ghost, icon: "x", onclick: move |_| cancel_all(), {t("downloads.cancel_all")} }
                 }
             }
-            ul { class: "max-h-72 overflow-y-auto py-1",
+            if busy > 0 {
+                div { class: "mx-4 mb-3 h-1 overflow-hidden rounded-full bg-line", "aria-hidden": "true",
+                    div { class: "ow-accent-fill h-full rounded-full transition-[width] duration-(--ow-dur-panel)", style: "width: {percent}%" }
+                }
+            }
+            div { class: "max-h-80 overflow-y-auto border-t border-line pb-2",
                 if let Some(track) = active {
-                    QueueRow { key: "a{track.id}", track, row: Row::Downloading, note: t("downloads.queue.downloading") }
+                    GroupHeading { label: t("downloads.queue.downloading") }
+                    ul {
+                        QueueRow { key: "a{track.id}", track, row: Row::Downloading, note: String::new() }
+                    }
                 }
-                for track in pending {
-                    QueueRow { key: "p{track.id}", track, row: Row::Waiting, note: t("downloads.queue.waiting") }
+                if waiting_n > 0 {
+                    GroupHeading { label: t("downloads.queue.waiting"), count: waiting_n }
+                    ul {
+                        for track in pending {
+                            QueueRow { key: "p{track.id}", track, row: Row::Waiting, note: String::new() }
+                        }
+                    }
                 }
-                for (track, reason) in failed {
-                    QueueRow { key: "f{track.id}", track, row: Row::Failed, note: reason }
+                if failed_n > 0 {
+                    GroupHeading { label: t("downloads.queue.failed"), count: failed_n }
+                    ul {
+                        for (track, reason) in failed {
+                            QueueRow { key: "f{track.id}", track, row: Row::Failed, note: reason }
+                        }
+                    }
                 }
             }
+        }
+    }
+}
+
+#[component]
+fn GroupHeading(label: String, #[props(default)] count: usize) -> Element {
+    rsx! {
+        h3 { class: "px-4 pb-1 pt-3 text-xs font-semibold text-muted",
+            "{label}"
+            if count > 0 { span { class: "ml-1.5 tabular-nums", "· {count}" } }
         }
     }
 }
@@ -63,19 +101,30 @@ pub fn QueuePanel() -> Element {
 fn QueueRow(track: Track, row: Row, note: String) -> Element {
     let id = track.id.to_string();
     let artists = track.artists_label();
-    let note_class = if row == Row::Failed {
-        "text-danger-text"
-    } else {
-        "text-muted"
-    };
+    let cover = track.cover.as_ref().map(|c| c.url.to_string());
     let (remove_id, retry_track) = (id.clone(), track.clone());
+    let tone = if row == Row::Waiting {
+        "opacity-80"
+    } else {
+        ""
+    };
     rsx! {
-        li { class: "flex items-center gap-3 px-4 py-1.5 text-sm",
+        li { class: "group flex items-center gap-3 px-4 py-1.5 text-sm hover:bg-hover {tone}",
+            div { class: "relative flex-none",
+                Cover { src: cover, alt: "", size: 36 }
+                if row == Row::Downloading {
+                    span { class: "absolute inset-0 grid place-items-center rounded-[inherit] bg-black/45", "aria-hidden": "true",
+                        span { class: "ow-spin inline-block h-4 w-4 rounded-full border-2 border-white/30 border-t-white" }
+                    }
+                }
+            }
             div { class: "min-w-0 flex-1",
                 div { class: "truncate font-medium text-fg", "{track.title}" }
                 div { class: "truncate text-xs text-muted", "{artists}" }
             }
-            span { class: "max-w-[40%] flex-none truncate text-xs {note_class}", title: "{note}", "{note}" }
+            if !note.is_empty() {
+                span { class: "max-w-[40%] flex-none truncate text-xs text-danger-text", title: "{note}", "{note}" }
+            }
             if row == Row::Failed {
                 IconButton {
                     icon: "refresh-cw",
@@ -107,7 +156,7 @@ pub fn SidebarProgress() -> Element {
     }
     let done = *RUN_DONE.read();
     let total = done + left;
-    let percent = done * 100 / total;
+    let percent = run_percent(done, left);
     let label = t_args(
         "downloads.ring",
         &[("done", &done.to_string()), ("total", &total.to_string())],
@@ -127,5 +176,17 @@ pub fn SidebarProgress() -> Element {
                 div { class: "ow-accent-fill h-full rounded-full transition-[width] duration-(--ow-dur-panel)", style: "width: {percent}%" }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::run_percent;
+
+    #[test]
+    fn run_percent_counts_finished_share() {
+        assert_eq!(run_percent(0, 0), 0);
+        assert_eq!(run_percent(20, 64), 23);
+        assert_eq!(run_percent(5, 0), 100);
     }
 }
