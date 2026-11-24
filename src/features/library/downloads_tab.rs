@@ -3,7 +3,7 @@
 use dioxus::prelude::*;
 
 use super::actions::{play_all, shuffle_all};
-use crate::features::downloads::{self, ACTIVE, DOWNLOADS, PENDING};
+use crate::features::downloads::{self, QueuePanel, DOWNLOADS};
 use crate::features::tracks::common::IllustratedEmpty;
 use crate::features::tracks::TrackList;
 use crate::i18n::{t, t_args, t_count};
@@ -23,18 +23,11 @@ pub fn size_text(bytes: u64) -> String {
 #[component]
 pub fn DownloadsTab() -> Element {
     let tracks: Vec<Track> = DOWNLOADS.read().iter().map(|d| d.track.clone()).collect();
-    let pending = PENDING.read().len() + usize::from(ACTIVE.read().is_some());
     let total = size_text(downloads::total_bytes());
     let (a, b, list) = (tracks.clone(), tracks.clone(), tracks.clone());
     let ids: Vec<String> = tracks.iter().map(|t| t.id.to_string()).collect();
     rsx! {
-        if pending > 0 {
-            div { class: "mb-4 flex items-center gap-3 rounded-lg border border-line px-4 py-3 text-sm", role: "status",
-                span { class: "ow-spin inline-block h-4 w-4 rounded-full border-2 border-line border-t-accent", "aria-hidden": "true" }
-                span { class: "flex-1 text-fg", {t_count("downloads.pending", pending)} }
-                Button { variant: ButtonVariant::Ghost, onclick: move |_| downloads::cancel_pending(), {t("downloads.cancel")} }
-            }
-        }
+        QueuePanel {}
         if !tracks.is_empty() {
             div { class: "mb-5 flex flex-wrap items-center gap-3",
                 GradientPlayButton { size: PlaySize::Md, label: t("common.play"), onclick: move |_| play_all(&a) }
