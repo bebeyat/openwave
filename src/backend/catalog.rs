@@ -151,9 +151,13 @@ impl Catalog {
 
 /// The unauthenticated YouTube Music client, over HTTP/1.1: YouTube Music resets HTTP/2 streams
 /// that carry the fixed Firefox 88 user agent ytmapi-rs sends (issue #33), HTTP/1.1 is still served.
+/// `SOCS=CAI` skips the EU consent page, which otherwise answers instead of the visitor id (#37).
 async fn ytm_client() -> Result<YtMusic<NoAuthToken>, CatalogError> {
+    use reqwest_ytm::header::{HeaderMap, HeaderValue, COOKIE};
+    let cookie = HeaderMap::from_iter([(COOKIE, HeaderValue::from_static("SOCS=CAI"))]);
     let http = reqwest_ytm::Client::builder()
         .http1_only()
+        .default_headers(cookie)
         .build()
         .map_err(net)?;
     YtMusicBuilder::new_with_client(ytmapi_rs::Client::new_from_reqwest_client(http))
