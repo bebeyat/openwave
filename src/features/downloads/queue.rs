@@ -5,11 +5,12 @@ use dioxus::prelude::*;
 
 use super::{
     cancel_active, cancel_all, dismiss_failed, remove_pending, retry_failed, ACTIVE, FAILED,
-    PENDING,
+    PENDING, RUN_DONE,
 };
-use crate::i18n::{t, t_count};
+use crate::i18n::{t, t_args, t_count};
 use crate::model::Track;
-use crate::ui::{Button, ButtonVariant, IconButton, IconButtonSize};
+use crate::routes::Route;
+use crate::ui::{Button, ButtonVariant, Icon, IconButton, IconButtonSize};
 
 #[derive(Clone, Copy, PartialEq)]
 enum Row {
@@ -92,6 +93,38 @@ fn QueueRow(track: Track, row: Row, note: String) -> Element {
                     Row::Waiting => remove_pending(&remove_id),
                     Row::Failed => dismiss_failed(&remove_id),
                 },
+            }
+        }
+    }
+}
+
+/// Sidebar entry above Settings while songs download: "done/total" with a bar; opens the queue.
+#[component]
+pub fn SidebarProgress() -> Element {
+    let left = PENDING.read().len() + usize::from(ACTIVE.read().is_some());
+    if left == 0 {
+        return rsx! {};
+    }
+    let done = *RUN_DONE.read();
+    let total = done + left;
+    let percent = done * 100 / total;
+    let label = t_args(
+        "downloads.ring",
+        &[("done", &done.to_string()), ("total", &total.to_string())],
+    );
+    rsx! {
+        Link {
+            to: Route::Library { tab: "downloads".into() },
+            "aria-label": "{label}",
+            title: "{label}",
+            class: "flex flex-col gap-2 rounded-md px-4 py-2.5 text-muted transition-colors duration-(--ow-dur-hover) hover:bg-hover hover:text-fg max-[1099px]:items-center max-[1099px]:px-1",
+            div { class: "flex items-center gap-3.5 max-[1099px]:flex-col max-[1099px]:gap-1",
+                Icon { name: "download", size: 22, class: "text-accent-text" }
+                span { class: "flex-1 truncate text-[15px] font-medium max-[1099px]:sr-only", {t("downloads.queue.downloading")} }
+                span { class: "text-xs font-semibold tabular-nums text-fg max-[1099px]:text-[11px]", "{done}/{total}" }
+            }
+            div { class: "h-1 w-full overflow-hidden rounded-full bg-line", "aria-hidden": "true",
+                div { class: "ow-accent-fill h-full rounded-full transition-[width] duration-(--ow-dur-panel)", style: "width: {percent}%" }
             }
         }
     }

@@ -7,7 +7,7 @@ mod button;
 mod queue;
 
 pub use button::DownloadAllButton;
-pub use queue::QueuePanel;
+pub use queue::{QueuePanel, SidebarProgress};
 
 use std::collections::{HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -33,6 +33,9 @@ static RUNNING: AtomicBool = AtomicBool::new(false);
 pub static ACTIVE: GlobalSignal<Option<Track>> = Signal::global(|| None);
 /// Tracks whose download failed, with the reason, oldest first.
 pub static FAILED: GlobalSignal<Vec<(Track, String)>> = Signal::global(Vec::new);
+/// Tracks finished (downloaded, failed or skipped) since the queue last started; with the
+/// tracks still waiting this gives the progress of the whole run.
+pub static RUN_DONE: GlobalSignal<usize> = Signal::global(|| 0);
 /// Set by [`cancel_active`] so the runner drops that one track instead of reporting it failed.
 static SKIP_ACTIVE: AtomicBool = AtomicBool::new(false);
 
@@ -134,6 +137,7 @@ async fn run_queue() {
         }
     }
     *ACTIVE.write() = None;
+    *RUN_DONE.write() = 0;
     if CANCELLED.swap(false, Ordering::SeqCst) {
         toast(t("downloads.toast.cancelled"));
         return;
@@ -154,7 +158,9 @@ async fn drain(ok: &mut usize, failed: &mut Option<String>) {
         *ACTIVE.write() = Some(track.clone());
         SKIP_ACTIVE.store(false, Ordering::SeqCst);
         let quality = store::settings().get().quality();
-        match api::download_track(&track, quality).await {
+        let result = api::download_track(&track, quality).await;
+        *RUN_DONE.write() += 1;
+        match result {
             Ok(_) => {
                 *ok += 1;
                 if let Ok(list) = api::downloads().await {

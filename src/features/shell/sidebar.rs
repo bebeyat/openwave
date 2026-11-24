@@ -1,6 +1,6 @@
 //! Left navigation panel: Home and Library (search and the wordmark live in the top strip), the
 //! playlists list (cover thumbs),
-//! Settings pinned at the bottom. 248px wide, floating glass; below 1100px window width it
+//! download progress (while songs download) and Settings pinned at the bottom. 248px wide, floating glass; below 1100px window width it
 //! narrows to a 76px rail that keeps a small text label under every icon (labels are never hidden).
 
 use dioxus::prelude::*;
@@ -113,6 +113,7 @@ pub fn Sidebar() -> Element {
             }
             }
             div { class: "flex flex-col gap-1 px-3 pb-3 pt-2 max-[1099px]:px-2",
+                crate::features::downloads::SidebarProgress {}
                 NavLink { kind: NavKind::Settings, icon: "settings", label: t("nav.settings") }
             }
         }
