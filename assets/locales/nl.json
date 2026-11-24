@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "Mislukte opnieuw proberen",
   "downloads.queue.title": "Downloadwachtrij",
   "downloads.queue.waiting": "Wacht",
-  "downloads.ring": "{done} van {total} nummers gedownload. Klik om te annuleren.",
+  "downloads.ring": "{done} van {total} nummers gedownload. Klik om de wachtrij te zien.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Downloads geannuleerd.",
   "downloads.toast.done.one": "1 nummer gedownload.",

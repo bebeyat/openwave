@@ -151,7 +151,7 @@
   "downloads.queue.retry_all": "Ponów nieudane",
   "downloads.queue.title": "Kolejka pobierania",
   "downloads.queue.waiting": "Oczekuje",
-  "downloads.ring": "Pobrano {done} z {total}. Kliknij, aby anulować.",
+  "downloads.ring": "Pobrano {done} z {total}. Kliknij, aby zobaczyć kolejkę.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Pobieranie anulowane.",
   "downloads.toast.done.few": "Pobrano {count} utwory.",

@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "Başarısızları tekrar dene",
   "downloads.queue.title": "İndirme kuyruğu",
   "downloads.queue.waiting": "Bekliyor",
-  "downloads.ring": "{done}/{total} şarkı indirildi. İptal etmek için tıkla.",
+  "downloads.ring": "{done}/{total} şarkı indirildi. Kuyruğu görmek için tıkla.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "İndirmeler iptal edildi.",
   "downloads.toast.done.one": "1 şarkı indirildi.",

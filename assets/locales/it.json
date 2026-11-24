@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "Riprova i non riusciti",
   "downloads.queue.title": "Coda di download",
   "downloads.queue.waiting": "In attesa",
-  "downloads.ring": "{done} brani su {total} scaricati. Fai clic per annullare.",
+  "downloads.ring": "{done} brani su {total} scaricati. Fai clic per vedere la coda.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Download annullati.",
   "downloads.toast.done.one": "1 brano scaricato.",

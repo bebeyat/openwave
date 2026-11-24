@@ -151,7 +151,7 @@
   "downloads.queue.retry_all": "Повторити невдалі",
   "downloads.queue.title": "Черга завантажень",
   "downloads.queue.waiting": "Очікує",
-  "downloads.ring": "Завантажено {done} з {total}. Натисни, щоб скасувати.",
+  "downloads.ring": "Завантажено {done} з {total}. Натисни, щоб відкрити чергу.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Завантаження скасовано.",
   "downloads.toast.done.few": "Завантажено {count} треки.",

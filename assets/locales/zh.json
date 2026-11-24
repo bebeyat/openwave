@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "重试失败项",
   "downloads.queue.title": "下载队列",
   "downloads.queue.waiting": "等待中",
-  "downloads.ring": "已下载 {done}/{total} 首。点击取消。",
+  "downloads.ring": "已下载 {done}/{total} 首。点击查看队列。",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "已取消下载。",
   "downloads.toast.done.one": "已下载 1 首歌曲。",

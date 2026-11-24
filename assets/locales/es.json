@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "Reintentar fallidas",
   "downloads.queue.title": "Cola de descargas",
   "downloads.queue.waiting": "En espera",
-  "downloads.ring": "{done} de {total} canciones descargadas. Haz clic para cancelar.",
+  "downloads.ring": "{done} de {total} canciones descargadas. Haz clic para ver la cola.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Descargas canceladas.",
   "downloads.toast.done.one": "1 canción descargada.",

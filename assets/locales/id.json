@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "Coba lagi yang gagal",
   "downloads.queue.title": "Antrean unduhan",
   "downloads.queue.waiting": "Menunggu",
-  "downloads.ring": "{done} dari {total} lagu diunduh. Klik untuk membatalkan.",
+  "downloads.ring": "{done} dari {total} lagu diunduh. Klik untuk melihat antrean.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Unduhan dibatalkan.",
   "downloads.toast.done.one": "1 lagu didownload.",

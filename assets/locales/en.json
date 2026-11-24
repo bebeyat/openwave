@@ -145,7 +145,7 @@
   "downloads.queue.retry_all": "Retry failed",
   "downloads.queue.title": "Download queue",
   "downloads.queue.waiting": "Waiting",
-  "downloads.ring": "{done} of {total} songs downloaded. Click to cancel.",
+  "downloads.ring": "{done} of {total} songs downloaded. Click to see the queue.",
   "downloads.summary": "{songs} · {size}",
   "downloads.toast.cancelled": "Downloads cancelled.",
   "downloads.toast.done.one": "1 song downloaded.",
