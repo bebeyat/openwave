@@ -18,6 +18,7 @@ ignore = [
     { id = "RUSTSEC-2026-0370", reason = "zvariant is unmaintained, no vulnerability; transitive D-Bus dependency (Linux)" },
     { id = "RUSTSEC-2026-0371", reason = "zbus_names is unmaintained, no vulnerability; transitive D-Bus dependency (Linux)" },
     { id = "RUSTSEC-2026-0372", reason = "zvariant_derive is unmaintained, no vulnerability; transitive D-Bus dependency (Linux)" },
+    { id = "RUSTSEC-2026-0543", reason = "chrono is unmaintained, no vulnerability; transitive via ytmapi-rs, no replacement yet" },
 ]
 
 [licenses]

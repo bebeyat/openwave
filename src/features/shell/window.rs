@@ -6,9 +6,7 @@ use std::cell::Cell;
 use dioxus::desktop::tao::dpi::{LogicalSize, PhysicalPosition};
 use dioxus::desktop::trayicon::menu::{Menu, MenuItem, PredefinedMenuItem};
 use dioxus::desktop::trayicon::{init_tray_icon, Icon};
-use dioxus::desktop::{
-    use_tray_menu_event_handler, use_window, DesktopContext, WindowCloseBehaviour,
-};
+use dioxus::desktop::{use_muda_event_handler, use_window, DesktopContext, WindowCloseBehaviour};
 use dioxus::prelude::*;
 
 use crate::i18n::t;
@@ -141,7 +139,9 @@ fn use_tray() {
     use_effect(use_reactive!(|close_to_tray| {
         w.set_close_behavior(close_behaviour(close_to_tray));
     }));
-    use_tray_menu_event_handler(move |event| {
+    // Tray clicks arrive as muda (menubar) events: muda keeps one global handler, dioxus installs
+    // the menubar one first, so its tray handler never receives anything (issue #33).
+    use_muda_event_handler(move |event| {
         let id = event.id();
         if id == items.toggle.id() {
             ctl::toggle_pause();
