@@ -3,14 +3,16 @@
 
 use dioxus::prelude::*;
 
+use super::live::{self, LIVE};
 use super::{
-    cancel_active, cancel_all, dismiss_failed, remove_pending, retry_failed, ACTIVE, FAILED,
-    PENDING, RUN_DONE,
+    cancel_active, cancel_all, dismiss_failed, pause, remove_pending, resume, retry_failed, ACTIVE,
+    FAILED, PAUSED, PENDING, RUN_DONE,
 };
 use crate::i18n::{t, t_args, t_count};
 use crate::model::Track;
 use crate::routes::Route;
 use crate::ui::{Button, ButtonVariant, Cover, Icon, IconButton, IconButtonSize};
+use crate::util::format_time;
 
 #[derive(Clone, Copy, PartialEq)]
 enum Row {
@@ -36,19 +38,33 @@ pub fn QueuePanel() -> Element {
     let done = *RUN_DONE.read();
     let percent = run_percent(done, busy);
     let (waiting_n, failed_n) = (pending.len(), failed.len());
+    let paused = *PAUSED.read();
+    let title = if paused {
+        t("downloads.queue.paused")
+    } else if busy > 0 {
+        t_count("downloads.pending", busy)
+    } else {
+        t("downloads.queue.title")
+    };
     rsx! {
         section { class: "mb-8 overflow-hidden rounded-lg border border-line bg-surface", "aria-label": t("downloads.queue.title"),
             div { class: "flex flex-wrap items-center gap-3 px-4 pb-3 pt-4",
                 div { class: "min-w-0 flex-1",
-                    p { class: "font-semibold text-fg", role: "status",
-                        if busy > 0 { {t_count("downloads.pending", busy)} } else { {t("downloads.queue.title")} }
-                    }
+                    p { class: "font-semibold text-fg", role: "status", "{title}" }
                     if busy > 0 {
-                        p { class: "text-xs tabular-nums text-muted", "{done}/{done + busy} · {percent}%" }
+                        p { class: "text-xs tabular-nums text-muted",
+                            "{done}/{done + busy} · {percent}%"
+                            if !paused { RunSpeed { waiting: waiting_n } }
+                        }
                     }
                 }
                 if failed_n > 0 {
                     Button { variant: ButtonVariant::Ghost, icon: "refresh-cw", onclick: move |_| retry_failed(), {t("downloads.queue.retry_all")} }
+                }
+                if busy > 0 && paused {
+                    Button { variant: ButtonVariant::Secondary, icon: "play", onclick: move |_| resume(), {t("downloads.queue.resume")} }
+                } else if busy > 0 {
+                    Button { variant: ButtonVariant::Ghost, icon: "pause", onclick: move |_| pause(), {t("downloads.queue.pause")} }
                 }
                 if busy > 0 {
                     Button { variant: ButtonVariant::Ghost, icon: "x", onclick: move |_| cancel_all(), {t("downloads.cancel_all")} }
@@ -87,6 +103,38 @@ pub fn QueuePanel() -> Element {
     }
 }
 
+/// " · 1.2 MB/s · 3:20 left" for the header (its own component, so only it redraws per tick).
+#[component]
+fn RunSpeed(waiting: usize) -> Element {
+    let l = *LIVE.read();
+    if l.bytes_per_sec < 1.0 {
+        return rsx! {};
+    }
+    let speed = live::speed_text(l.bytes_per_sec);
+    let eta = live::eta_secs(l, waiting)
+        .map(|s| t_args("downloads.queue.eta", &[("time", &format_time(s))]));
+    rsx! {
+        " · {speed}"
+        if let Some(eta) = eta { " · {eta}" }
+    }
+}
+
+/// Percent and a thin bar under the song downloading now.
+#[component]
+fn SongProgress() -> Element {
+    let Some(p) = live::percent(*LIVE.read()) else {
+        return rsx! {};
+    };
+    rsx! {
+        div { class: "mt-1 flex items-center gap-2",
+            div { class: "h-1 flex-1 overflow-hidden rounded-full bg-line", "aria-hidden": "true",
+                div { class: "ow-accent-fill h-full rounded-full transition-[width] duration-(--ow-dur-panel)", style: "width: {p}%" }
+            }
+            span { class: "w-9 text-right text-xs tabular-nums text-muted", "{p}%" }
+        }
+    }
+}
+
 #[component]
 fn GroupHeading(label: String, #[props(default)] count: usize) -> Element {
     rsx! {
@@ -121,6 +169,7 @@ fn QueueRow(track: Track, row: Row, note: String) -> Element {
             div { class: "min-w-0 flex-1",
                 div { class: "truncate font-medium text-fg", "{track.title}" }
                 div { class: "truncate text-xs text-muted", "{artists}" }
+                if row == Row::Downloading { SongProgress {} }
             }
             if !note.is_empty() {
                 span { class: "max-w-[40%] flex-none truncate text-xs text-danger-text", title: "{note}", "{note}" }
@@ -169,7 +218,9 @@ pub fn SidebarProgress() -> Element {
             class: "flex flex-col gap-2 rounded-md px-4 py-2.5 text-muted transition-colors duration-(--ow-dur-hover) hover:bg-hover hover:text-fg max-[1099px]:items-center max-[1099px]:px-1",
             div { class: "flex items-center gap-3.5 max-[1099px]:flex-col max-[1099px]:gap-1",
                 Icon { name: "download", size: 22, class: "text-accent-text" }
-                span { class: "flex-1 truncate text-[15px] font-medium max-[1099px]:sr-only", {t("downloads.queue.downloading")} }
+                span { class: "flex-1 truncate text-[15px] font-medium max-[1099px]:sr-only",
+                    if *PAUSED.read() { {t("downloads.queue.paused")} } else { {t("downloads.queue.downloading")} }
+                }
                 span { class: "text-xs font-semibold tabular-nums text-fg max-[1099px]:text-[11px]", "{done}/{total}" }
             }
             div { class: "h-1 w-full overflow-hidden rounded-full bg-line", "aria-hidden": "true",
