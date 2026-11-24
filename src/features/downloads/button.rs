@@ -1,11 +1,12 @@
 //! "Tümünü indir" for a list: a pill while idle, a progress ring with "done/total" while its
-//! tracks download (hover turns it into a cancel button), a quiet "downloaded" pill when done.
+//! tracks download (click opens the download queue in Library), a quiet "downloaded" pill when done.
 
 use dioxus::prelude::*;
 
-use super::{cancel_all, enqueue, list_progress};
+use super::{enqueue, list_progress};
 use crate::i18n::{t, t_args};
 use crate::model::Track;
+use crate::routes::Route;
 use crate::ui::Icon;
 
 const RING_R: f64 = 20.0;
@@ -23,6 +24,7 @@ pub fn ring_offset(done: usize, total: usize) -> f64 {
 
 #[component]
 pub fn DownloadAllButton(tracks: Vec<Track>) -> Element {
+    let nav = use_navigator();
     let (done, total, busy) = list_progress(&tracks);
     let pill = "inline-flex h-10 items-center gap-2 rounded-md px-4 text-sm font-semibold text-fg ring-1 ring-line-strong transition-[background-color] duration-(--ow-dur-hover) hover:bg-hover active:bg-press disabled:pointer-events-none disabled:opacity-50";
     if busy {
@@ -37,8 +39,10 @@ pub fn DownloadAllButton(tracks: Vec<Track>) -> Element {
                 r#type: "button",
                 class: "group relative inline-flex h-12 w-12 flex-none items-center justify-center rounded-full text-fg",
                 "aria-label": "{label}",
-                title: t("downloads.cancel_all"),
-                onclick: move |_| cancel_all(),
+                title: t("downloads.queue.title"),
+                onclick: move |_| {
+                    nav.push(Route::Library { tab: "downloads".into() });
+                },
                 svg {
                     class: "absolute inset-0 -rotate-90",
                     view_box: "0 0 48 48",
@@ -57,10 +61,7 @@ pub fn DownloadAllButton(tracks: Vec<Track>) -> Element {
                         style: "transition: stroke-dashoffset var(--ow-dur-panel) var(--ow-ease)",
                     }
                 }
-                span { class: "relative text-[9px] font-bold leading-none tabular-nums group-hover:hidden group-focus-visible:hidden", "{done}/{total}" }
-                span { class: "relative hidden text-danger-text group-hover:block group-focus-visible:block", "aria-hidden": "true",
-                    Icon { name: "x", size: 18 }
-                }
+                span { class: "relative text-[9px] font-bold leading-none tabular-nums", "{done}/{total}" }
             }
         };
     }

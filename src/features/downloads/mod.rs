@@ -4,8 +4,11 @@
 //! downloaded track plays from disk (see `backend::media::download`), so it also works offline.
 
 mod button;
+mod live;
+mod queue;
 
 pub use button::DownloadAllButton;
+pub use queue::{QueuePanel, SidebarProgress};
 
 use std::collections::{HashSet, VecDeque};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -28,7 +31,16 @@ static CANCELLED: AtomicBool = AtomicBool::new(false);
 /// Set while the queue runner exists; claimed synchronously so two runners never start.
 static RUNNING: AtomicBool = AtomicBool::new(false);
 /// The track being downloaded right now.
-pub static ACTIVE: GlobalSignal<Option<String>> = Signal::global(|| None);
+pub static ACTIVE: GlobalSignal<Option<Track>> = Signal::global(|| None);
+/// Tracks whose download failed, with the reason, oldest first.
+pub static FAILED: GlobalSignal<Vec<(Track, String)>> = Signal::global(Vec::new);
+/// Tracks finished (downloaded, failed or skipped) since the queue last started; with the
+/// tracks still waiting this gives the progress of the whole run.
+pub static RUN_DONE: GlobalSignal<usize> = Signal::global(|| 0);
+/// The queue is paused: nothing new starts until [`resume`].
+pub static PAUSED: GlobalSignal<bool> = Signal::global(|| false);
+/// Set by [`cancel_active`] so the runner drops that one track instead of reporting it failed.
+static SKIP_ACTIVE: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum State {
@@ -46,7 +58,7 @@ pub fn downloadable(t: &Track) -> bool {
 pub fn state(id: &str) -> State {
     if DOWNLOADS.read().iter().any(|d| d.track.id == id) {
         State::Done
-    } else if ACTIVE.read().as_deref() == Some(id) {
+    } else if ACTIVE.read().as_ref().is_some_and(|t| t.id == id) {
         State::Downloading
     } else if PENDING.read().iter().any(|t| t.id == id) {
         State::Queued
@@ -98,8 +110,8 @@ pub fn to_download(
 pub fn enqueue(tracks: &[Track]) {
     let done = downloaded_ids();
     let mut queued: HashSet<String> = PENDING.peek().iter().map(|t| t.id.to_string()).collect();
-    if let Some(a) = ACTIVE.peek().clone() {
-        queued.insert(a);
+    if let Some(a) = ACTIVE.peek().as_ref() {
+        queued.insert(a.id.to_string());
     }
     let fresh = to_download(tracks, &done, &queued);
     if fresh.is_empty() {
@@ -107,9 +119,18 @@ pub fn enqueue(tracks: &[Track]) {
         return;
     }
     toast(t_count("downloads.toast.queued", fresh.len()));
+    FAILED
+        .write()
+        .retain(|(f, _)| !fresh.iter().any(|t| t.id == f.id));
     CANCELLED.store(false, Ordering::SeqCst);
     PENDING.write().extend(fresh);
-    if !RUNNING.swap(true, Ordering::SeqCst) {
+    start_runner();
+}
+
+/// Start the queue runner unless it runs already or the queue is paused.
+fn start_runner() {
+    if !*PAUSED.peek() && !RUNNING.swap(true, Ordering::SeqCst) {
+        live::start(|| RUNNING.load(Ordering::SeqCst));
         spawn_forever(run_queue());
     }
 }
@@ -120,11 +141,15 @@ async fn run_queue() {
         drain(&mut ok, &mut failed).await;
         RUNNING.store(false, Ordering::SeqCst);
         // Something queued between the last pop and the store above: keep going.
-        if PENDING.peek().is_empty() || RUNNING.swap(true, Ordering::SeqCst) {
+        if PENDING.peek().is_empty() || *PAUSED.peek() || RUNNING.swap(true, Ordering::SeqCst) {
             break 'runner;
         }
     }
     *ACTIVE.write() = None;
+    if *PAUSED.peek() {
+        return;
+    }
+    *RUN_DONE.write() = 0;
     if CANCELLED.swap(false, Ordering::SeqCst) {
         toast(t("downloads.toast.cancelled"));
         return;
@@ -139,19 +164,35 @@ async fn run_queue() {
 /// Download everything in [`PENDING`], one track at a time.
 async fn drain(ok: &mut usize, failed: &mut Option<String>) {
     loop {
+        if *PAUSED.peek() {
+            break;
+        }
         let Some(track) = PENDING.write().pop_front() else {
             break;
         };
-        *ACTIVE.write() = Some(track.id.to_string());
+        *ACTIVE.write() = Some(track.clone());
+        SKIP_ACTIVE.store(false, Ordering::SeqCst);
         let quality = store::settings().get().quality();
-        match api::download_track(&track, quality).await {
+        let result = api::download_track(&track, quality).await;
+        if result.is_err() && *PAUSED.peek() {
+            // Stopped by [`pause`]: it starts over first when the queue resumes.
+            PENDING.write().push_front(track);
+            break;
+        }
+        *RUN_DONE.write() += 1;
+        match result {
             Ok(_) => {
                 *ok += 1;
                 if let Ok(list) = api::downloads().await {
                     *DOWNLOADS.write() = list;
                 }
             }
-            Err(e) => *failed = Some(e.user_message()),
+            Err(_) if CANCELLED.load(Ordering::SeqCst) || SKIP_ACTIVE.load(Ordering::SeqCst) => {}
+            Err(e) => {
+                let msg = e.user_message();
+                FAILED.write().push((track, msg.clone()));
+                *failed = Some(msg);
+            }
         }
     }
 }
@@ -194,15 +235,53 @@ pub fn export(ids: Vec<String>) {
     });
 }
 
-/// Stop the queue after the current track.
-pub fn cancel_pending() {
-    PENDING.write().clear();
+/// Take one waiting track out of the queue.
+pub fn remove_pending(id: &str) {
+    PENDING.write().retain(|t| t.id != id);
+}
+
+/// Stop the track being downloaded right now; the queue goes on with the next one.
+pub fn cancel_active() {
+    SKIP_ACTIVE.store(true, Ordering::SeqCst);
+    crate::backend::media::cancel_downloads();
+}
+
+/// Pause the queue; the song downloading now stops and goes back to the front of the queue.
+pub fn pause() {
+    *PAUSED.write() = true;
+    if ACTIVE.peek().is_some() {
+        crate::backend::media::cancel_downloads();
+    }
+}
+
+/// Go on with the queue after [`pause`].
+pub fn resume() {
+    *PAUSED.write() = false;
+    if PENDING.peek().is_empty() {
+        *RUN_DONE.write() = 0;
+    }
+    start_runner();
+}
+
+/// Queue the failed downloads again.
+pub fn retry_failed() {
+    let tracks: Vec<Track> = FAILED.peek().iter().map(|(t, _)| t.clone()).collect();
+    enqueue(&tracks);
+}
+
+/// Forget one failed download.
+pub fn dismiss_failed(id: &str) {
+    FAILED.write().retain(|(t, _)| t.id != id);
 }
 
 /// Cancel everything: the queue and the track being downloaded right now.
 pub fn cancel_all() {
     CANCELLED.store(true, Ordering::SeqCst);
     PENDING.write().clear();
+    *PAUSED.write() = false;
+    if !RUNNING.load(Ordering::SeqCst) {
+        *RUN_DONE.write() = 0;
+    }
     crate::backend::media::cancel_downloads();
 }
 
@@ -210,7 +289,7 @@ pub fn cancel_all() {
 pub fn list_progress(tracks: &[Track]) -> (usize, usize, bool) {
     let done = downloaded_ids();
     let pending: HashSet<String> = PENDING.read().iter().map(|t| t.id.to_string()).collect();
-    let active = ACTIVE.read().clone();
+    let active = ACTIVE.read().as_ref().map(|t| t.id.to_string());
     let mut seen = HashSet::new();
     let list: Vec<&Track> = tracks
         .iter()

@@ -19,6 +19,17 @@ pub fn cancel_all() {
     CANCEL_EPOCH.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 }
 
+/// Bytes written and total size (0 while unknown) of the download running now, for the queue UI.
+/// Downloads run one at a time, so one pair is enough.
+static GOT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static TOTAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// (bytes written, total bytes or 0 when not known yet) of the running download.
+pub fn progress() -> (u64, u64) {
+    use std::sync::atomic::Ordering::Relaxed;
+    (GOT.load(Relaxed), TOTAL.load(Relaxed))
+}
+
 fn cancelled_since(epoch: u64) -> bool {
     CANCEL_EPOCH.load(std::sync::atomic::Ordering::SeqCst) != epoch
 }
@@ -209,8 +220,11 @@ impl Media {
     /// Stream `url` into `path` chunk by chunk; the byte count on success.
     async fn fetch_to(&self, url: &str, path: &PathBuf) -> Result<u64, MediaError> {
         let epoch = CANCEL_EPOCH.load(std::sync::atomic::Ordering::SeqCst);
+        use std::sync::atomic::Ordering::Relaxed;
         let mut file = tokio::fs::File::create(path).await?;
         let mut next = 0_u64;
+        GOT.store(0, Relaxed);
+        TOTAL.store(0, Relaxed);
         loop {
             if cancelled_since(epoch) {
                 return Err(MediaError::Io("cancelled".into()));
@@ -231,7 +245,12 @@ impl Media {
             if status != 206 && (status != 200 || next > 0) {
                 return Err(MediaError::BadResponse);
             }
-            let total = content_range(&resp).map(|(_, _, t)| t);
+            let total = content_range(&resp)
+                .map(|(_, _, t)| t)
+                .or_else(|| (status == 200).then(|| resp.content_length()).flatten());
+            if let Some(t) = total {
+                TOTAL.store(t, Relaxed);
+            }
             let whole = status == 200;
             let mut body = resp.bytes_stream();
             let mut got = 0_u64;
@@ -245,6 +264,7 @@ impl Media {
                     return Err(MediaError::BadResponse);
                 }
                 file.write_all(&chunk).await?;
+                GOT.store(next + got, Relaxed);
             }
             next += got;
             if total.is_some_and(|t| next > t) {

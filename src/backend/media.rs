@@ -20,7 +20,7 @@ use std::{
 mod cache;
 #[path = "media_download.rs"]
 mod download;
-pub use download::cancel_all as cancel_downloads;
+pub use download::{cancel_all as cancel_downloads, progress as download_progress};
 #[path = "media_export.rs"]
 mod export;
 #[path = "media_local.rs"]

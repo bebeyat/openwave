@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-11-24
+
+### Added
+
+- Download queue in **Library > Downloads**: the song downloading now (with its own progress bar and
+  percent), the songs waiting and the ones that failed (with the reason), each in its own section. Every
+  song can be cancelled or removed, failed ones retried one by one or all at once. The header shows overall
+  progress, download speed and an estimate of the time left, with **Pause**, **Resume** and **Cancel all**
+  ([#40](https://github.com/bebeyat/openwave/issues/40)).
+- While songs download, the sidebar shows the progress above **Settings**; click it to open the queue.
+
+### Changed
+
+- Clicking the progress ring on a list now opens the download queue instead of cancelling all downloads.
+
 ## [0.2.3] - 2026-11-24
 
 ### Fixed
