@@ -1,6 +1,6 @@
 [package]
 name = "openwave"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 rust-version = "1.95"
 description = "A simple, private, local-first desktop music player"
@@ -19,7 +19,9 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "json", "stream", "http2"] }
-ytmapi-rs = { version = "0.3.3", default-features = false, features = ["rustls", "simplified-queries"] }
+ytmapi-rs = { version = "0.3.3", default-features = false, features = ["rustls", "simplified-queries", "reqwest"] }
+# The reqwest ytmapi-rs is built on, to hand it an HTTP/1.1-only client (see `catalog::ytm_client`).
+reqwest-ytm = { package = "reqwest", version = "0.13", default-features = false }
 axum = "0.8"
 uuid = { version = "1", features = ["v4"] }
 futures-util = "0.3"

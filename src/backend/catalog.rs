@@ -16,7 +16,7 @@ use ytmapi_rs::query::search::{
     AlbumsFilter, ArtistsFilter, PlaylistsFilter, SearchQuery, SongsFilter,
 };
 use ytmapi_rs::query::{GetMoodPlaylistsQuery, GetPlaylistTracksQuery};
-use ytmapi_rs::{auth::noauth::NoAuthToken, YtMusic};
+use ytmapi_rs::{auth::noauth::NoAuthToken, YtMusic, YtMusicBuilder};
 
 #[path = "catalog_discover.rs"]
 pub mod discover;
@@ -84,10 +84,7 @@ impl Catalog {
     }
     /// Create the YouTube Music client ahead of the first search so it does not pay for it.
     pub async fn warm(&self) {
-        let _ = self
-            .api
-            .get_or_try_init(|| async { YtMusic::new_unauthenticated().await.map_err(net) })
-            .await;
+        let _ = self.api.get_or_try_init(ytm_client).await;
     }
 
     pub async fn query(&self, section: &str, term: &str, key: &str) -> Result<Value, CatalogError> {
@@ -113,9 +110,7 @@ impl Catalog {
     }
 
     async fn api(&self) -> Result<&YtMusic<NoAuthToken>, CatalogError> {
-        self.api
-            .get_or_try_init(|| async { YtMusic::new_unauthenticated().await.map_err(net) })
-            .await
+        self.api.get_or_try_init(ytm_client).await
     }
 
     /// Songs from YouTube Music, or from yt-dlp when it fails (or is being skipped after
@@ -152,6 +147,19 @@ impl Catalog {
         }
         cache.push_back((cache_key, Instant::now(), value.clone()));
     }
+}
+
+/// The unauthenticated YouTube Music client, over HTTP/1.1: YouTube Music resets HTTP/2 streams
+/// that carry the fixed Firefox 88 user agent ytmapi-rs sends (issue #33), HTTP/1.1 is still served.
+async fn ytm_client() -> Result<YtMusic<NoAuthToken>, CatalogError> {
+    let http = reqwest_ytm::Client::builder()
+        .http1_only()
+        .build()
+        .map_err(net)?;
+    YtMusicBuilder::new_with_client(ytmapi_rs::Client::new_from_reqwest_client(http))
+        .build()
+        .await
+        .map_err(net)
 }
 
 /// Terms and ids are checked before any request is made.
