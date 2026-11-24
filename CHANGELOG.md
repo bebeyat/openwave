@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-24
+
+### Fixed
+
+- In the EU, searching for artists, albums and playlists, opening artist pages, and the **Recommended for you**
+  and **Mixes for you** sections failed with "The server sent an unexpected answer". YouTube Music showed its
+  cookie consent page instead of answering; OpenWave now skips it
+  ([#37](https://github.com/bebeyat/openwave/issues/37)).
+
+### Changed
+
+- Dependency updates.
+
 ## [0.2.2] - 2026-11-24
 
 ### Fixed
