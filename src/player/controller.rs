@@ -156,6 +156,26 @@ pub fn play_now(tracks: &[Track], start: usize) {
     }
 }
 
+/// Listen together (guest): replace the queue with `tracks` and start the first at `secs`.
+pub fn play_now_at(tracks: &[Track], secs: f64, autoplay: bool) {
+    with_core(|c| c.play_request += 1);
+    let next = QUEUE.peek().play_now(tracks, 0, fresh_seed());
+    let empty = next.is_empty();
+    commit_queue(next);
+    if empty {
+        stop_engine();
+    } else {
+        start_current(secs, autoplay);
+    }
+}
+
+/// Keep the playing song and replace everything after it.
+pub fn replace_upcoming(tracks: &[Track]) {
+    let next = QUEUE.peek().clear_upcoming().add_last(tracks);
+    commit_queue(next);
+    prefetch_next();
+}
+
 /// Ticket for a "look the songs up, then play" request; check it with [`is_latest_play`]
 /// before playing the result.
 pub fn play_request() -> u64 {
@@ -186,7 +206,8 @@ pub fn add_last(tracks: &[Track]) {
 }
 
 fn add_tracks(tracks: &[Track], next: bool) {
-    if tracks.is_empty() {
+    // A listen-together guest's queue mirrors the host's: the songs go to the host instead.
+    if tracks.is_empty() || crate::features::listen::suggest(tracks) {
         return;
     }
     let was_empty = QUEUE.peek().is_empty();

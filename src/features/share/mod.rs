@@ -1,4 +1,4 @@
-//! Share links. `share(...)` from any menu opens [`ShareDialog`], which stores the list on the
+//! Share links (and the hand-over of listen-together invites). `share(...)` from any menu opens [`ShareDialog`], which stores the list on the
 //! share relays and copies the short link. Opening a link (clicked in a browser or chat, or a
 //! second launch with `openwave://s/<id>`) arrives through [`LinkInbox`]: one song plays, a list
 //! opens the import dialog on its preview.
@@ -11,6 +11,7 @@ use dioxus::prelude::*;
 
 use crate::backend::api;
 use crate::backend::error::Coded;
+use crate::backend::listen;
 use crate::backend::share::{parse_open, SCHEME};
 use crate::features::shell::slots::{OPEN_IMPORT, PENDING_IMPORT};
 use crate::i18n::t;
@@ -20,6 +21,7 @@ use crate::store::datadir::OPEN_LINK;
 use crate::ui::{toast, toast_error};
 
 pub use dialog::ShareDialog;
+pub(crate) use dialog::{copy, LinkBox};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ShareRequest {
@@ -51,9 +53,16 @@ pub fn share_track(track: &Track) {
 
 /// Hand a link from the command line to the running window (this process or the first one).
 pub fn hand_over(dir: &std::path::Path, args: impl Iterator<Item = String>) {
-    if let Some((id, start)) = args.filter_map(|a| parse_open(&a)).next() {
+    let link = args.into_iter().find_map(|a| {
+        if let Some(code) = listen::parse_join(&a) {
+            return Some(format!("{}{code}", listen::SCHEME));
+        }
+        let (id, start) = parse_open(&a)?;
         let song = start.map(|n| format!("/{n}")).unwrap_or_default();
-        let _ = std::fs::write(dir.join(OPEN_LINK), format!("{SCHEME}{id}{song}"));
+        Some(format!("{SCHEME}{id}{song}"))
+    });
+    if let Some(link) = link {
+        let _ = std::fs::write(dir.join(OPEN_LINK), link);
     }
 }
 
@@ -86,7 +95,11 @@ pub fn LinkInbox() -> Element {
         loop {
             if let Ok(text) = std::fs::read_to_string(&path) {
                 let _ = std::fs::remove_file(&path);
-                if let Some((id, start)) = parse_open(&text) {
+                // An invite (`openwave://j/...`) joins a session; anything else is a share.
+                if let (false, Some((id, start))) = (
+                    crate::features::listen::open_invite(&text),
+                    parse_open(&text),
+                ) {
                     open(id, start);
                 }
             }

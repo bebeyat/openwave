@@ -13,7 +13,7 @@ use crate::ui::{Banner, BannerKind, Button, ButtonVariant, Dialog, DialogSize, S
 /// Kept open for the whole run: on Linux the clipboard text lives only as long as its owner.
 static BOARD: Mutex<Option<arboard::Clipboard>> = Mutex::new(None);
 
-async fn copy(text: String) -> bool {
+pub(crate) async fn copy(text: String) -> bool {
     tokio::task::spawn_blocking(move || {
         let mut board = BOARD.lock().unwrap_or_else(|e| e.into_inner());
         if board.is_none() {
@@ -79,7 +79,7 @@ pub fn ShareDialog() -> Element {
 }
 
 #[component]
-fn LinkBox(link: String, copied: Signal<bool>) -> Element {
+pub(crate) fn LinkBox(link: String, copied: Signal<bool>) -> Element {
     let mut copied = copied;
     let text = link.clone();
     rsx! {

@@ -7,6 +7,7 @@ pub mod downloads;
 pub mod home;
 pub mod import;
 pub mod library;
+pub mod listen;
 pub mod onboarding;
 pub mod player;
 pub mod search;

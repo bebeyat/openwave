@@ -62,7 +62,7 @@ pub fn TrackMenuItems(
             label: t("track.menu.next"),
             onselect: move |_| {
                 controller::add_next(std::slice::from_ref(&t_next));
-                toast(t("track.toast.next"));
+                toast(crate::features::listen::queued_text("track.toast.next"));
             },
         }
         MenuItem {
@@ -70,7 +70,7 @@ pub fn TrackMenuItems(
             label: t("track.menu.last"),
             onselect: move |_| {
                 controller::add_last(std::slice::from_ref(&t_last));
-                toast(t("track.toast.last"));
+                toast(crate::features::listen::queued_text("track.toast.last"));
             },
         }
         MenuItem {
