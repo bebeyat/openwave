@@ -207,8 +207,12 @@ function renderInvite(code) {
   const open = $("open");
   open.href = `openwave://j/${code}`;
   open.querySelector("span").textContent = S.join;
-  open.addEventListener("click", () => setTimeout(() => { if (document.hasFocus()) $("hint").hidden = false; }, 1600));
+  const tried = () => setTimeout(() => { if (document.hasFocus()) $("hint").hidden = false; }, 1600);
+  open.addEventListener("click", tried);
   $("actions").hidden = false;
+  // A session is live right now: open the app at once (the browser may ask first); the button stays.
+  location.href = open.href;
+  tried();
 }
 
 async function main() {
