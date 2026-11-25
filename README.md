@@ -47,6 +47,7 @@ No subscription. No account. No telemetry.</p>
 - **Stream & discover.** Search YouTube Music and SoundCloud. Find recommendations that learn from what you play and skip, genre rows and personal mixes on Home.
 - **Bring your music.** Import Spotify (public links or your own account), Apple Music, YouTube and YouTube Music playlists, or add local files with tags and embedded covers.
 - **Listen offline.** Download songs, playlists or your likes, and export them as tagged `.m4a` files with covers.
+- **Listen together.** Start a session and send the link. Friends hear the same song at the same moment and can add songs to your queue. No account or server needed.
 - **Shape the sound.** A 10-band equalizer with saveable curves, speed, pitch, reverb, bass, distortion, loudness levelling and crossfade.
 - **Lyrics.** Synced lyrics timed to the recording (YouTube Music, with LRCLIB as fallback), word-by-word karaoke fill, per-song timing offset, translation and right-to-left scripts.
 - **Your desk, your way.** Mini player that turns into a lyric line when you look away, system tray, media keys, sleep timer, visualizer and a Ctrl+K command palette.
