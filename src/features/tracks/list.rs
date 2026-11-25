@@ -225,7 +225,7 @@ pub fn TrackList(
             DoubleClickAction::PlayNow => controller::play_now(&double_set, i),
             DoubleClickAction::AddToQueue => {
                 controller::add_last(std::slice::from_ref(track));
-                toast(t("track.toast.last"));
+                toast(crate::features::listen::queued_text("track.toast.last"));
             }
         }
     });
@@ -318,7 +318,7 @@ pub fn TrackList(
                 },
                 on_queue: move |_| {
                     controller::add_last(&queue_set);
-                    toast(t("track.toast.last"));
+                    toast(crate::features::listen::queued_text("track.toast.last"));
                 },
                 on_playlist: move |_| dialog.set(Some(playlist_set.clone())),
                 on_download: move |_| crate::features::downloads::enqueue(&download_set),

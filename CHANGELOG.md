@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Listen together** (the people button in the player bar): start a session and send the link, and
+  friends who open it hear the same song at the same moment. Play, pause, seek and skip follow the
+  host; guests' "Add to queue" goes to the host's queue. No account and no OpenWave server: the
+  session runs over the same public relays as share links
+  ([#43](https://github.com/bebeyat/openwave/issues/43)).
+
 ## [0.2.4] - 2026-11-24
 
 ### Added

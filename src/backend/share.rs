@@ -23,7 +23,7 @@ use crate::model::{Cover, Text, Track};
 /// The page that opens a share (or shows it in a browser). Fixed: old links must keep working.
 pub const BASE_URL: &str = "https://openwave.pages.dev/#";
 pub const SCHEME: &str = "openwave://s/";
-const RELAYS: [&str; 5] = [
+pub(super) const RELAYS: [&str; 5] = [
     "wss://relay.damus.io",
     "wss://nos.lol",
     "wss://relay.primal.net",
@@ -108,7 +108,7 @@ fn valid_id(s: &str) -> bool {
 }
 
 /// A shared track is untrusted input: keep only catalog ids, short texts and allowed cover hosts.
-fn clean(t: Track) -> Option<Track> {
+pub(super) fn clean(t: Track) -> Option<Track> {
     if !valid_id(&t.id) {
         return None;
     }
@@ -190,11 +190,11 @@ pub fn decode(id: &str, content: &str) -> Option<Shared> {
     })
 }
 
-fn hex(bytes: &[u8]) -> String {
+pub(super) fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-fn random32() -> Result<[u8; 32], ShareError> {
+pub(super) fn random32() -> Result<[u8; 32], ShareError> {
     let mut b = [0u8; 32];
     getrandom::fill(&mut b).map_err(|_| ShareError::Offline)?;
     Ok(b)
@@ -202,20 +202,45 @@ fn random32() -> Result<[u8; 32], ShareError> {
 
 /// A NIP-01 event signed with a fresh key (BIP-340 Schnorr over the event id).
 pub fn signed_event(content: &str, created_at: u64) -> Result<Value, ShareError> {
-    let key = loop {
-        // Fails only for the ~2^-128 chance of an out-of-range scalar.
-        if let Ok(k) = k256::schnorr::SigningKey::from_slice(&random32()?) {
-            break k;
-        }
-    };
-    let pubkey = hex(&key.verifying_key().to_bytes());
     let tags = json!([
         ["d", format!("{D_PREFIX}{}", id_of(content))],
         ["alt", "OpenWave shared playlist"]
     ]);
-    let serial = serde_json::to_string(&json!([0, pubkey, created_at, KIND, tags, content]))
-        .map_err(|_| ShareError::Nothing)?;
-    let id: [u8; 32] = Sha256::digest(serial.as_bytes()).into();
+    sign(&new_key()?, KIND, tags, content, created_at)
+}
+
+/// A random Schnorr signing key.
+pub(super) fn new_key() -> Result<k256::schnorr::SigningKey, ShareError> {
+    loop {
+        // Fails only for the ~2^-128 chance of an out-of-range scalar.
+        if let Ok(k) = k256::schnorr::SigningKey::from_slice(&random32()?) {
+            return Ok(k);
+        }
+    }
+}
+
+/// The NIP-01 id of an event: SHA-256 of its canonical serialization.
+pub(super) fn event_id(
+    pubkey: &str,
+    created_at: u64,
+    kind: u64,
+    tags: &Value,
+    content: &str,
+) -> [u8; 32] {
+    let serial = json!([0, pubkey, created_at, kind, tags, content]).to_string();
+    Sha256::digest(serial.as_bytes()).into()
+}
+
+/// A NIP-01 event signed with `key`.
+pub(super) fn sign(
+    key: &k256::schnorr::SigningKey,
+    kind: u64,
+    tags: Value,
+    content: &str,
+    created_at: u64,
+) -> Result<Value, ShareError> {
+    let pubkey = hex(&key.verifying_key().to_bytes());
+    let id = event_id(&pubkey, created_at, kind, &tags, content);
     let sig = key
         .sign_raw(&id, &random32()?)
         .map_err(|_| ShareError::Offline)?;
@@ -223,7 +248,7 @@ pub fn signed_event(content: &str, created_at: u64) -> Result<Value, ShareError>
         "id": hex(&id),
         "pubkey": pubkey,
         "created_at": created_at,
-        "kind": KIND,
+        "kind": kind,
         "tags": tags,
         "content": content,
         "sig": hex(&sig.to_bytes()),
@@ -231,7 +256,7 @@ pub fn signed_event(content: &str, created_at: u64) -> Result<Value, ShareError>
 }
 
 /// rustls has two crypto providers compiled in (through reqwest), so pick one explicitly.
-fn connector() -> Connector {
+pub(super) fn connector() -> Connector {
     static CONFIG: OnceLock<Arc<rustls::ClientConfig>> = OnceLock::new();
     let config = CONFIG.get_or_init(|| {
         let roots = rustls::RootCertStore {

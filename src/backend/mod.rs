@@ -9,6 +9,7 @@ pub mod error;
 pub mod import;
 pub mod import_flow;
 mod innertube;
+pub mod listen;
 pub mod local_tags;
 pub mod lyrics;
 pub mod lyrics_cache;

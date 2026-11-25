@@ -41,7 +41,11 @@ pub fn PlayerBar() -> Element {
                 None => rsx! {
                     div { class: "flex w-full items-center justify-between gap-4",
                         p { class: "text-sm text-muted", {t("player.placeholder")} }
-                        ShortcutsButton {}
+                        div { class: "flex items-center gap-1",
+                            // A guest joins before anything plays.
+                            crate::features::listen::ListenButton {}
+                            ShortcutsButton {}
+                        }
                     }
                 },
             }
@@ -256,6 +260,7 @@ fn RightControls() -> Element {
             if c.bar_sleep {
                 SleepButton {}
             }
+            crate::features::listen::ListenButton {}
             if c.bar_mini {
                 MiniButton {}
             }

@@ -556,6 +556,11 @@ pub async fn share(name: String, tracks: Vec<Track>, single: bool) -> Result<Str
         .unwrap_or(Err(ShareError::Offline))
 }
 
+/// Open a listen-together room on the share relays (connections live on the backend runtime).
+pub fn listen_connect(code: &str) -> ApiResult<super::listen::Connection> {
+    Ok(super::listen::connect(backend_ref()?.rt.handle(), code))
+}
+
 /// Read the list behind a share id (checked against the id, cleaned like any outside input).
 pub async fn open_share(id: &str) -> Result<share::Shared, ShareError> {
     let id = id.to_owned();
