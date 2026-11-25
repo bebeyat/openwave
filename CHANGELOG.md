@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-11-25
+
 ### Added
 
 - **Listen together** (the people button in the player bar): start a session and send the link, and
@@ -13,6 +15,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   host; guests' "Add to queue" goes to the host's queue. No account and no OpenWave server: the
   session runs over the same public relays as share links
   ([#43](https://github.com/bebeyat/openwave/issues/43)).
+- Opening an invite link in a browser starts OpenWave and joins the session right away.
 
 ## [0.2.4] - 2026-11-24
 
