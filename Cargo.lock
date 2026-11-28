@@ -2849,9 +2849,9 @@ dependencies = [
 
 [[package]]
 name = "json-crawler"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "58edb96eb1bdc2fb37429c17aec3e0349bfe636031c0816ba3aac3f9c936a565"
+checksum = "444fcb56b51b52d83db6147f1a8bd0e6c1d4209763ed2543ab60d6e78b6bcecc"
 dependencies = [
  "serde",
  "serde_json",
@@ -7028,9 +7028,9 @@ dependencies = [
 
 [[package]]
 name = "ytmapi-rs"
-version = "0.3.3"
+version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87542009ef7ebf9dbb37219c9d756d9f12ad67713437179ebb28ec7d44940ced"
+checksum = "752cd5359d3daf893bf87d8f5e50f3517d204fa904d06f9499a6777c1a1066e7"
 dependencies = [
  "chrono",
  "const_format",
